@@ -78,24 +78,7 @@ app.include_router(articles.router)
 app.include_router(quizzes.router)
 
 
-# ─── FRONTEND & HEALTH ENDPOINTS ──────────────────────────────────
-@app.get("/", response_class=FileResponse)
-def read_root():
-    index_path = os.path.join(FRONTEND_DIR, "index.html")
-    if os.path.exists(index_path):
-        return FileResponse(index_path)
-    return HTMLResponse("<h1>Sen Trắng Hub</h1>")
-
-
-@app.get("/dashboard.html", response_class=FileResponse)
-@app.get("/dashboard", response_class=FileResponse)
-def read_dashboard():
-    dashboard_path = os.path.join(FRONTEND_DIR, "dashboard.html")
-    if os.path.exists(dashboard_path):
-        return FileResponse(dashboard_path)
-    return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
-
-
+# ─── HEALTH CHECK & API ENDPOINTS ─────────────────────────────────
 @app.get("/api", tags=["Health Check"])
 def root():
     return {
@@ -128,3 +111,27 @@ async def global_exception_handler(request: Request, exc: Exception):
             "detail": str(exc) if settings.APP_DEBUG else None
         }
     )
+
+
+# ─── CATCH-ALL ROUTE FOR FRONTEND STATIC SITE ─────────────────────
+@app.get("/{full_path:path}", response_class=FileResponse)
+async def catch_all(full_path: str = ""):
+    clean_path = full_path.lstrip("/")
+    
+    # 1. Exact file match in frontend directory
+    if clean_path:
+        file_path = os.path.join(FRONTEND_DIR, clean_path)
+        if os.path.isfile(file_path):
+            return FileResponse(file_path)
+
+        # 2. Page with .html extension
+        html_path = os.path.join(FRONTEND_DIR, f"{clean_path}.html")
+        if os.path.isfile(html_path):
+            return FileResponse(html_path)
+
+    # 3. Default fallback to index.html
+    index_path = os.path.join(FRONTEND_DIR, "index.html")
+    if os.path.isfile(index_path):
+        return FileResponse(index_path)
+
+    return HTMLResponse("<h1>Sen Trắng Hub</h1>")
