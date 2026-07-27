@@ -40,3 +40,8 @@ def get_supabase_anon() -> Client:
             print(f"⚠️ Exception creating Supabase Anon Client: {e}")
             _supabase_anon_client = create_client("https://fjshckqpfkjsbpfkojhm.supabase.co", "sb_publishable_E9vO4U5GhxvrHqqgArcjMQ_4nQE6vtR")
     return _supabase_anon_client
+
+
+# Aliases for compatibility
+get_supabase_admin_client = get_supabase_admin
+get_supabase_anon_client = get_supabase_anon
