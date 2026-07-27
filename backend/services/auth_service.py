@@ -8,6 +8,7 @@ Giao tiếp trực tiếp với Supabase Auth & PostgreSQL.
 from datetime import datetime
 from typing import Optional, Dict, Any, List
 from fastapi import HTTPException, status
+from backend.config import get_settings
 from backend.services.supabase_client import get_supabase_admin, get_supabase_anon
 from backend.models.auth import (
     LoginRequest, RegisterRequest, UserResponse, TokenResponse,
