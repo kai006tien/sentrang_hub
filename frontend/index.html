@@ -1,55 +1,91 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sen Trắng Hub — Hệ thống Quản trị Nội bộ</title>
-    <meta name="description" content="Hệ thống quản trị nội bộ CLB Thanh niên Tình nguyện Sen Trắng">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #0a1628 0%, #1a3a2a 50%, #0d2818 100%);
-            color: #e8f5e9;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .container {
-            text-align: center;
-            padding: 2rem;
-        }
-        .logo { font-size: 4rem; margin-bottom: 1rem; }
-        h1 {
-            font-size: 2.5rem;
-            background: linear-gradient(135deg, #81c784, #fff9c4);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 0.5rem;
-        }
-        .subtitle { color: #a5d6a7; font-size: 1.1rem; margin-bottom: 2rem; }
-        .status {
-            display: inline-block;
-            padding: 0.5rem 1.5rem;
-            border: 1px solid #4caf50;
-            border-radius: 2rem;
-            color: #4caf50;
-            font-size: 0.9rem;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng nhập — Sen Trắng Hub</title>
+  <meta name="description" content="Hệ thống quản trị nội bộ CLB Thanh niên Tình nguyện Sen Trắng">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌸</text></svg>">
 </head>
 <body>
-    <div class="container">
-        <div class="logo">🌸</div>
-        <h1>Sen Trắng Hub</h1>
-        <p class="subtitle">Hệ thống Quản trị Nội bộ — CLB Thanh niên Tình nguyện</p>
-        <div class="status">🚀 Đang phát triển...</div>
+
+  <!-- Animated Mesh Background -->
+  <div class="bg-mesh"></div>
+
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-brand">
+          <div class="logo-icon">🌸</div>
+          <div>
+            <h1 class="auth-title">Sen Trắng Hub</h1>
+            <p class="auth-subtitle">Cổng quản trị nội bộ CLB Tình nguyện</p>
+          </div>
+        </div>
+      </div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label class="form-label" for="email">Email đăng nhập</label>
+          <div class="input-wrapper">
+            <input type="email" id="email" class="form-input" placeholder="admin@sentranghub.vn" required autocomplete="email">
+            <span class="input-icon">✉</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">Mật khẩu</label>
+          <div class="input-wrapper">
+            <input type="password" id="password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+            <span class="input-icon">🔒</span>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary" id="btn-submit">
+          <span>Đăng nhập hệ thống</span>
+          <span>➔</span>
+        </button>
+      </form>
+
+      <!-- Demo Box -->
+      <div class="demo-box">
+        <strong>Tài khoản Super Admin mặc định:</strong><br>
+        Email: <code>admin@sentranghub.vn</code><br>
+        Mật khẩu: <code>SenTrang@2026!</code>
+      </div>
     </div>
+  </div>
+
+  <!-- JavaScript Modules -->
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Chuyển hướng nếu đã đăng nhập
+      Auth.redirectIfAuthenticated();
+
+      const form = document.getElementById('login-form');
+      const btnSubmit = document.getElementById('btn-submit');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = `<span>Đang xác thực...</span>`;
+
+        try {
+          await Auth.login(email, password);
+        } catch (err) {
+          btnSubmit.disabled = false;
+          btnSubmit.innerHTML = `<span>Đăng nhập hệ thống</span> <span>➔</span>`;
+        }
+      });
+    });
+  </script>
 </body>
 </html>
