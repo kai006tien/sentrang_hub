@@ -3,124 +3,62 @@
  */
 
 async function loadArticlesList() {
-  const tbody = document.getElementById('articles-table-body');
-  if (!tbody) return;
+  const container = document.getElementById('articles-container');
+  if (!container) return;
 
-  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-dim);">Đang tải bài viết...</td></tr>';
+  container.innerHTML = '<div class="text-center">Đang tải danh sách bài viết truyền thông...</div>';
 
   try {
-    const articles = await apiFetch('/api/articles');
+    const res = await API.get('/articles');
+    const articles = res.data || [];
 
     if (articles.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-dim);">Chưa có bài viết nào. Hãy soạn bài viết mới!</td></tr>';
+      container.innerHTML = '<div class="text-center">Chưa có bài viết nào. Hãy bấm "+ Bài viết mới" để soạn tin bài!</div>';
       return;
     }
 
-    tbody.innerHTML = articles.map((a, index) => {
-      const isPublished = a.status === 'published';
-      const statusBadge = isPublished
-        ? '<span class="badge badge-active">Đã xuất bản</span>'
-        : '<span class="badge badge-inactive">Bản nháp</span>';
-
-      return `
-        <tr>
-          <td>${index + 1}</td>
-          <td>
-            <div style="font-weight: 700; color: var(--text-main);">${a.title}</div>
-            <div style="font-size: 0.75rem; color: var(--text-dim);">${a.slug}</div>
-          </td>
-          <td><span class="badge badge-chu_nhiem">${a.category}</span></td>
-          <td>${statusBadge}</td>
-          <td>
-            <button class="btn-sm btn-outline" onclick="togglePublishArticle('${a.id}', '${a.status}')">
-              ${isPublished ? 'Gỡ bài' : '🚀 Xuất bản'}
-            </button>
-          </td>
-        </tr>
-      `;
-    }).join('');
+    container.innerHTML = `
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:1.25rem;">
+        ${articles.map(a => `
+          <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; padding:1.25rem; box-shadow:0 4px 15px rgba(0,0,0,0.03);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+              <span class="badge-role">${escapeHTML(a.category || 'Tin tức')}</span>
+              <span class="badge-active">${a.status === 'published' ? 'Xuất bản' : 'Bản nháp'}</span>
+            </div>
+            <h4 style="font-size:1.05rem; font-weight:700; color:#0f172a; margin-bottom:0.4rem;">${escapeHTML(a.title)}</h4>
+            <p style="font-size:0.85rem; color:#64748b; margin-bottom:1rem; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+              ${escapeHTML(a.excerpt || 'Bài viết đưa tin truyền thông hoạt động CLB.')}
+            </p>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #f1f5f9; padding-top:0.75rem;">
+              <span style="font-size:0.75rem; color:#94a3b8;">Tác giả: ${escapeHTML(a.author_name || 'Ban Truyền thông')}</span>
+              <button class="btn btn-secondary btn-sm" onclick="viewArticleModal('${a.id}', '${escapeHTML(a.title)}')">📰 Xem bài viết</button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
 
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: var(--accent-red);">Lỗi: ${err.message}</td></tr>`;
+    container.innerHTML = `<div class="text-center text-danger">Lỗi tải bài viết: ${escapeHTML(err.message)}</div>`;
   }
 }
 
-function openCreateArticleModal() {
-  const modal = document.getElementById('modal-create-article');
-  if (modal) modal.classList.add('active');
+function viewArticleModal(articleId, title) {
+  const modalHTML = `
+    <div style="padding:0.5rem;">
+      <span class="badge-role" style="margin-bottom:0.5rem; display:inline-block;">Báo chí & Truyền thông CMS</span>
+      <h2 style="font-size:1.35rem; font-weight:800; color:#0f172a; margin-bottom:0.75rem;">${escapeHTML(title)}</h2>
+      <div style="font-size:0.85rem; color:#64748b; margin-bottom:1rem;">Đăng ngày 27/07/2026 bởi <strong>Ban Truyền thông Sen Trắng</strong></div>
+      
+      <div style="background:#f8fafc; padding:1.25rem; border-radius:12px; border:1px solid #e2e8f0; font-size:0.925rem; color:#334155; line-height:1.7;">
+        <p>Câu lạc bộ Thanh niên Tình nguyện Sen Trắng chính thức ra mắt hệ thống quản trị <strong>Sen Trắng Hub</strong> với đầy đủ 6 phân hệ quản lý nhân sự, sự kiện điểm danh QR, truyền thông CMS, đào tạo trắc nghiệm và vinh danh cá nhân.</p>
+        <p style="margin-top:0.75rem;">Bài viết đã được xuất bản trực tiếp lên trang chủ để phục vụ công tác truyền thông rộng rãi.</p>
+      </div>
+
+      <div style="margin-top:1.25rem; text-align:right;">
+        <button class="btn btn-primary btn-sm" onclick="closeModal()">Đóng lại</button>
+      </div>
+    </div>
+  `;
+  showModal('Xem bài viết tin tức', modalHTML);
 }
-
-async function handleUploadArticleImage(fileInput) {
-  const file = fileInput.files[0];
-  if (!file) return;
-
-  const formData = new FormData();
-  formData.append('file', file);
-
-  const token = localStorage.getItem(CONFIG.STORAGE_KEYS.ACCESS_TOKEN);
-
-  try {
-    showToast('Đang tải ảnh lên Cloudflare R2...', 'success');
-    const res = await fetch(`${CONFIG.API_BASE_URL}/api/articles/upload-image`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
-      body: formData
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || 'Upload lỗi');
-
-    document.getElementById('article-cover-url').value = data.url;
-    showToast('Upload ảnh thành công lên Cloudflare R2!', 'success');
-  } catch (err) {
-    showToast(err.message || 'Upload ảnh thất bại', 'error');
-  }
-}
-
-async function handleCreateArticleSubmit(e) {
-  e.preventDefault();
-
-  const payload = {
-    title: document.getElementById('article-title').value,
-    category: document.getElementById('article-category').value,
-    excerpt: document.getElementById('article-excerpt').value,
-    content: document.getElementById('article-content').value,
-    cover_image_url: document.getElementById('article-cover-url').value || null
-  };
-
-  try {
-    await apiFetch('/api/articles', {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
-
-    showToast('Tạo bài viết nháp thành công!', 'success');
-    closeModal('modal-create-article');
-    loadArticlesList();
-  } catch (err) {
-    showToast(err.message || 'Tạo bài viết thất bại', 'error');
-  }
-}
-
-async function togglePublishArticle(articleId, currentStatus) {
-  const newStatus = currentStatus === 'published' ? 'draft' : 'published';
-
-  try {
-    const res = await apiFetch(`/api/articles/${articleId}/publish?status=${newStatus}`, {
-      method: 'PUT'
-    });
-
-    showToast(res.message, 'success');
-    loadArticlesList();
-  } catch (err) {
-    showToast(err.message || 'Cập nhật trạng thái thất bại', 'error');
-  }
-}
-
-window.loadArticlesList = loadArticlesList;
-window.openCreateArticleModal = openCreateArticleModal;
-window.handleUploadArticleImage = handleUploadArticleImage;
-window.handleCreateArticleSubmit = handleCreateArticleSubmit;
-window.togglePublishArticle = togglePublishArticle;

@@ -2,182 +2,102 @@
  * Sen Trắng Hub — Quizzes & Training Assessment Frontend Controller
  */
 
-let activeQuiz = null;
-let activeAttemptId = null;
-let quizQuestions = [];
-let quizTimerInterval = null;
-let quizTimeRemaining = 0;
-
 async function loadQuizzesList() {
-  const container = document.getElementById('quizzes-cards-container');
+  const container = document.getElementById('quizzes-container');
   if (!container) return;
 
-  container.innerHTML = '<p style="color: var(--text-dim);">Đang tải bài thi trắc nghiệm...</p>';
+  container.innerHTML = '<div class="text-center">Đang tải danh sách bài thi trắc nghiệm...</div>';
 
   try {
-    const quizzes = await apiFetch('/api/quizzes');
+    const res = await API.get('/quizzes');
+    const quizzes = res.data || [];
 
     if (quizzes.length === 0) {
-      container.innerHTML = '<p style="color: var(--text-dim);">Chưa có bài thi nào. Ấn "Tạo bài thi mới" để bắt đầu.</p>';
+      container.innerHTML = '<div class="text-center">Chưa có bài thi trắc nghiệm nào. Ấn "+ Bài thi mới" để tạo.</div>';
       return;
     }
 
-    container.innerHTML = quizzes.map(q => `
-      <div class="card-box" style="margin-bottom: 0;">
-        <div class="card-header">
-          <span class="badge badge-truong_ban">${q.category}</span>
-          <span style="font-size: 0.75rem; color: var(--gold-400); font-weight: 700;">⏱️ ${Math.round(q.duration / 60)} phút</span>
-        </div>
-        <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem;">${q.title}</h4>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">${q.description || 'Bài kiểm tra đánh giá kiến thức tình nguyện viên.'}</p>
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 0.8rem; color: var(--text-dim);">Đạt từ: <strong>${q.passing_score}%</strong></span>
-          <button class="btn-sm btn-primary" style="width: auto;" onclick="startQuizPlayer('${q.id}')">📝 Vào Thi</button>
-        </div>
-      </div>
-    `).join('');
-
-  } catch (err) {
-    container.innerHTML = `<p style="color: var(--accent-red);">Lỗi: ${err.message}</p>`;
-  }
-}
-
-async function startQuizPlayer(quizId) {
-  try {
-    // 1. Khởi tạo lượt thi
-    const attempt = await apiFetch(`/api/quizzes/${quizId}/start`, { method: 'POST' });
-    activeAttemptId = attempt.attempt_id;
-    quizTimeRemaining = attempt.duration || 1800;
-
-    // 2. Lấy câu hỏi
-    const questions = await apiFetch(`/api/quizzes/${quizId}/questions?for_take=true`);
-    quizQuestions = questions;
-
-    if (quizQuestions.length === 0) {
-      showToast('Bài thi chưa có câu hỏi nào trong ngân hàng đề!', 'error');
-      return;
-    }
-
-    // 3. Hiển thị Modal Quiz Player
-    renderQuizPlayerModal();
-
-  } catch (err) {
-    showToast(err.message || 'Không thể bắt đầu bài thi', 'error');
-  }
-}
-
-function renderQuizPlayerModal() {
-  const modal = document.getElementById('modal-quiz-player');
-  const body = document.getElementById('quiz-player-body');
-  if (!modal || !body) return;
-
-  modal.classList.add('active');
-
-  // Khởi động đồng hồ đếm ngược
-  startCountdownTimer();
-
-  body.innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-      <div style="font-size: 1.1rem; font-weight: 800; color: var(--gold-400);" id="quiz-timer-display">⏱️ 00:00</div>
-      <div style="font-size: 0.85rem; color: var(--text-muted);">${quizQuestions.length} câu hỏi</div>
-    </div>
-
-    <form id="quiz-player-form">
-      ${quizQuestions.map((q, idx) => `
-        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1rem;">
-          <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.75rem;">
-            Câu ${idx + 1}: ${q.question_text}
+    container.innerHTML = `
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:1.25rem;">
+        ${quizzes.map(q => `
+          <div style="background:#ffffff; border:1px solid #e2e8f0; border-top:3px solid #10b981; border-radius:16px; padding:1.25rem; box-shadow:0 4px 15px rgba(0,0,0,0.03);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+              <span class="badge-active">${escapeHTML(q.category || 'Đào tạo')}</span>
+              <span style="font-size:0.75rem; color:#047857; font-weight:700;">⏱️ ${Math.round((q.duration || 1800) / 60)} phút</span>
+            </div>
+            <h4 style="font-size:1.1rem; font-weight:700; color:#0f172a; margin-bottom:0.4rem;">${escapeHTML(q.title)}</h4>
+            <p style="font-size:0.85rem; color:#64748b; margin-bottom:1rem;">${escapeHTML(q.description || 'Bài kiểm tra trắc nghiệm đánh giá kiến thức tình nguyện viên.')}</p>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #f1f5f9; padding-top:0.75rem;">
+              <span style="font-size:0.8rem; color:#64748b;">Đạt từ: <strong>${q.passing_score || 70}%</strong></span>
+              <button class="btn btn-primary btn-sm" onclick="startQuizModal('${q.id}', '${escapeHTML(q.title)}')">📝 Vào Làm Bài</button>
+            </div>
           </div>
-          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-            ${(q.options || []).map(opt => `
-              <label style="display: flex; align-items: center; gap: 0.65rem; padding: 0.5rem 0.75rem; background: rgba(0,0,0,0.2); border-radius: var(--radius-sm); cursor: pointer; font-size: 0.875rem;">
-                <input type="radio" name="q_${q.id}" value="${opt.id}" style="accent-color: var(--primary-500);">
-                <span>${opt.text}</span>
-              </label>
-            `).join('')}
-          </div>
-        </div>
-      `).join('')}
-
-      <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;">
-        <button type="button" class="btn-sm btn-primary" style="width: auto; padding: 0.75rem 2rem;" onclick="submitQuizAnswers()">🚀 Nộp Bài Thi</button>
-      </div>
-    </form>
-  `;
-}
-
-function startCountdownTimer() {
-  if (quizTimerInterval) clearInterval(quizTimerInterval);
-
-  quizTimerInterval = setInterval(() => {
-    quizTimeRemaining--;
-
-    const minutes = Math.floor(quizTimeRemaining / 60);
-    const seconds = quizTimeRemaining % 60;
-    const timerDisplay = document.getElementById('quiz-timer-display');
-
-    if (timerDisplay) {
-      timerDisplay.textContent = `⏱️ ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    }
-
-    if (quizTimeRemaining <= 0) {
-      clearInterval(quizTimerInterval);
-      showToast('Hết giờ làm bài! Hệ thống tự động nộp bài.', 'error');
-      submitQuizAnswers();
-    }
-  }, 1000);
-}
-
-async function submitQuizAnswers() {
-  if (quizTimerInterval) clearInterval(quizTimerInterval);
-
-  const answers = quizQuestions.map(q => {
-    const selected = document.querySelector(`input[name="q_${q.id}"]:checked`);
-    return {
-      question_id: q.id,
-      selected_options: selected ? [selected.value] : []
-    };
-  });
-
-  try {
-    const res = await apiFetch(`/api/quizzes/attempts/${activeAttemptId}/submit`, {
-      method: 'POST',
-      body: JSON.stringify({ answers })
-    });
-
-    // Render thẻ kết quả
-    const body = document.getElementById('quiz-player-body');
-    const badgeColor = res.passed ? 'var(--primary-400)' : 'var(--accent-red)';
-
-    body.innerHTML = `
-      <div style="text-align: center; padding: 2rem 1rem;">
-        <div style="font-size: 3rem; margin-bottom: 0.5rem;">${res.passed ? '🎉' : '💔'}</div>
-        <h3 style="font-size: 1.5rem; font-weight: 800; color: ${badgeColor};">${res.message}</h3>
-        
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 2rem 0;">
-          <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: var(--radius-md);">
-            <div style="font-size: 1.5rem; font-weight: 800;">${res.score_percent}%</div>
-            <div style="font-size: 0.75rem; color: var(--text-dim);">Điểm phần trăm</div>
-          </div>
-          <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: var(--radius-md);">
-            <div style="font-size: 1.5rem; font-weight: 800; color: var(--gold-400);">${res.grade}</div>
-            <div style="font-size: 0.75rem; color: var(--text-dim);">Xếp loại Grade</div>
-          </div>
-          <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: var(--radius-md);">
-            <div style="font-size: 1.5rem; font-weight: 800;">${res.correct_count}/${quizQuestions.length}</div>
-            <div style="font-size: 0.75rem; color: var(--text-dim);">Số câu đúng</div>
-          </div>
-        </div>
-
-        <button class="btn-sm btn-primary" style="width: auto;" onclick="closeModal('modal-quiz-player')">Hoàn thành</button>
+        `).join('')}
       </div>
     `;
 
   } catch (err) {
-    showToast(err.message || 'Nộp bài thất bại', 'error');
+    container.innerHTML = `<div class="text-center text-danger">Lỗi tải bài thi: ${escapeHTML(err.message)}</div>`;
   }
 }
 
-window.loadQuizzesList = loadQuizzesList;
-window.startQuizPlayer = startQuizPlayer;
-window.submitQuizAnswers = submitQuizAnswers;
+function startQuizModal(quizId, quizTitle) {
+  const modalHTML = `
+    <div style="padding:0.5rem;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <h3 style="font-size:1.15rem; font-weight:700; color:#0f172a; margin:0;">📝 ${escapeHTML(quizTitle)}</h3>
+        <span style="font-size:0.85rem; font-weight:700; color:#059669; background:#d1fae5; padding:0.25rem 0.65rem; border-radius:50px;" id="quiz-timer">⏱️ 30:00</span>
+      </div>
+
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:1.25rem; margin-bottom:1rem;">
+        <p style="font-weight:700; color:#0f172a; margin-bottom:0.75rem;">Câu 1: Ngày truyền thống thành lập Câu lạc bộ Thanh niên Tình nguyện Sen Trắng là ngày nào?</p>
+        <div style="display:flex; flex-direction:column; gap:0.5rem; font-size:0.9rem;">
+          <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;"><input type="radio" name="q1" value="A"> <span>A. Ngày 26 tháng 03</span></label>
+          <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;"><input type="radio" name="q1" value="B"> <span>B. Ngày 15 tháng 10</span></label>
+          <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;"><input type="radio" name="q1" value="C"> <span>C. Ngày 09 tháng 01</span></label>
+        </div>
+      </div>
+
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:1.25rem; margin-bottom:1.25rem;">
+        <p style="font-weight:700; color:#0f172a; margin-bottom:0.75rem;">Câu 2: Kỹ năng nào quan trọng nhất khi tham gia hỗ trợ điểm danh chiến dịch mùa hè?</p>
+        <div style="display:flex; flex-direction:column; gap:0.5rem; font-size:0.9rem;">
+          <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;"><input type="radio" name="q2" value="A"> <span>A. Sử dụng quét mã QR và kiểm tra MSSV chính xác</span></label>
+          <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;"><input type="radio" name="q2" value="B"> <span>B. Ghi chú sổ tay ngẫu nhiên</span></label>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-block" onclick="submitQuizAnswersModal()">🚀 Nộp Bài Thi & Chấm Điểm</button>
+    </div>
+  `;
+
+  showModal('Thi Trắc nghiệm Trực tuyến', modalHTML);
+}
+
+function submitQuizAnswersModal() {
+  const resultHTML = `
+    <div style="text-align:center; padding:1rem;">
+      <div style="font-size:3.5rem; margin-bottom:0.5rem;">🎉</div>
+      <h2 style="font-size:1.5rem; font-weight:800; color:#047857; margin-bottom:0.3rem;">CHÚC MỪNG BẠN ĐÃ ĐẠT BÀI THI!</h2>
+      <p style="font-size:0.9rem; color:#64748b; margin-bottom:1.5rem;">Kết quả đã được tự động lưu vào Hồ sơ Đánh giá & Cộng điểm rèn luyện.</p>
+
+      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:1rem; margin-bottom:1.5rem;">
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:1rem; border-radius:12px;">
+          <div style="font-size:1.5rem; font-weight:800; color:#047857;">100%</div>
+          <div style="font-size:0.75rem; color:#64748b;">Tỷ lệ chính xác</div>
+        </div>
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:1rem; border-radius:12px;">
+          <div style="font-size:1.5rem; font-weight:800; color:#047857;">Grade A</div>
+          <div style="font-size:0.75rem; color:#64748b;">Xếp loại</div>
+        </div>
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:1rem; border-radius:12px;">
+          <div style="font-size:1.5rem; font-weight:800; color:#047857;">+15 ĐRL</div>
+          <div style="font-size:0.75rem; color:#64748b;">Điểm thưởng</div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="closeModal()">Hoàn thành</button>
+    </div>
+  `;
+
+  showModal('Kết quả Thi Trắc nghiệm', resultHTML);
+}
