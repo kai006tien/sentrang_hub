@@ -20,7 +20,7 @@ from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config import get_settings
-from backend.routers import auth, users, roles, events, articles, quizzes
+from backend.routers import auth, users, roles, events, articles, quizzes, members, logs, notifications, certificates
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FRONTEND_DIR = os.path.join(BASE_DIR, "frontend")
@@ -78,6 +78,10 @@ app.include_router(roles.router)
 app.include_router(events.router)
 app.include_router(articles.router)
 app.include_router(quizzes.router)
+app.include_router(members.router)
+app.include_router(logs.router)
+app.include_router(notifications.router)
+app.include_router(certificates.router)
 
 
 # ─── HEALTH CHECK & API ENDPOINTS ─────────────────────────────────
