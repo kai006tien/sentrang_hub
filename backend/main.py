@@ -14,12 +14,14 @@ import time
 # Ensure project root is in sys.path for Vercel Serverless Functions
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
 
 from backend.config import get_settings
 from backend.routers import auth, users, roles, events, articles, quizzes
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FRONTEND_DIR = os.path.join(BASE_DIR, "frontend")
 
 settings = get_settings()
 
@@ -31,6 +33,11 @@ app = FastAPI(
     redoc_url="/redoc",
     openapi_url="/openapi.json"
 )
+
+# ─── STATIC FILES MOUNT ───────────────────────────────────────────
+assets_dir = os.path.join(FRONTEND_DIR, "assets")
+if os.path.exists(assets_dir):
+    app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
 # ─── CORS MIDDLEWARE ───────────────────────────────────────────────
 origins = [
@@ -71,7 +78,24 @@ app.include_router(articles.router)
 app.include_router(quizzes.router)
 
 
-# ─── HEALTH CHECK & ROOT ENDPOINTS ────────────────────────────────
+# ─── FRONTEND & HEALTH ENDPOINTS ──────────────────────────────────
+@app.get("/", response_class=FileResponse)
+def read_root():
+    index_path = os.path.join(FRONTEND_DIR, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    return HTMLResponse("<h1>Sen Trắng Hub</h1>")
+
+
+@app.get("/dashboard.html", response_class=FileResponse)
+@app.get("/dashboard", response_class=FileResponse)
+def read_dashboard():
+    dashboard_path = os.path.join(FRONTEND_DIR, "dashboard.html")
+    if os.path.exists(dashboard_path):
+        return FileResponse(dashboard_path)
+    return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
+
+
 @app.get("/api", tags=["Health Check"])
 def root():
     return {
