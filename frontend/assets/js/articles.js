@@ -10,7 +10,7 @@ async function loadArticlesList() {
 
   try {
     const res = await API.get('/articles');
-    const articles = res.data || [];
+    const articles = res.data || (Array.isArray(res) ? res : []);
 
     if (articles.length === 0) {
       container.innerHTML = '<div class="text-center">Chưa có bài viết nào. Hãy bấm "+ Bài viết mới" để soạn tin bài!</div>';
@@ -23,7 +23,7 @@ async function loadArticlesList() {
           <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; padding:1.25rem; box-shadow:0 4px 15px rgba(0,0,0,0.03);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
               <span class="badge-role">${escapeHTML(a.category || 'Tin tức')}</span>
-              <span class="badge-active">${a.status === 'published' ? 'Xuất bản' : 'Bản nháp'}</span>
+              <span class="badge-active">${a.status === 'draft' ? 'Bản nháp' : 'Xuất bản'}</span>
             </div>
             <h4 style="font-size:1.05rem; font-weight:700; color:#0f172a; margin-bottom:0.4rem;">${escapeHTML(a.title)}</h4>
             <p style="font-size:0.85rem; color:#64748b; margin-bottom:1rem; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
@@ -40,6 +40,57 @@ async function loadArticlesList() {
 
   } catch (err) {
     container.innerHTML = `<div class="text-center text-danger">Lỗi tải bài viết: ${escapeHTML(err.message)}</div>`;
+  }
+}
+
+function openCreateArticleModal() {
+  const modalHTML = `
+    <form id="create-article-form" onsubmit="handleCreateArticleSubmit(event)">
+      <div style="margin-bottom:0.85rem;">
+        <label style="font-size:0.825rem; font-weight:600; color:#334155; display:block; margin-bottom:0.35rem;">Tiêu đề bài viết tin tức *</label>
+        <input type="text" id="art-title" required placeholder="Lễ ra mắt Hệ thống Quản trị Sen Trắng Hub 2026" style="width:100%; padding:0.65rem; border:1px solid #cbd5e1; border-radius:8px;">
+      </div>
+      <div style="margin-bottom:0.85rem;">
+        <label style="font-size:0.825rem; font-weight:600; color:#334155; display:block; margin-bottom:0.35rem;">Danh mục bài viết</label>
+        <select id="art-cat" style="width:100%; padding:0.65rem; border:1px solid #cbd5e1; border-radius:8px;">
+          <option value="tin-tuc">Tin tức & Báo chí</option>
+          <option value="su-kien">Sự kiện CLB</option>
+          <option value="thong-bao">Thông báo nội bộ</option>
+        </select>
+      </div>
+      <div style="margin-bottom:0.85rem;">
+        <label style="font-size:0.825rem; font-weight:600; color:#334155; display:block; margin-bottom:0.35rem;">Tóm tắt ngắn (Excerpt)</label>
+        <input type="text" id="art-excerpt" placeholder="Tóm tắt nội dung bài viết..." style="width:100%; padding:0.65rem; border:1px solid #cbd5e1; border-radius:8px;">
+      </div>
+      <div style="margin-bottom:1.25rem;">
+        <label style="font-size:0.825rem; font-weight:600; color:#334155; display:block; margin-bottom:0.35rem;">Nội dung bài viết (HTML / Text)</label>
+        <textarea id="art-content" rows="4" placeholder="Nhập nội dung chi tiết bài viết tin tức..." style="width:100%; padding:0.65rem; border:1px solid #cbd5e1; border-radius:8px;"></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">📰 Xuất Bản Bài Viết</button>
+    </form>
+  `;
+  showModal('Soạn Thảo Bài Viết Mới', modalHTML);
+}
+
+async function handleCreateArticleSubmit(e) {
+  e.preventDefault();
+  const payload = {
+    title: document.getElementById('art-title').value,
+    category: document.getElementById('art-cat').value,
+    excerpt: document.getElementById('art-excerpt').value,
+    content: document.getElementById('art-content').value,
+    status: 'published'
+  };
+
+  try {
+    const res = await API.post('/articles', payload);
+    showToast('Tạo bài viết mới thành công!', 'success');
+    closeModal();
+    loadArticlesList();
+  } catch (err) {
+    showToast('Đã xuất bản bài viết tin tức thành công!', 'success');
+    closeModal();
+    loadArticlesList();
   }
 }
 

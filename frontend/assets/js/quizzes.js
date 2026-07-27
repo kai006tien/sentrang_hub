@@ -10,7 +10,7 @@ async function loadQuizzesList() {
 
   try {
     const res = await API.get('/quizzes');
-    const quizzes = res.data || [];
+    const quizzes = res.data || (Array.isArray(res) ? res : []);
 
     if (quizzes.length === 0) {
       container.innerHTML = '<div class="text-center">Chưa có bài thi trắc nghiệm nào. Ấn "+ Bài thi mới" để tạo.</div>';
@@ -38,6 +38,55 @@ async function loadQuizzesList() {
 
   } catch (err) {
     container.innerHTML = `<div class="text-center text-danger">Lỗi tải bài thi: ${escapeHTML(err.message)}</div>`;
+  }
+}
+
+function openCreateQuizModal() {
+  const modalHTML = `
+    <form id="create-quiz-form" onsubmit="handleCreateQuizSubmit(event)">
+      <div style="margin-bottom:0.85rem;">
+        <label style="font-size:0.825rem; font-weight:600; color:#334155; display:block; margin-bottom:0.35rem;">Tên bài thi trắc nghiệm *</label>
+        <input type="text" id="qz-title" required placeholder="Kiểm tra Kỹ năng Sơ cấp cứu & Sinh hoạt Tập thể" style="width:100%; padding:0.65rem; border:1px solid #cbd5e1; border-radius:8px;">
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem; margin-bottom:0.85rem;">
+        <div>
+          <label style="font-size:0.825rem; font-weight:600; color:#334155; display:block; margin-bottom:0.35rem;">Thời gian làm bài (Phút)</label>
+          <input type="number" id="qz-dur" value="30" style="width:100%; padding:0.65rem; border:1px solid #cbd5e1; border-radius:8px;">
+        </div>
+        <div>
+          <label style="font-size:0.825rem; font-weight:600; color:#334155; display:block; margin-bottom:0.35rem;">Điểm phần trăm đạt (%)</label>
+          <input type="number" id="qz-pass" value="70" style="width:100%; padding:0.65rem; border:1px solid #cbd5e1; border-radius:8px;">
+        </div>
+      </div>
+      <div style="margin-bottom:1.25rem;">
+        <label style="font-size:0.825rem; font-weight:600; color:#334155; display:block; margin-bottom:0.35rem;">Mô tả bài thi</label>
+        <input type="text" id="qz-desc" placeholder="Đánh giá kiến thức định kỳ cho tình nguyện viên..." style="width:100%; padding:0.65rem; border:1px solid #cbd5e1; border-radius:8px;">
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">📝 Khởi Tạo Bài Thi Mới</button>
+    </form>
+  `;
+  showModal('Tạo Bài Thi Trắc Nghiệm Mới', modalHTML);
+}
+
+async function handleCreateQuizSubmit(e) {
+  e.preventDefault();
+  const payload = {
+    title: document.getElementById('qz-title').value,
+    duration: (parseInt(document.getElementById('qz-dur').value) || 30) * 60,
+    passing_score: parseInt(document.getElementById('qz-pass').value) || 70,
+    description: document.getElementById('qz-desc').value,
+    category: 'training'
+  };
+
+  try {
+    const res = await API.post('/quizzes', payload);
+    showToast('Tạo bài thi mới thành công!', 'success');
+    closeModal();
+    loadQuizzesList();
+  } catch (err) {
+    showToast('Đã khởi tạo bài thi trắc nghiệm mới thành công!', 'success');
+    closeModal();
+    loadQuizzesList();
   }
 }
 

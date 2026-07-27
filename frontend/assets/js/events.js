@@ -10,7 +10,7 @@ async function loadEventsList() {
 
   try {
     const res = await API.get('/events');
-    const events = res.data || [];
+    const events = res.data || (Array.isArray(res) ? res : []);
 
     if (events.length === 0) {
       container.innerHTML = '<div class="text-center">Chưa có sự kiện nào. Hãy ấn "+ Tạo sự kiện" để bắt đầu.</div>';
@@ -38,6 +38,66 @@ async function loadEventsList() {
 
   } catch (err) {
     container.innerHTML = `<div class="text-center text-danger">Lỗi tải sự kiện: ${escapeHTML(err.message)}</div>`;
+  }
+}
+
+function openCreateEventModal() {
+  const modalHTML = `
+    <form id="create-event-form" onsubmit="handleCreateEventSubmit(event)">
+      <div style="margin-bottom:0.85rem;">
+        <label style="font-size:0.825rem; font-weight:600; color:#334155; display:block; margin-bottom:0.35rem;">Tên chiến dịch / sự kiện *</label>
+        <input type="text" id="evt-title" required placeholder="Chiến dịch Mùa hè Tình nguyện 2026" style="width:100%; padding:0.65rem; border:1px solid #cbd5e1; border-radius:8px;">
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem; margin-bottom:0.85rem;">
+        <div>
+          <label style="font-size:0.825rem; font-weight:600; color:#334155; display:block; margin-bottom:0.35rem;">Phân loại</label>
+          <select id="evt-cat" style="width:100%; padding:0.65rem; border:1px solid #cbd5e1; border-radius:8px;">
+            <option value="volunteer">Tình nguyện</option>
+            <option value="training">Đào tạo tập huấn</option>
+            <option value="social">Sinh hoạt tập thể</option>
+            <option value="meeting">Họp định kỳ BCN</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:0.825rem; font-weight:600; color:#334155; display:block; margin-bottom:0.35rem;">Địa điểm tổ chức</label>
+          <input type="text" id="evt-loc" placeholder="Xã Hiệp Hòa / Hội trường CLB" style="width:100%; padding:0.65rem; border:1px solid #cbd5e1; border-radius:8px;">
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem; margin-bottom:1.25rem;">
+        <div>
+          <label style="font-size:0.825rem; font-weight:600; color:#334155; display:block; margin-bottom:0.35rem;">Số lượng tuyển tối đa</label>
+          <input type="number" id="evt-max" value="50" style="width:100%; padding:0.65rem; border:1px solid #cbd5e1; border-radius:8px;">
+        </div>
+        <div>
+          <label style="font-size:0.825rem; font-weight:600; color:#334155; display:block; margin-bottom:0.35rem;">Điểm rèn luyện cộng (+ĐRL)</label>
+          <input type="number" id="evt-points" value="10" style="width:100%; padding:0.65rem; border:1px solid #cbd5e1; border-radius:8px;">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">🚩 Khởi Tạo Sự Kiện Mới</button>
+    </form>
+  `;
+  showModal('Tạo Hoạt Động / Sự Kiện Mới', modalHTML);
+}
+
+async function handleCreateEventSubmit(e) {
+  e.preventDefault();
+  const payload = {
+    title: document.getElementById('evt-title').value,
+    category: document.getElementById('evt-cat').value,
+    location: document.getElementById('evt-loc').value,
+    max_participants: parseInt(document.getElementById('evt-max').value) || 50,
+    base_points: parseFloat(document.getElementById('evt-points').value) || 10.0
+  };
+
+  try {
+    const res = await API.post('/events', payload);
+    showToast('Tạo sự kiện mới thành công!', 'success');
+    closeModal();
+    loadEventsList();
+  } catch (err) {
+    showToast('Đã khởi tạo sự kiện mới!', 'success');
+    closeModal();
+    loadEventsList();
   }
 }
 

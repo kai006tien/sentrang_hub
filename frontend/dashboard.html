@@ -156,7 +156,7 @@
           <div class="card-panel">
             <div class="panel-header">
               <h3 class="panel-title">Danh sách Hồ sơ Nhân sự & Chức vụ kiêm nhiệm</h3>
-              <button class="btn btn-primary btn-sm" onclick="alert('Tính năng Tạo hồ sơ nhân sự mới đang mở!')">+ Thêm tài khoản</button>
+              <button class="btn btn-primary btn-sm" onclick="openCreateUserModal()">+ Thêm tài khoản</button>
             </div>
             <div class="table-responsive">
               <table class="data-table">
@@ -234,7 +234,7 @@
           <div class="card-panel">
             <div class="panel-header">
               <h3 class="panel-title">Quản lý Sự kiện & Cổng Điểm danh QR</h3>
-              <button class="btn btn-primary btn-sm" onclick="alert('Tính năng Tạo sự kiện mới đang mở!')">+ Tạo sự kiện</button>
+              <button class="btn btn-primary btn-sm" onclick="openCreateEventModal()">+ Tạo sự kiện</button>
             </div>
             <div class="events-list" id="events-container">
               <div class="text-center">Đang tải danh sách sự kiện...</div>
@@ -259,7 +259,7 @@
           <div class="card-panel">
             <div class="panel-header">
               <h3 class="panel-title">Truyền thông CMS & Hệ thống Thông báo Push Alert</h3>
-              <button class="btn btn-primary btn-sm" onclick="alert('Tính năng Soạn bài viết đang mở!')">+ Bài viết mới</button>
+              <button class="btn btn-primary btn-sm" onclick="openCreateArticleModal()">+ Bài viết mới</button>
             </div>
             <div class="articles-list" id="articles-container">
               <div class="text-center">Đang tải tin bài...</div>
@@ -272,6 +272,7 @@
           <div class="card-panel">
             <div class="panel-header">
               <h3 class="panel-title">Hệ thống Đào tạo & Trắc nghiệm trực tuyến</h3>
+              <button class="btn btn-primary btn-sm" onclick="openCreateQuizModal()">+ Bài thi mới</button>
             </div>
             <div class="quizzes-list" id="quizzes-container">
               <div class="text-center">Đang tải bài thi trắc nghiệm...</div>
@@ -353,6 +354,16 @@
 
     function closeModal() {
       document.getElementById('global-modal').style.display = 'none';
+    }
+
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
     }
   </script>
 </body>

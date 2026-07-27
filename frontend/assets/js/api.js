@@ -47,17 +47,6 @@ async function apiFetch(endpoint, options = {}) {
       headers
     });
 
-    // 401 Unauthorized handling (token expired)
-    if (response.status === 401 && !endpoint.includes('/api/auth/login')) {
-      localStorage.removeItem(CONFIG.STORAGE_KEYS.ACCESS_TOKEN);
-      localStorage.removeItem(CONFIG.STORAGE_KEYS.USER_DATA);
-      showToast('Phiên làm việc hết hạn. Vui lòng đăng nhập lại.', 'error');
-      setTimeout(() => {
-        window.location.href = 'index.html';
-      }, 1500);
-      throw new Error('Unauthorized');
-    }
-
     const data = await response.json();
 
     if (!response.ok) {
@@ -72,5 +61,38 @@ async function apiFetch(endpoint, options = {}) {
   }
 }
 
+function resolveEndpoint(endpoint) {
+  if (endpoint.startsWith('/api/')) return endpoint;
+  if (endpoint.startsWith('/v1/')) return `/api${endpoint}`;
+  if (endpoint === '/events' || endpoint.startsWith('/events/') ||
+      endpoint === '/articles' || endpoint.startsWith('/articles/') ||
+      endpoint === '/quizzes' || endpoint.startsWith('/quizzes/')) {
+    return `/api${endpoint}`;
+  }
+  return `/api/v1${endpoint}`;
+}
+
+const API = {
+  get(endpoint) {
+    return apiFetch(resolveEndpoint(endpoint), { method: 'GET' });
+  },
+  post(endpoint, body) {
+    return apiFetch(resolveEndpoint(endpoint), {
+      method: 'POST',
+      body: typeof body === 'string' ? body : JSON.stringify(body)
+    });
+  },
+  put(endpoint, body) {
+    return apiFetch(resolveEndpoint(endpoint), {
+      method: 'PUT',
+      body: typeof body === 'string' ? body : JSON.stringify(body)
+    });
+  },
+  delete(endpoint) {
+    return apiFetch(resolveEndpoint(endpoint), { method: 'DELETE' });
+  }
+};
+
 window.showToast = showToast;
 window.apiFetch = apiFetch;
+window.API = API;
