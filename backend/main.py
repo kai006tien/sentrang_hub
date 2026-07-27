@@ -72,7 +72,7 @@ app.include_router(quizzes.router)
 
 
 # ─── HEALTH CHECK & ROOT ENDPOINTS ────────────────────────────────
-@app.get("/", tags=["Health Check"])
+@app.get("/api", tags=["Health Check"])
 def root():
     return {
         "system": "Sen Trắng Hub API",
