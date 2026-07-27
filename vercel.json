@@ -1,12 +1,8 @@
 {
   "cleanUrls": true,
   "outputDirectory": "frontend",
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/backend/main.py" },
-    { "src": "/api", "dest": "/backend/main.py" },
-    { "src": "/docs", "dest": "/backend/main.py" },
-    { "src": "/openapi.json", "dest": "/backend/main.py" },
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.py" },
+    { "source": "/api", "destination": "/api/index.py" }
   ]
 }

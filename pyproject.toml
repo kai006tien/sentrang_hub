@@ -12,6 +12,3 @@ dependencies = [
     "boto3",
     "python-multipart"
 ]
-
-[tool.vercel]
-entrypoint = "backend.main:app"
