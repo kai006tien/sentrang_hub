@@ -7,6 +7,7 @@ dependencies = [
     "supabase",
     "pydantic",
     "pydantic-settings",
+    "email-validator",
     "python-dotenv",
     "boto3",
     "python-multipart"

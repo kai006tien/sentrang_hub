@@ -7,7 +7,13 @@ Storage: Cloudflare R2
 Deployment: Vercel / Uvicorn
 """
 
+import sys
+import os
 import time
+
+# Ensure project root is in sys.path for Vercel Serverless Functions
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
