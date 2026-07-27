@@ -1,13 +1,14 @@
 {
   "version": 2,
-  "rewrites": [
+  "outputDirectory": "frontend",
+  "routes": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/index.py"
+      "src": "/api/(.*)",
+      "dest": "api/index.py"
     },
     {
-      "source": "/(.*)",
-      "destination": "/frontend/$1"
+      "src": "/(.*)",
+      "dest": "/$1"
     }
   ]
 }
