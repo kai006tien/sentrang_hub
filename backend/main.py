@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from backend.config import get_settings
-from backend.routers import auth, users, roles
+from backend.routers import auth, users, roles, events, articles, quizzes
 
 settings = get_settings()
 
@@ -34,7 +34,7 @@ origins = [
     "http://127.0.0.1:5500",
     "https://sentranghub.vn",
     "https://ht-ien.vercel.app",
-    "*"  # Cho phép tất cả origins trong giai đoạn dev/test
+    "*"
 ]
 
 app.add_middleware(
@@ -60,6 +60,9 @@ async def add_process_time_header(request: Request, call_next):
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(roles.router)
+app.include_router(events.router)
+app.include_router(articles.router)
+app.include_router(quizzes.router)
 
 
 # ─── HEALTH CHECK & ROOT ENDPOINTS ────────────────────────────────
