@@ -73,17 +73,47 @@ class AuthService:
     def login(req: LoginRequest) -> TokenResponse:
         """Đăng nhập bằng Email/Password qua Supabase Auth."""
         supabase_anon = get_supabase_anon()
+        supabase_admin = get_supabase_admin()
+        settings = get_settings()
         
+        auth_res = None
         try:
             auth_res = supabase_anon.auth.sign_in_with_password({
                 "email": req.email,
                 "password": req.password
             })
         except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Đăng nhập thất bại: Email hoặc mật khẩu không chính xác."
-            )
+            # Tự động tạo tài khoản Super Admin mặc định nếu khớp credentials trong settings
+            if req.email == settings.SUPER_ADMIN_EMAIL and req.password == settings.SUPER_ADMIN_PASSWORD:
+                try:
+                    admin_user = supabase_admin.auth.admin.create_user({
+                        "email": req.email,
+                        "password": req.password,
+                        "email_confirm": True,
+                        "user_metadata": {"display_name": "Super Admin"}
+                    })
+                    admin_uid = admin_user.user.id
+                    
+                    supabase_admin.table("users").upsert({
+                        "id": admin_uid,
+                        "email": req.email,
+                        "display_name": "Super Admin",
+                        "role_id": "role_super_admin",
+                        "is_active": True
+                    }).execute()
+                    
+                    auth_res = supabase_anon.auth.sign_in_with_password({
+                        "email": req.email,
+                        "password": req.password
+                    })
+                except Exception as create_err:
+                    print(f"⚠️ Auto-provisioning Super Admin fallback: {create_err}")
+
+            if not auth_res:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Đăng nhập thất bại: Email hoặc mật khẩu không chính xác."
+                )
 
         if not auth_res.user or not auth_res.session:
             raise HTTPException(
