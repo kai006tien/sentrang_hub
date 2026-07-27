@@ -14,8 +14,10 @@ import time
 # Ensure project root is in sys.path for Vercel Serverless Functions
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config import get_settings
 from backend.routers import auth, users, roles, events, articles, quizzes
