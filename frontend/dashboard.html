@@ -3,216 +3,225 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard — Sen Trắng Hub</title>
+  <title>Dashboard — Cổng Thông Tin Điện Tử Sen Trắng Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌸</text></svg>">
 </head>
-<body>
+<body class="dashboard-body">
 
-  <!-- Mesh Background -->
-  <div class="bg-mesh"></div>
-
-  <div class="app-container">
-    <!-- Sidebar Navigation -->
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <div class="logo-box">🌸</div>
-        <div class="logo-text">Sen Trắng Hub</div>
+  <!-- Top Navigation Header -->
+  <header class="app-topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">🌸</div>
+      <div class="topbar-brand">
+        <h1 class="topbar-title">SEN TRẮNG HUB</h1>
+        <p class="topbar-sub">CỔNG QUẢN TRỊ NỘI BỘ</p>
       </div>
+    </div>
 
+    <div class="topbar-center">
+      <div class="live-clock" id="live-clock">
+        <span class="clock-icon">🕒</span>
+        <span id="clock-text">Đang tải thời gian...</span>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <div class="user-profile-pill">
+        <div class="user-avatar-circle" id="user-avatar">A</div>
+        <div class="user-details">
+          <span class="user-display-name" id="user-display-name">Super Admin</span>
+          <span class="user-role-badge" id="user-role-badge">Super Admin</span>
+        </div>
+      </div>
+      <button class="btn-topbar-logout" id="btn-logout" title="Đăng xuất">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        <span>Đăng xuất</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- App Layout -->
+  <div class="app-container">
+    
+    <!-- Sidebar -->
+    <aside class="sidebar">
       <nav class="sidebar-nav">
-        <div class="nav-section-title">Hệ thống</div>
-        <a class="nav-item active" data-view="overview">
-          <span class="icon">📊</span>
+        <div class="nav-group-title">QUẢN TRỊ HỆ THỐNG</div>
+        <a class="nav-item active" data-view="overview" onclick="showView('overview')">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
           <span>Tổng quan</span>
         </a>
-
-        <div class="nav-section-title">Quản trị cốt lõi</div>
-        <a class="nav-item" data-view="users">
-          <span class="icon">👥</span>
+        <a class="nav-item" data-view="users" onclick="showView('users')">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           <span>Tài khoản & Nhân sự</span>
         </a>
-        <a class="nav-item" data-view="roles">
-          <span class="icon">🛡️</span>
-          <span>Phân quyền động</span>
+        <a class="nav-item" data-view="roles" onclick="showView('roles')">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span>Phân quyền hệ thống</span>
         </a>
 
-        <div class="nav-section-title">Phân hệ chức năng</div>
-        <a class="nav-item" data-view="events" onclick="loadEventsList()">
-          <span class="icon">🚩</span>
+        <div class="nav-group-title">PHÂN HỆ CHỨC NĂNG</div>
+        <a class="nav-item" data-view="events" onclick="showView('events'); loadEventsList();">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           <span>Sự kiện & Điểm danh</span>
         </a>
-        <a class="nav-item" data-view="articles" onclick="loadArticlesList()">
-          <span class="icon">📰</span>
+        <a class="nav-item" data-view="articles" onclick="showView('articles'); loadArticlesList();">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
           <span>Truyền thông CMS</span>
         </a>
-        <a class="nav-item" data-view="quizzes" onclick="loadQuizzesList()">
-          <span class="icon">📝</span>
+        <a class="nav-item" data-view="quizzes" onclick="showView('quizzes'); loadQuizzesList();">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
           <span>Đào tạo & Trắc nghiệm</span>
         </a>
       </nav>
-
-      <!-- Sidebar Footer (User Info & Logout) -->
-      <div class="sidebar-footer">
-        <div class="user-badge">
-          <div class="user-avatar">A</div>
-          <div class="user-info">
-            <div class="user-name">Đang tải...</div>
-            <div class="user-role">Role</div>
-          </div>
-        </div>
-        <button class="btn-logout" id="btn-logout" title="Đăng xuất">🚪</button>
-      </div>
     </aside>
 
-    <!-- Main Content Area -->
+    <!-- Main Content -->
     <main class="main-content">
-      <!-- Top Bar -->
-      <header class="topbar">
-        <h2 class="page-title" id="page-title">Tổng quan</h2>
-        <div class="topbar-actions">
-          <button class="btn-sm btn-outline" onclick="loadOverviewStats()">🔄 Làm mới</button>
+      <div class="content-header">
+        <h2 class="content-title" id="page-title">Tổng quan hệ thống</h2>
+        <div class="content-actions">
+          <button class="btn btn-secondary btn-sm" onclick="loadOverviewStats()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            <span>Làm mới</span>
+          </button>
         </div>
-      </header>
+      </div>
 
-      <!-- Main Body -->
       <div class="content-body">
-
         <!-- VIEW 1: OVERVIEW -->
         <section id="view-overview" class="view-section active">
-          <div class="grid-stats">
-            <div class="stat-card">
-              <div class="stat-icon green">👥</div>
-              <div>
-                <div class="stat-val" id="stat-total-users">0</div>
-                <div class="stat-label">Tổng người dùng</div>
+          <div class="stats-grid">
+            <div class="stat-card stat-card--users">
+              <div class="stat-card__icon">👥</div>
+              <div class="stat-card__content">
+                <div class="stat-card__value" id="stat-total-users">0</div>
+                <div class="stat-card__label">Tổng người dùng</div>
               </div>
             </div>
 
-            <div class="stat-card">
-              <div class="stat-icon blue">🛡️</div>
-              <div>
-                <div class="stat-val" id="stat-total-roles">6</div>
-                <div class="stat-label">Vai trò hệ thống</div>
+            <div class="stat-card stat-card--roles">
+              <div class="stat-card__icon">🛡️</div>
+              <div class="stat-card__content">
+                <div class="stat-card__value" id="stat-total-roles">6</div>
+                <div class="stat-card__label">Vai trò hệ thống</div>
               </div>
             </div>
 
-            <div class="stat-card">
-              <div class="stat-icon purple">✨</div>
-              <div>
-                <div class="stat-val" id="stat-active-users">0</div>
-                <div class="stat-label">Tài khoản hoạt động</div>
+            <div class="stat-card stat-card--active">
+              <div class="stat-card__icon">⚡</div>
+              <div class="stat-card__content">
+                <div class="stat-card__value" id="stat-active-users">1</div>
+                <div class="stat-card__label">Tài khoản hoạt động</div>
               </div>
             </div>
 
-            <div class="stat-card">
-              <div class="stat-icon gold">🚩</div>
-              <div>
-                <div class="stat-val">5</div>
-                <div class="stat-label">Sự kiện hoạt động</div>
+            <div class="stat-card stat-card--events">
+              <div class="stat-card__icon">🚩</div>
+              <div class="stat-card__content">
+                <div class="stat-card__value" id="stat-active-events">5</div>
+                <div class="stat-card__label">Sự kiện hoạt động</div>
               </div>
             </div>
           </div>
 
-          <!-- Quick Shortcuts & System Overview -->
-          <div class="card-box">
-            <div class="card-header">
-              <h3 class="card-title">🌸 Chào mừng đến với Sen Trắng Hub!</h3>
-            </div>
-            <p style="color: var(--text-muted); margin-bottom: 1rem;">
-              Hệ thống quản trị nội bộ dành cho Câu lạc bộ Thanh niên Tình nguyện Sen Trắng. Bạn có toàn quyền quản lý nhân sự, phân quyền vai trò động, sự kiện điểm danh, bài viết báo chí và thi trắc nghiệm.
-            </p>
-            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-              <button class="btn-sm btn-outline" onclick="document.querySelector('[data-view=\'users\']').click()">Quản lý tài khoản ➔</button>
-              <button class="btn-sm btn-outline" onclick="document.querySelector('[data-view=\'roles\']').click()">Cấu hình phân quyền ➔</button>
-              <button class="btn-sm btn-outline" onclick="document.querySelector('[data-view=\'events\']').click(); loadEventsList();">Quản lý sự kiện ➔</button>
+          <!-- Welcome Banner -->
+          <div class="welcome-banner">
+            <div class="welcome-icon">🌸</div>
+            <div class="welcome-text">
+              <h3>Chào mừng đến với Cổng quản trị Sen Trắng Hub!</h3>
+              <p>Hệ thống quản trị nội bộ dành riêng cho Câu lạc bộ Thanh niên Tình nguyện Sen Trắng. Bạn đang đăng nhập với quyền <strong>Super Admin</strong> (Toàn quyền hệ thống).</p>
+              <div class="welcome-actions">
+                <button class="btn btn-primary btn-sm" onclick="showView('users')">Quản lý nhân sự ➔</button>
+                <button class="btn btn-secondary btn-sm" onclick="showView('events')">Sự kiện & Điểm danh ➔</button>
+              </div>
             </div>
           </div>
         </section>
 
-        <!-- VIEW 2: USERS MANAGEMENT -->
+        <!-- VIEW 2: USERS -->
         <section id="view-users" class="view-section">
-          <div class="card-box">
-            <div class="card-header">
-              <h3 class="card-title">Danh sách tài khoản & Nhân sự</h3>
-              <button class="btn-sm btn-primary" style="width: auto;" onclick="loadUsersTable()">🔄 Tải lại bảng</button>
+          <div class="card-panel">
+            <div class="panel-header">
+              <h3 class="panel-title">Danh sách Tài khoản & Nhân sự</h3>
+              <button class="btn btn-primary btn-sm" onclick="alert('Tính năng Tạo người dùng đang được mở rộng!')">+ Thêm tài khoản</button>
             </div>
-
             <div class="table-responsive">
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th>STT</th>
-                    <th>Người dùng</th>
-                    <th>Vai trò (Role)</th>
+                    <th>Họ và tên</th>
+                    <th>Email</th>
+                    <th>Vai trò</th>
                     <th>Trạng thái</th>
                     <th>Ngày tạo</th>
-                    <th>Thao tác</th>
                   </tr>
                 </thead>
                 <tbody id="users-table-body">
-                  <!-- Dynamic user rows -->
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <!-- VIEW 3: ROLES & PERMISSIONS -->
-        <section id="view-roles" class="view-section">
-          <div class="card-header" style="margin-bottom: 1rem;">
-            <h3 class="card-title">Phân quyền động (Dynamic RBAC)</h3>
-          </div>
-          <div id="roles-cards-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem;">
-            <!-- Dynamic role cards -->
-          </div>
-        </section>
-
-        <!-- VIEW 4: EVENTS & ATTENDANCE -->
-        <section id="view-events" class="view-section">
-          <div class="card-header" style="margin-bottom: 1rem;">
-            <h3 class="card-title">🚩 Phân hệ Hoạt động & Điểm danh</h3>
-            <button class="btn-sm btn-primary" style="width: auto;" onclick="openCreateEventModal()">+ Tạo sự kiện mới</button>
-          </div>
-          <div id="events-cards-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;">
-            <!-- Dynamic event cards -->
-          </div>
-        </section>
-
-        <!-- VIEW 5: ARTICLES CMS -->
-        <section id="view-articles" class="view-section">
-          <div class="card-box">
-            <div class="card-header">
-              <h3 class="card-title">📰 Phân hệ Truyền thông (CMS Mini)</h3>
-              <button class="btn-sm btn-primary" style="width: auto;" onclick="openCreateArticleModal()">+ Soạn bài viết mới</button>
-            </div>
-
-            <div class="table-responsive">
-              <table class="data-table">
-                <thead>
                   <tr>
-                    <th>STT</th>
-                    <th>Tiêu đề & Slug</th>
-                    <th>Danh mục</th>
-                    <th>Trạng thái</th>
-                    <th>Thao tác</th>
+                    <td colspan="5" class="text-center">Đang tải danh sách người dùng...</td>
                   </tr>
-                </thead>
-                <tbody id="articles-table-body">
-                  <!-- Dynamic article rows -->
                 </tbody>
               </table>
             </div>
           </div>
         </section>
 
-        <!-- VIEW 6: QUIZZES & ASSESSMENT -->
-        <section id="view-quizzes" class="view-section">
-          <div class="card-header" style="margin-bottom: 1rem;">
-            <h3 class="card-title">📝 Phân hệ Đào tạo & Thi trắc nghiệm</h3>
+        <!-- VIEW 3: ROLES -->
+        <section id="view-roles" class="view-section">
+          <div class="card-panel">
+            <div class="panel-header">
+              <h3 class="panel-title">Cấu hình Vai trò & Phân quyền động</h3>
+            </div>
+            <div class="roles-grid" id="roles-cards-container">
+              <div class="text-center">Đang tải vai trò...</div>
+            </div>
           </div>
-          <div id="quizzes-cards-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;">
-            <!-- Dynamic quiz cards -->
+        </section>
+
+        <!-- VIEW 4: EVENTS -->
+        <section id="view-events" class="view-section">
+          <div class="card-panel">
+            <div class="panel-header">
+              <h3 class="panel-title">Quản lý Sự kiện & Cổng Điểm danh QR</h3>
+              <button class="btn btn-primary btn-sm" onclick="alert('Tính năng Tạo sự kiện mới đang mở!')">+ Tạo sự kiện</button>
+            </div>
+            <div class="events-list" id="events-container">
+              <div class="text-center">Đang tải danh sách sự kiện...</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW 5: ARTICLES -->
+        <section id="view-articles" class="view-section">
+          <div class="card-panel">
+            <div class="panel-header">
+              <h3 class="panel-title">Truyền thông & Tin tức CMS</h3>
+              <button class="btn btn-primary btn-sm" onclick="alert('Tính năng Soạn bài viết đang mở!')">+ Bài viết mới</button>
+            </div>
+            <div class="articles-list" id="articles-container">
+              <div class="text-center">Đang tải tin bài...</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW 6: QUIZZES -->
+        <section id="view-quizzes" class="view-section">
+          <div class="card-panel">
+            <div class="panel-header">
+              <h3 class="panel-title">Hệ thống Đào tạo & Trắc nghiệm</h3>
+            </div>
+            <div class="quizzes-list" id="quizzes-container">
+              <div class="text-center">Đang tải bài thi trắc nghiệm...</div>
+            </div>
           </div>
         </section>
 
@@ -220,197 +229,50 @@
     </main>
   </div>
 
-  <!-- MODAL: PERMISSIONS CONFIGURATION -->
-  <div class="modal-overlay" id="modal-permissions">
-    <div class="modal-box">
-      <div class="modal-header">
-        <h3 class="modal-title">Phân quyền: <span id="modal-role-name" style="color: var(--primary-400);"></span></h3>
-        <button class="btn-close">&times;</button>
-      </div>
-      <p style="font-size: 0.825rem; color: var(--text-muted);">
-        Tích chọn các quyền hạn phép vai trò này được truy cập trên hệ thống:
-      </p>
-      <div class="perm-grid" id="perm-checkbox-grid">
-        <!-- Dynamic checkboxes -->
-      </div>
-      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.25rem;">
-        <button class="btn-sm btn-secondary btn-modal-close">Hủy</button>
-        <button class="btn-sm btn-primary" id="btn-save-permissions" style="width: auto;">Lưu cấu hình</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: EDIT USER -->
-  <div class="modal-overlay" id="modal-edit-user">
-    <div class="modal-box">
-      <div class="modal-header">
-        <h3 class="modal-title">Cập nhật tài khoản</h3>
-        <button class="btn-close">&times;</button>
-      </div>
-      <input type="hidden" id="edit-user-id">
-      <p style="font-size: 0.9rem; color: var(--text-main); margin-bottom: 1rem;">
-        Người dùng: <strong id="edit-user-name"></strong>
-      </p>
-      <div class="form-group">
-        <label class="form-label">Vai trò (Role)</label>
-        <select id="edit-user-role" class="form-input" style="padding-left: 1rem;">
-          <option value="role_super_admin">Super Admin</option>
-          <option value="role_chu_nhiem">Chủ nhiệm</option>
-          <option value="role_pho_chu_nhiem">Phó Chủ nhiệm</option>
-          <option value="role_thu_quy">Thủ quỹ</option>
-          <option value="role_truong_ban">Trưởng ban</option>
-          <option value="role_thanh_vien">Thành viên</option>
-        </select>
-      </div>
-      <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
-        <input type="checkbox" id="edit-user-active" style="accent-color: var(--primary-500); width: 18px; height: 18px;">
-        <label for="edit-user-active" style="font-size: 0.9rem; cursor: pointer;">Tài khoản đang hoạt động (Active)</label>
-      </div>
-      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
-        <button class="btn-sm btn-secondary btn-modal-close">Hủy</button>
-        <button class="btn-sm btn-primary" id="btn-save-user" style="width: auto;">Cập nhật</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: CREATE EVENT -->
-  <div class="modal-overlay" id="modal-create-event">
-    <div class="modal-box">
-      <div class="modal-header">
-        <h3 class="modal-title">Tạo sự kiện mới</h3>
-        <button class="btn-close">&times;</button>
-      </div>
-      <form onsubmit="handleCreateEventSubmit(event)">
-        <div class="form-group">
-          <label class="form-label">Tên sự kiện</label>
-          <input type="text" id="event-title" class="form-input" style="padding-left: 1rem;" placeholder="Chiến dịch Mùa hè xanh 2026" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Danh mục</label>
-          <select id="event-category" class="form-input" style="padding-left: 1rem;">
-            <option value="volunteer">Tình nguyện (Volunteer)</option>
-            <option value="training">Đào tạo (Training)</option>
-            <option value="social">Giao lưu (Social)</option>
-            <option value="meeting">Họp CLB (Meeting)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Địa điểm</label>
-          <input type="text" id="event-location" class="form-input" style="padding-left: 1rem;" placeholder="Huyện Cần Giờ, TP.HCM" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Thời gian bắt đầu</label>
-          <input type="datetime-local" id="event-start" class="form-input" style="padding-left: 1rem;" required>
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-          <div class="form-group">
-            <label class="form-label">Số lượng tối đa</label>
-            <input type="number" id="event-max" class="form-input" style="padding-left: 1rem;" value="50">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Điểm rèn luyện (+ĐRL)</label>
-            <input type="number" id="event-points" class="form-input" style="padding-left: 1rem;" value="10">
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Mô tả sự kiện</label>
-          <textarea id="event-desc" class="form-input" style="padding-left: 1rem; height: 80px;" placeholder="Chi tiết sự kiện..."></textarea>
-        </div>
-        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem;">
-          <button type="button" class="btn-sm btn-secondary btn-modal-close">Hủy</button>
-          <button type="submit" class="btn-sm btn-primary" style="width: auto;">Tạo sự kiện</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- MODAL: QR CHECK-IN -->
-  <div class="modal-overlay" id="modal-qr-checkin">
-    <div class="modal-box">
-      <div class="modal-header">
-        <h3 class="modal-title">📷 Điểm danh QR Code</h3>
-        <button class="btn-close">&times;</button>
-      </div>
-      <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">
-        Sự kiện: <strong id="qr-event-title" style="color: var(--primary-300);"></strong>
-      </p>
-      <div style="text-align: center; padding: 1.5rem; background: rgba(255,255,255,0.03); border: 2px dashed var(--primary-500); border-radius: var(--radius-md); margin-bottom: 1rem;">
-        <div style="font-size: 3rem; margin-bottom: 0.5rem;">📱</div>
-        <div style="font-weight: 700; font-size: 0.9rem;">Quét QR Code từ điện thoại của thành viên</div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Hoặc nhập mã Member ID / MSSV:</label>
-        <input type="text" id="checkin-member-id" class="form-input" style="padding-left: 1rem;" placeholder="member_005 / MSSV">
-      </div>
-      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem;">
-        <button class="btn-sm btn-secondary btn-modal-close">Đóng</button>
-        <button class="btn-sm btn-primary" style="width: auto;" onclick="simulateCheckIn()">Xác nhận Điểm danh</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: CREATE ARTICLE -->
-  <div class="modal-overlay" id="modal-create-article">
-    <div class="modal-box" style="max-width: 650px;">
-      <div class="modal-header">
-        <h3 class="modal-title">📰 Soạn bài viết báo chí mới</h3>
-        <button class="btn-close">&times;</button>
-      </div>
-      <form onsubmit="handleCreateArticleSubmit(event)">
-        <div class="form-group">
-          <label class="form-label">Tiêu đề bài viết</label>
-          <input type="text" id="article-title" class="form-input" style="padding-left: 1rem;" placeholder="Sen Trắng — Hành trình 12 năm vì cộng đồng" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Danh mục bài viết</label>
-          <select id="article-category" class="form-input" style="padding-left: 1rem;">
-            <option value="tin-tuc">Tin tức</option>
-            <option value="su-kien">Sự kiện</option>
-            <option value="bai-viet">Bài viết cảm nhận</option>
-            <option value="thong-bao">Thông báo</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Tải ảnh bìa (Upload Cloudflare R2)</label>
-          <input type="file" id="article-file-input" class="form-input" style="padding-left: 1rem;" accept="image/*" onchange="handleUploadArticleImage(this)">
-          <input type="hidden" id="article-cover-url">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Tóm tắt ngắn (Excerpt)</label>
-          <textarea id="article-excerpt" class="form-input" style="padding-left: 1rem; height: 60px;" placeholder="Tóm tắt ngắn 1-2 câu..." required></textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Nội dung bài viết (HTML / Text)</label>
-          <textarea id="article-content" class="form-input" style="padding-left: 1rem; height: 120px;" placeholder="<h2>Nội dung...</h2>" required></textarea>
-        </div>
-        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem;">
-          <button type="button" class="btn-sm btn-secondary btn-modal-close">Hủy</button>
-          <button type="submit" class="btn-sm btn-primary" style="width: auto;">Lưu bản nháp</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- MODAL: QUIZ PLAYER -->
-  <div class="modal-overlay" id="modal-quiz-player">
-    <div class="modal-box" style="max-width: 650px;">
-      <div class="modal-header">
-        <h3 class="modal-title">📝 Bài thi trắc nghiệm trực tuyến</h3>
-        <button class="btn-close">&times;</button>
-      </div>
-      <div id="quiz-player-body">
-        <!-- Dynamic quiz questions & countdown timer -->
-      </div>
-    </div>
-  </div>
-
   <!-- JavaScript Modules -->
   <script src="assets/js/config.js"></script>
   <script src="assets/js/api.js"></script>
   <script src="assets/js/auth.js"></script>
   <script src="assets/js/dashboard.js"></script>
-  <script src="assets/js/events.js"></script>
-  <script src="assets/js/articles.js"></script>
-  <script src="assets/js/quizzes.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      Auth.requireAuth();
+
+      // Update Live Clock
+      function updateClock() {
+        const now = new Date();
+        const options = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+        document.getElementById('clock-text').textContent = now.toLocaleDateString('vi-VN', options);
+      }
+      setInterval(updateClock, 1000);
+      updateClock();
+
+      // Logout handler
+      document.getElementById('btn-logout').addEventListener('click', () => {
+        Auth.logout();
+      });
+    });
+
+    function showView(viewId) {
+      document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+
+      const targetView = document.getElementById(`view-${viewId}`);
+      if (targetView) targetView.classList.add('active');
+
+      const targetNav = document.querySelector(`.nav-item[data-view="${viewId}"]`);
+      if (targetNav) targetNav.classList.add('active');
+
+      const titleMap = {
+        'overview': 'Tổng quan hệ thống',
+        'users': 'Quản lý Tài khoản & Nhân sự',
+        'roles': 'Cấu hình Vai trò & Phân quyền',
+        'events': 'Quản lý Sự kiện & Điểm danh',
+        'articles': 'Truyền thông & Tin tức CMS',
+        'quizzes': 'Hệ thống Đào tạo & Trắc nghiệm'
+      };
+      document.getElementById('page-title').textContent = titleMap[viewId] || 'Dashboard';
+    }
+  </script>
 </body>
 </html>
