@@ -18,16 +18,18 @@ from backend.services.supabase_client import get_supabase_admin
 from backend.dependencies import get_current_user
 
 
-router = APIRouter(prefix="/api/auth", tags=["Authentication"])
+router = APIRouter(prefix="", tags=["Authentication"])
 
 
-@router.post("/login", response_model=TokenResponse, summary="Đăng nhập tài khoản")
+@router.post("/api/auth/login", response_model=TokenResponse, summary="Đăng nhập tài khoản")
+@router.post("/auth/login", response_model=TokenResponse, summary="Đăng nhập tài khoản (alias)")
 def login(req: LoginRequest):
     """
     Đăng nhập bằng Email và Password.
     Trả về JWT Access Token, Refresh Token và thông tin User kèm danh sách Permission Keys.
     """
     return AuthService.login(req)
+
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED, summary="Đăng ký tài khoản mới")
