@@ -38,13 +38,15 @@ async function loadEventsList() {
 }
 
 function openCreateEventModal() {
+  const nowStr = new Date().toISOString().slice(0, 16);
   showModal('Tạo Sự Kiện Mới', `
     <form onsubmit="handleCreateEventSubmit(event)">
       <div style="margin-bottom:0.85rem;"><label>Tên sự kiện *</label><input type="text" id="evt-title" required placeholder="Chiến dịch Mùa hè Tình nguyện 2026"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;margin-bottom:0.85rem;">
         <div><label>Phân loại</label><select id="evt-cat"><option value="volunteer">Tình nguyện</option><option value="training">Đào tạo</option><option value="social">Sinh hoạt</option><option value="meeting">Họp BCN</option></select></div>
-        <div><label>Địa điểm</label><input type="text" id="evt-loc" placeholder="Hội trường CLB"></div>
+        <div><label>Thời gian diễn ra *</label><input type="datetime-local" id="evt-date" value="${nowStr}" required></div>
       </div>
+      <div style="margin-bottom:0.85rem;"><label>Địa điểm</label><input type="text" id="evt-loc" placeholder="Hội trường CLB"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;margin-bottom:1.25rem;">
         <div><label>Số lượng tối đa</label><input type="number" id="evt-max" value="50"></div>
         <div><label>Điểm thành tích (+ĐTT)</label><input type="number" id="evt-points" value="10"></div>
@@ -55,8 +57,16 @@ function openCreateEventModal() {
 
 async function handleCreateEventSubmit(e) {
   e.preventDefault();
+  const dtVal = document.getElementById('evt-date')?.value;
   try {
-    const res = await API.post('/events', { title: document.getElementById('evt-title').value, category: document.getElementById('evt-cat').value, location: document.getElementById('evt-loc').value, max_participants: parseInt(document.getElementById('evt-max').value)||50, base_points: parseFloat(document.getElementById('evt-points').value)||10 });
+    const res = await API.post('/events', {
+      title: document.getElementById('evt-title').value,
+      category: document.getElementById('evt-cat').value,
+      location: document.getElementById('evt-loc').value,
+      start_date: dtVal ? new Date(dtVal).toISOString() : new Date().toISOString(),
+      max_participants: parseInt(document.getElementById('evt-max').value)||50,
+      base_points: parseFloat(document.getElementById('evt-points').value)||10
+    });
     showToast(res.message || 'Tạo sự kiện thành công!', 'success');
     closeModal(); loadEventsList();
   } catch (err) { showToast('Lỗi: ' + err.message, 'error'); }

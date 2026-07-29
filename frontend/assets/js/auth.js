@@ -67,10 +67,14 @@ const Auth = {
       }
     }
 
-    localStorage.setItem(CONFIG.STORAGE_KEYS.ACCESS_TOKEN, data.access_token);
-    localStorage.setItem(CONFIG.STORAGE_KEYS.USER_DATA, JSON.stringify(data.user));
-
-    showToast(`Xin chào ${data.user.display_name}! Đăng nhập thành công.`, 'success');
+    if (data && data.user) {
+      localStorage.setItem(CONFIG.STORAGE_KEYS.ACCESS_TOKEN, data.access_token || 'demo_token');
+      localStorage.setItem(CONFIG.STORAGE_KEYS.USER_DATA, JSON.stringify(data.user));
+      showToast(`Xin chào ${data.user.display_name}! Đăng nhập thành công.`, 'success');
+    } else {
+      showToast('Đăng nhập không thành công', 'error');
+      throw new Error('Dữ liệu tài khoản không hợp lệ');
+    }
     
     setTimeout(() => {
       window.location.href = 'dashboard.html';
