@@ -1,6 +1,8 @@
 {
+  "version": 2,
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/(.*)", "destination": "/backend/main.py" }
+    { "source": "/api/(.*)", "destination": "/api/index.py" },
+    { "source": "/(.*)", "destination": "/frontend/$1" }
   ]
 }
