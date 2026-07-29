@@ -137,6 +137,18 @@ function getMockApiResponse(endpoint, options = {}) {
   if (endpoint.startsWith('/api/roles')) return Promise.resolve(MOCK_DB.roles);
 
   // Members
+  if (endpoint.match(/\/members\/[^/]+$/) && method === 'PUT') {
+    const memId = endpoint.split('/').pop();
+    const mem = MOCK_DB.members.find(m => m.id === memId);
+    if (mem) Object.assign(mem, body);
+    return Promise.resolve({ message: 'Cập nhật thông tin thành công!', data: mem });
+  }
+  if (endpoint.match(/\/members\/[^/]+$/) && method === 'DELETE') {
+    const memId = endpoint.split('/').pop();
+    const idx = MOCK_DB.members.findIndex(m => m.id === memId);
+    if (idx !== -1) MOCK_DB.members.splice(idx, 1);
+    return Promise.resolve({ message: 'Xóa thành viên thành công!' });
+  }
   if (endpoint.match(/\/members\/[^/]+$/) && method === 'GET') {
     const memId = endpoint.split('/').pop();
     const mem = MOCK_DB.members.find(m => m.id === memId) || MOCK_DB.members[0];

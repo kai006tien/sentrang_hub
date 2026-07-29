@@ -237,6 +237,24 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
+        if (urlPath.match(/^\/api\/members\/[^/]+$/) && req.method === 'PUT') {
+          const memberId = urlPath.split('/').pop();
+          const member = demoMembers.find(m => m.id === memberId);
+          if (member) { Object.assign(member, parsedBody); }
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ message: 'Cập nhật thông tin thành viên thành công!', data: member }));
+          return;
+        }
+
+        if (urlPath.match(/^\/api\/members\/[^/]+$/) && req.method === 'DELETE') {
+          const memberId = urlPath.split('/').pop();
+          const idx = demoMembers.findIndex(m => m.id === memberId);
+          if (idx !== -1) { demoMembers.splice(idx, 1); }
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ message: 'Đã xóa thành viên thành công!' }));
+          return;
+        }
+
         if (urlPath === '/api/members' && req.method === 'POST') {
           const newMember = { id: 'mem_' + Date.now(), ...parsedBody, status: 'active' };
           demoMembers.push(newMember);
