@@ -84,6 +84,29 @@ function getMockApiResponse(endpoint, options = {}) {
     try { body = typeof options.body === 'string' ? JSON.parse(options.body) : options.body; } catch {}
   }
 
+  // Auth Login
+  if (endpoint.includes('/auth/login') && method === 'POST') {
+    const email = body.email || 'admin@sentranghub.vn';
+    const isSuper = (email === 'admin@sentranghub.vn');
+    const user = {
+      id: isSuper ? 'admin_uid' : 'user_' + Date.now(),
+      email: email,
+      display_name: isSuper ? 'Admin Hệ Thống' : (email.split('@')[0] || 'Thành viên'),
+      role_id: isSuper ? 'role_super_admin' : 'role_thanh_vien',
+      role_name: isSuper ? 'Super Admin' : 'Thành viên',
+      role_level: isSuper ? 0 : 10,
+      is_active: true,
+      permissions: isSuper ? ['*'] : ['quizzes.take', 'events.create', 'articles.create'],
+      created_at: new Date().toISOString()
+    };
+    return Promise.resolve({
+      access_token: 'demo_token_' + Date.now(),
+      refresh_token: 'demo_refresh_' + Date.now(),
+      expires_in: 86400,
+      user: user
+    });
+  }
+
   // Users
   if (endpoint.includes('/users/create-account') && method === 'POST') {
     const newUser = { id: 'user_' + Date.now(), ...body, is_active: true, created_at: new Date().toISOString() };

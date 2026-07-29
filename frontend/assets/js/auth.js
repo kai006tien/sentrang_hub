@@ -6,11 +6,16 @@
 const Auth = {
   getUser() {
     const data = localStorage.getItem(CONFIG.STORAGE_KEYS.USER_DATA);
-    return data ? JSON.parse(data) : null;
+    if (!data || data === 'undefined' || data === 'null') return null;
+    try {
+      return JSON.parse(data);
+    } catch { return null; }
   },
 
   isLoggedIn() {
-    return !!localStorage.getItem(CONFIG.STORAGE_KEYS.ACCESS_TOKEN);
+    const token = localStorage.getItem(CONFIG.STORAGE_KEYS.ACCESS_TOKEN);
+    const user = this.getUser();
+    return !!(token && token !== 'undefined' && user);
   },
 
   async login(email, password) {
