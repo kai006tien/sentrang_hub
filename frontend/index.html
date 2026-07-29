@@ -3,23 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Đăng nhập — Cổng Thông Tin Điện Tử Sen Trắng Hub</title>
-  <meta name="description" content="Hệ thống quản trị nội bộ - Cổng Thông Tin Điện Tử CLB Thanh niên Tình nguyện Sen Trắng">
+  <title>Đăng nhập — Sen Trắng Hub</title>
+  <meta name="description" content="Hệ thống quản trị nội bộ CLB Thanh niên Tình nguyện Sen Trắng — Đăng nhập để truy cập hệ thống">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌸</text></svg>">
 </head>
 <body class="login-page">
 
-  <div class="login-wrapper">
-    <!-- Traditional Motif Overlay & Glow Spotlights -->
-    <div class="login-decoration login-decoration--trongdong"></div>
-    <div class="glow-spotlight glow-spotlight--top"></div>
-    <div class="glow-spotlight glow-spotlight--bottom"></div>
+  <!-- Decorative Elements -->
+  <div class="login-decoration login-decoration--trongdong"></div>
+  <div class="glow-spotlight glow-spotlight--top"></div>
+  <div class="glow-spotlight glow-spotlight--bottom"></div>
 
-    <!-- Top Header -->
+  <div class="login-wrapper">
+    <!-- Header -->
     <header class="login-header animate-fadeInDown">
       <div class="login-header__logo-container">
         <div class="logo-medallion">
@@ -27,18 +27,18 @@
           <div class="logo-medallion__icon">🌸</div>
         </div>
       </div>
-      <h1 class="login-header__title">CỔNG THÔNG TIN ĐIỆN TỬ</h1>
-      <p class="login-header__subtitle">HỆ THỐNG QUẢN TRỊ NỘI BỘ — CLB THANH NIÊN TÌNH NGUYỆN SEN TRẮNG</p>
+      <h1 class="login-header__title">Sen Trắng Hub</h1>
+      <p class="login-header__subtitle">Hệ thống quản trị nội bộ — CLB Thanh niên Tình nguyện Sen Trắng</p>
     </header>
 
-    <!-- Login Container & Card -->
+    <!-- Login Card -->
     <main class="login-container animate-fadeInUp">
       <div class="login-card">
         <div class="login-card__top-bar"></div>
         <h2 class="login-card__title">Đăng nhập</h2>
-        <p class="login-card__desc">Vui lòng nhập thông tin tài khoản để truy cập hệ thống</p>
+        <p class="login-card__desc">Nhập thông tin tài khoản để truy cập hệ thống quản trị</p>
 
-        <!-- Dynamic Error Banner -->
+        <!-- Error Banner -->
         <div class="login-error" id="login-error" style="display: none;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"/>
@@ -51,7 +51,7 @@
         <!-- Form -->
         <form class="login-form" id="login-form">
           <div class="form-group">
-            <label class="form-label" for="email">Tên đăng nhập / Email</label>
+            <label class="form-label" for="email">Email đăng nhập</label>
             <div class="input-icon-wrapper">
               <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
@@ -87,7 +87,7 @@
           </button>
         </form>
 
-        <!-- Demo Credentials Helper Box -->
+        <!-- Demo Credentials -->
         <div class="credentials-box">
           <div class="credentials-header">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -112,23 +112,21 @@
             <span>Tự động điền tài khoản</span>
           </button>
         </div>
-
       </div>
     </main>
 
     <!-- Footer -->
     <footer class="login-footer">
-      <p>© 2026 Câu lạc bộ Thanh niên Tình nguyện Sen Trắng. Tất cả quyền được bảo lưu.</p>
+      <p>© 2026 CLB Thanh niên Tình nguyện Sen Trắng. Tất cả quyền được bảo lưu.</p>
     </footer>
   </div>
 
-  <!-- JavaScript Modules -->
+  <!-- JavaScript -->
   <script src="assets/js/config.js"></script>
   <script src="assets/js/api.js"></script>
   <script src="assets/js/auth.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // Chuyển hướng nếu đã đăng nhập
       Auth.redirectIfAuthenticated();
 
       const form = document.getElementById('login-form');

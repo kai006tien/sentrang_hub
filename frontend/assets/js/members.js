@@ -1,6 +1,6 @@
 /**
- * Sen Trắng Hub — Members & HR Module JavaScript
- * Handles Member List, External Positions, Position History & Details Modal
+ * Sen Trắng Hub — Members & HR Module
+ * Handles: Member List, Create, Detail View
  */
 
 async function loadMembersList() {
@@ -11,36 +11,47 @@ async function loadMembersList() {
 
   try {
     const res = await API.get('/members');
-    const members = res.data || [];
+    // Handle both {data: []} and direct array responses
+    const members = res.data || (Array.isArray(res) ? res : []);
 
     if (members.length === 0) {
-      container.innerHTML = `<tr><td colspan="5" class="text-center">Chưa có dữ liệu thành viên. Bấm "+ Thêm tài khoản" để khởi tạo.</td></tr>`;
+      container.innerHTML = `<tr><td colspan="5" class="text-center">Chưa có dữ liệu thành viên. Bấm "+ Thêm thành viên" để khởi tạo.</td></tr>`;
       return;
     }
 
-    container.innerHTML = members.map(m => `
-      <tr>
-        <td>
-          <div style="display:flex; align-items:center; gap:0.6rem;">
-            <div style="width:32px; height:32px; border-radius:50%; background:#059669; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700;">
-              ${m.full_name ? m.full_name.charAt(0).toUpperCase() : 'M'}
+    const avatarColors = ['#1E88E5', '#00C853', '#FF6D00', '#7C4DFF', '#FF1744', '#00BCD4'];
+
+    container.innerHTML = members.map((m, i) => {
+      const color = avatarColors[i % avatarColors.length];
+      const initial = m.full_name ? m.full_name.charAt(0).toUpperCase() : 'M';
+      const statusClass = m.status === 'inactive' ? 'badge-inactive' : 'badge-active';
+      const statusText = m.status === 'inactive' ? 'Tạm nghỉ' : 'Hoạt động';
+
+      return `
+        <tr>
+          <td>
+            <div style="display:flex; align-items:center; gap:0.65rem;">
+              <div style="width:36px; height:36px; border-radius:50%; background:${color}; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.85rem; flex-shrink:0;">
+                ${initial}
+              </div>
+              <div>
+                <div style="font-weight:700; color:var(--text-primary); font-size:0.9rem;">${escapeHTML(m.full_name)}</div>
+                <div style="font-size:0.75rem; color:var(--text-muted);">${escapeHTML(m.generation || 'Gen 1')} • ${escapeHTML(m.department || 'Ban Chuyên môn')}</div>
+              </div>
             </div>
-            <div>
-              <strong>${escapeHTML(m.full_name)}</strong>
-              <div style="font-size:0.75rem; color:#64748b;">${escapeHTML(m.generation || 'Gen 1')} • ${escapeHTML(m.department || 'Ban Chuyên môn')}</div>
-            </div>
-          </div>
-        </td>
-        <td>${escapeHTML(m.email)}</td>
-        <td><span class="badge-role">${escapeHTML(m.current_position || 'Thành viên')}</span></td>
-        <td><span class="badge-active">${m.status === 'inactive' ? 'Tạm nghỉ' : 'Hoạt động'}</span></td>
-        <td>
-          <button class="btn btn-secondary btn-sm" onclick="viewMemberDetail('${m.id}')">Xem hồ sơ</button>
-        </td>
-      </tr>
-    `).join('');
+          </td>
+          <td style="font-size:0.85rem;">${escapeHTML(m.email)}</td>
+          <td><span class="badge-role">${escapeHTML(m.current_position || 'Thành viên')}</span></td>
+          <td><span class="${statusClass}">${statusText}</span></td>
+          <td>
+            <button class="btn btn-secondary btn-sm" onclick="viewMemberDetail('${m.id}')">Xem hồ sơ</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
   } catch (err) {
     container.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Lỗi tải dữ liệu: ${escapeHTML(err.message)}</td></tr>`;
+    console.error('loadMembersList error:', err);
   }
 }
 
@@ -48,21 +59,21 @@ function openCreateUserModal() {
   const modalHTML = `
     <form id="create-member-form" onsubmit="handleCreateMemberSubmit(event)">
       <div style="margin-bottom:0.85rem;">
-        <label style="font-size:0.825rem; font-weight:600; color:#334155; display:block; margin-bottom:0.35rem;">Họ và tên thành viên *</label>
-        <input type="text" id="mem-name" required placeholder="Nguyễn Văn A" style="width:100%; padding:0.65rem; border:1px solid #cbd5e1; border-radius:8px;">
+        <label>Họ và tên thành viên *</label>
+        <input type="text" id="mem-name" required placeholder="Nguyễn Văn A">
       </div>
       <div style="margin-bottom:0.85rem;">
-        <label style="font-size:0.825rem; font-weight:600; color:#334155; display:block; margin-bottom:0.35rem;">Email đăng nhập *</label>
-        <input type="email" id="mem-email" required placeholder="thanhvien@sentranghub.vn" style="width:100%; padding:0.65rem; border:1px solid #cbd5e1; border-radius:8px;">
+        <label>Email đăng nhập *</label>
+        <input type="email" id="mem-email" required placeholder="thanhvien@sentranghub.vn">
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem; margin-bottom:0.85rem;">
         <div>
-          <label style="font-size:0.825rem; font-weight:600; color:#334155; display:block; margin-bottom:0.35rem;">Mã số sinh viên (MSSV)</label>
-          <input type="text" id="mem-student-id" placeholder="2026001" style="width:100%; padding:0.65rem; border:1px solid #cbd5e1; border-radius:8px;">
+          <label>Mã số sinh viên (MSSV)</label>
+          <input type="text" id="mem-student-id" placeholder="2026001">
         </div>
         <div>
-          <label style="font-size:0.825rem; font-weight:600; color:#334155; display:block; margin-bottom:0.35rem;">Thế hệ (Gen)</label>
-          <select id="mem-gen" style="width:100%; padding:0.65rem; border:1px solid #cbd5e1; border-radius:8px;">
+          <label>Thế hệ (Gen)</label>
+          <select id="mem-gen">
             <option value="Gen 12">Gen 12</option>
             <option value="Gen 11">Gen 11</option>
             <option value="Gen 10">Gen 10</option>
@@ -72,8 +83,8 @@ function openCreateUserModal() {
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem; margin-bottom:1.25rem;">
         <div>
-          <label style="font-size:0.825rem; font-weight:600; color:#334155; display:block; margin-bottom:0.35rem;">Ban chuyên môn</label>
-          <select id="mem-dept" style="width:100%; padding:0.65rem; border:1px solid #cbd5e1; border-radius:8px;">
+          <label>Ban chuyên môn</label>
+          <select id="mem-dept">
             <option value="Ban Phong trào">Ban Phong trào</option>
             <option value="Ban Truyền thông">Ban Truyền thông</option>
             <option value="Ban Chuyên môn">Ban Chuyên môn</option>
@@ -81,14 +92,14 @@ function openCreateUserModal() {
           </select>
         </div>
         <div>
-          <label style="font-size:0.825rem; font-weight:600; color:#334155; display:block; margin-bottom:0.35rem;">Chức danh</label>
-          <select id="mem-pos" style="width:100%; padding:0.65rem; border:1px solid #cbd5e1; border-radius:8px;">
-            <option value="role_thanh_vien">Thành viên</option>
-            <option value="role_cong_tac_vien">Cộng tác viên</option>
-            <option value="role_thu_ky">Thư ký</option>
-            <option value="role_uy_vien_bcn">Ủy viên BCN</option>
-            <option value="role_pho_chu_nhiem">Phó Chủ nhiệm</option>
-            <option value="role_chu_nhiem">Chủ nhiệm</option>
+          <label>Chức danh</label>
+          <select id="mem-pos">
+            <option value="Thành viên">Thành viên</option>
+            <option value="Cộng tác viên">Cộng tác viên</option>
+            <option value="Thư ký">Thư ký</option>
+            <option value="Ủy viên BCN">Ủy viên BCN</option>
+            <option value="Phó Chủ nhiệm">Phó Chủ nhiệm</option>
+            <option value="Chủ nhiệm">Chủ nhiệm</option>
           </select>
         </div>
       </div>
@@ -115,43 +126,56 @@ async function handleCreateMemberSubmit(e) {
     closeModal();
     loadMembersList();
   } catch (err) {
-    showToast('Đã thêm thành viên mới thành công!', 'success');
-    closeModal();
-    loadMembersList();
+    showToast('Lỗi: ' + (err.message || 'Không thể tạo thành viên'), 'error');
+    console.error('handleCreateMemberSubmit error:', err);
   }
 }
 
 async function viewMemberDetail(memberId) {
   try {
     const res = await API.get(`/members/${memberId}`);
-    const data = res.data;
+    const data = res.data || res;
     const profile = data.profile;
     const extPositions = data.external_positions || [];
     const posHistory = data.position_history || [];
 
     const modalContent = `
-      <div style="padding:0.5rem;">
-        <h3 style="font-size:1.25rem; font-weight:700; color:#0f172a; margin-bottom:0.5rem;">🌸 Hồ sơ: ${escapeHTML(profile.full_name)}</h3>
-        <p style="font-size:0.85rem; color:#64748b; margin-bottom:1rem;">MSSV: ${escapeHTML(profile.student_id || 'N/A')} • ${escapeHTML(profile.generation || 'Gen 1')} • ${escapeHTML(profile.department || 'Ban Chuyên môn')}</p>
+      <div style="padding:0.25rem;">
+        <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.25rem;">
+          <div style="width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg, #1E88E5, #0D47A1); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.4rem; flex-shrink:0;">
+            ${profile.full_name ? profile.full_name.charAt(0).toUpperCase() : 'M'}
+          </div>
+          <div>
+            <h3 style="font-size:1.2rem; font-weight:700; color:var(--text-primary); margin:0 0 0.2rem;">${escapeHTML(profile.full_name)}</h3>
+            <p style="font-size:0.825rem; color:var(--text-muted); margin:0;">MSSV: ${escapeHTML(profile.student_id || 'N/A')} • ${escapeHTML(profile.generation || 'Gen 1')} • ${escapeHTML(profile.department || 'Ban Chuyên môn')}</p>
+          </div>
+        </div>
         
-        <div style="background:#f8fafc; padding:1rem; border-radius:12px; margin-bottom:1rem; border:1px solid #e2e8f0;">
-          <h4 style="font-size:0.9rem; font-weight:700; color:#047857; margin-bottom:0.5rem;">🏢 Chức vụ kiêm nhiệm ngoài CLB (Đoàn/Hội/Đội):</h4>
-          ${extPositions.length ? extPositions.map(ep => `<div style="font-size:0.85rem; color:#334155; margin-bottom:0.3rem;">• <strong>${escapeHTML(ep.position)}</strong> tại <em>${escapeHTML(ep.organization)}</em></div>`).join('') : '<div style="font-size:0.85rem; color:#94a3b8;">Chưa ghi nhận chức vụ kiêm nhiệm ngoài CLB.</div>'}
+        <div style="background:var(--bg-main); padding:1rem; border-radius:var(--radius-md); margin-bottom:1rem; border:1px solid var(--border-light);">
+          <h4 style="font-size:0.85rem; font-weight:700; color:var(--primary-700); margin-bottom:0.6rem;">🏢 Chức vụ kiêm nhiệm ngoài CLB</h4>
+          ${extPositions.length ? extPositions.map(ep => `<div style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:0.3rem;">• <strong>${escapeHTML(ep.position)}</strong> tại <em>${escapeHTML(ep.organization)}</em></div>`).join('') : '<div style="font-size:0.85rem; color:var(--text-muted);">Chưa ghi nhận chức vụ kiêm nhiệm.</div>'}
         </div>
 
-        <div style="background:#f0fdf4; padding:1rem; border-radius:12px; border:1px solid #bbf7d0;">
-          <h4 style="font-size:0.9rem; font-weight:700; color:#047857; margin-bottom:0.5rem;">⏳ Lịch sử thăng tiến nội bộ CLB:</h4>
-          ${posHistory.length ? posHistory.map(ph => `<div style="font-size:0.85rem; color:#334155; margin-bottom:0.3rem;">• <strong>${escapeHTML(ph.role_id)}</strong> (${escapeHTML(ph.start_date)} → ${ph.end_date || 'Hiện tại'})</div>`).join('') : '<div style="font-size:0.85rem; color:#94a3b8;">Đang ở mốc bổ nhiệm ban đầu.</div>'}
+        <div style="background:var(--success-bg); padding:1rem; border-radius:var(--radius-md); border:1px solid rgba(0,200,83,0.2);">
+          <h4 style="font-size:0.85rem; font-weight:700; color:#1B5E20; margin-bottom:0.6rem;">⏳ Lịch sử thăng tiến nội bộ</h4>
+          ${posHistory.length ? posHistory.map(ph => `<div style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:0.3rem;">• <strong>${escapeHTML(ph.role_id)}</strong> (${escapeHTML(ph.start_date)} → ${ph.end_date || 'Hiện tại'})</div>`).join('') : '<div style="font-size:0.85rem; color:var(--text-muted);">Đang ở mốc bổ nhiệm ban đầu.</div>'}
         </div>
 
         <div style="margin-top:1.25rem; text-align:right;">
-          <button class="btn btn-primary btn-sm" onclick="issueCertificateModal('${profile.id}')">🎖️ Xuất Chứng nhận Điện tử</button>
+          <button class="btn btn-primary btn-sm" onclick="issueCertificateModal('${profile.id}')">🎖️ Xuất Chứng nhận</button>
         </div>
       </div>
     `;
 
     showModal('Hồ sơ Nhân sự Chi tiết', modalContent);
   } catch (err) {
-    alert('Lỗi tải hồ sơ: ' + err.message);
+    showToast('Lỗi tải hồ sơ: ' + err.message, 'error');
+    console.error('viewMemberDetail error:', err);
   }
 }
+
+// Expose to global scope
+window.loadMembersList = loadMembersList;
+window.openCreateUserModal = openCreateUserModal;
+window.handleCreateMemberSubmit = handleCreateMemberSubmit;
+window.viewMemberDetail = viewMemberDetail;

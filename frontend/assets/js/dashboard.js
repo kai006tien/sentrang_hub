@@ -1,80 +1,140 @@
 /**
- * Sen Trắng Hub — Dashboard UI & Interactive Controller
+ * Sen Trắng Hub — Dashboard Controller
+ * Handles: Navigation, Stats Loading, Roles Grid, User Info, Modals
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Kiểm tra xác thực
+  // Auth check (single call, no duplicate)
   Auth.requireAuth();
 
   const currentUser = Auth.getUser();
 
-  // Khởi tạo thông tin User trên Header & Sidebar
+  // Init user info in header
   initUserInfo(currentUser);
 
-  // Khởi tạo Navigation chuyển View
+  // Init navigation (unified click handler)
   initNavigation();
 
-  // Tải dữ liệu ban đầu
+  // Load initial data
   loadOverviewStats();
-  loadUsersTable();
   loadRolesGrid();
 
-  // Event Listeners cho Modals & Forms
-  initEventListeners();
-});
-
-// Hiển thị thông tin User
-function initUserInfo(user) {
-  if (!user) return;
-  
-  const userNameEls = document.querySelectorAll('.user-name');
-  const userRoleEls = document.querySelectorAll('.user-role');
-  const userAvatarEls = document.querySelectorAll('.user-avatar');
-
-  userNameEls.forEach(el => el.textContent = user.display_name);
-  userRoleEls.forEach(el => el.textContent = user.role_name || user.role_id);
-  userAvatarEls.forEach(el => {
-    const initial = user.display_name ? user.display_name.charAt(0).toUpperCase() : 'U';
-    el.textContent = initial;
-  });
-
-  // Nút Logout
+  // Logout handler
   const btnLogout = document.getElementById('btn-logout');
   if (btnLogout) {
     btnLogout.addEventListener('click', () => Auth.logout());
   }
+
+  // Live clock
+  updateClock();
+  setInterval(updateClock, 1000);
+});
+
+// ========================================
+// User Info Display
+// ========================================
+function initUserInfo(user) {
+  if (!user) return;
+
+  const displayNameEl = document.getElementById('user-display-name');
+  const roleBadgeEl = document.getElementById('user-role-badge');
+  const avatarEl = document.getElementById('user-avatar');
+
+  if (displayNameEl) displayNameEl.textContent = user.display_name || 'Người dùng';
+  if (roleBadgeEl) roleBadgeEl.textContent = user.role_name || user.role_id || 'Thành viên';
+  if (avatarEl) {
+    const initial = user.display_name ? user.display_name.charAt(0).toUpperCase() : 'U';
+    avatarEl.textContent = initial;
+  }
 }
 
-// Điều hướng chuyển View (Tab)
+// ========================================
+// Live Clock
+// ========================================
+function updateClock() {
+  const now = new Date();
+  const options = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+  const clockEl = document.getElementById('clock-text');
+  if (clockEl) clockEl.textContent = now.toLocaleDateString('vi-VN', options);
+}
+
+// ========================================
+// Navigation — Unified handler
+// ========================================
+let currentView = 'overview';
+
 function initNavigation() {
   const navItems = document.querySelectorAll('.nav-item[data-view]');
-  const viewSections = document.querySelectorAll('.view-section');
-  const pageTitle = document.getElementById('page-title');
 
   navItems.forEach(item => {
     item.addEventListener('click', (e) => {
       e.preventDefault();
       const targetView = item.getAttribute('data-view');
-
-      navItems.forEach(nav => nav.classList.remove('active'));
-      item.classList.add('active');
-
-      viewSections.forEach(section => {
-        if (section.id === `view-${targetView}`) {
-          section.classList.add('active');
-        } else {
-          section.classList.remove('active');
-        }
-      });
-
-      if (pageTitle) {
-        pageTitle.textContent = item.innerText.trim();
-      }
+      showView(targetView);
     });
   });
 }
 
-// Tải số liệu thống kê tổng quan
+function showView(viewId) {
+  currentView = viewId;
+
+  // Update sections
+  document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+
+  const targetView = document.getElementById(`view-${viewId}`);
+  if (targetView) targetView.classList.add('active');
+
+  const targetNav = document.querySelector(`.nav-item[data-view="${viewId}"]`);
+  if (targetNav) targetNav.classList.add('active');
+
+  // Update title
+  const titleMap = {
+    'overview': 'Tổng quan hệ thống',
+    'users': 'Hồ sơ Nhân sự',
+    'roles': 'Phân quyền & System Log',
+    'events': 'Sự kiện & Điểm danh QR',
+    'leaderboard': 'Vinh danh & Xếp hạng',
+    'articles': 'Truyền thông CMS',
+    'quizzes': 'Đào tạo & Trắc nghiệm'
+  };
+  const pageTitle = document.getElementById('page-title');
+  if (pageTitle) pageTitle.textContent = titleMap[viewId] || 'Dashboard';
+
+  // Load data for the target view
+  switch (viewId) {
+    case 'overview':
+      loadOverviewStats();
+      break;
+    case 'users':
+      if (typeof loadMembersList === 'function') loadMembersList();
+      break;
+    case 'events':
+      if (typeof loadEventsList === 'function') loadEventsList();
+      break;
+    case 'leaderboard':
+      if (typeof loadLeaderboard === 'function') loadLeaderboard();
+      break;
+    case 'articles':
+      if (typeof loadArticlesList === 'function') loadArticlesList();
+      break;
+    case 'quizzes':
+      if (typeof loadQuizzesList === 'function') loadQuizzesList();
+      break;
+    case 'roles':
+      loadRolesGrid();
+      break;
+  }
+}
+
+function refreshCurrentView() {
+  showView(currentView);
+  showToast('Đã làm mới dữ liệu!', 'success');
+}
+
+// ========================================
+// Overview Stats
+// ========================================
 async function loadOverviewStats() {
   try {
     const users = await apiFetch('/api/users');
@@ -84,10 +144,12 @@ async function loadOverviewStats() {
     const totalRolesEl = document.getElementById('stat-total-roles');
     const activeUsersEl = document.getElementById('stat-active-users');
 
-    if (totalUsersEl) totalUsersEl.textContent = users.length;
-    if (totalRolesEl) totalRolesEl.textContent = roles.length;
+    const userList = Array.isArray(users) ? users : [];
+
+    if (totalUsersEl) totalUsersEl.textContent = userList.length;
+    if (totalRolesEl) totalRolesEl.textContent = Array.isArray(roles) ? roles.length : 0;
     if (activeUsersEl) {
-      const activeCount = users.filter(u => u.is_active).length;
+      const activeCount = userList.filter(u => u.is_active).length;
       activeUsersEl.textContent = activeCount;
     }
   } catch (err) {
@@ -95,197 +157,105 @@ async function loadOverviewStats() {
   }
 }
 
-// Tải danh sách Người dùng lên Bảng
-async function loadUsersTable() {
-  const tbody = document.getElementById('users-table-body');
-  if (!tbody) return;
-
-  tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-dim);">Đang tải dữ liệu...</td></tr>`;
-
-  try {
-    const users = await apiFetch('/api/users');
-    
-    if (users.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-dim);">Chưa có người dùng nào.</td></tr>`;
-      return;
-    }
-
-    tbody.innerHTML = users.map((u, index) => {
-      const roleBadge = `<span class="badge badge-${u.role_id}">${u.role_name || u.role_id}</span>`;
-      const statusBadge = u.is_active 
-        ? `<span class="badge badge-active">Hoạt động</span>`
-        : `<span class="badge badge-inactive">Bị khóa</span>`;
-
-      return `
-        <tr>
-          <td>${index + 1}</td>
-          <td>
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <div class="user-avatar" style="width: 32px; height: 32px; font-size: 0.8rem;">${u.display_name.charAt(0).toUpperCase()}</div>
-              <div>
-                <div style="font-weight: 700; color: var(--text-main);">${u.display_name}</div>
-                <div style="font-size: 0.75rem; color: var(--text-dim);">${u.email}</div>
-              </div>
-            </div>
-          </td>
-          <td>${roleBadge}</td>
-          <td>${statusBadge}</td>
-          <td style="font-size: 0.8rem; color: var(--text-muted);">${u.created_at ? new Date(u.created_at).toLocaleDateString('vi-VN') : '—'}</td>
-          <td>
-            <button class="btn-sm btn-outline" onclick="openEditUserModal('${u.id}', '${u.display_name}', '${u.role_id}', ${u.is_active})">Sửa</button>
-          </td>
-        </tr>
-      `;
-    }).join('');
-
-  } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--accent-red);">Lỗi: ${err.message}</td></tr>`;
-  }
-}
-
-// Tải lưới Vai trò & Phân quyền
+// ========================================
+// Roles Grid
+// ========================================
 async function loadRolesGrid() {
   const container = document.getElementById('roles-cards-container');
   if (!container) return;
 
   try {
     const roles = await apiFetch('/api/roles');
-    
-    container.innerHTML = roles.map(r => `
-      <div class="card-box" style="margin-bottom: 0;">
-        <div class="card-header">
-          <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <span class="badge badge-${r.id}" style="font-size: 0.9rem; padding: 0.35rem 0.85rem;">${r.name}</span>
-            <span style="font-size: 0.75rem; color: var(--text-dim);">Level ${r.level}</span>
-          </div>
-          <button class="btn-sm btn-outline" onclick="openPermissionsModal('${r.id}', '${r.name}')">⚡ Cấu hình quyền</button>
-        </div>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">${r.description}</p>
-        <div style="font-size: 0.8rem; color: var(--primary-400); font-weight: 700;">
-          ${r.permissions.length} quyền được gán
-        </div>
-      </div>
-    `).join('');
+    const roleList = Array.isArray(roles) ? roles : [];
 
-  } catch (err) {
-    container.innerHTML = `<p style="color: var(--accent-red);">Lỗi nạp danh sách vai trò: ${err.message}</p>`;
-  }
-}
+    if (roleList.length === 0) {
+      container.innerHTML = '<div class="text-center">Chưa có vai trò nào.</div>';
+      return;
+    }
 
-// Quản lý Modals
-let selectedRoleId = null;
+    const levelColors = {
+      0: { bg: '#FFEBEE', border: '#EF5350', text: '#C62828' },
+      1: { bg: '#FFF3E0', border: '#FF9800', text: '#E65100' },
+      2: { bg: '#E3F2FD', border: '#42A5F5', text: '#0D47A1' },
+      3: { bg: '#F3E5F5', border: '#AB47BC', text: '#6A1B9A' },
+      10: { bg: '#E8F5E9', border: '#66BB6A', text: '#1B5E20' }
+    };
 
-async function openPermissionsModal(roleId, roleName) {
-  selectedRoleId = roleId;
-  const modal = document.getElementById('modal-permissions');
-  const title = document.getElementById('modal-role-name');
-  const grid = document.getElementById('perm-checkbox-grid');
-
-  if (!modal || !grid) return;
-
-  title.textContent = roleName;
-  grid.innerHTML = '<p style="color: var(--text-dim);">Đang nạp dữ liệu quyền...</p>';
-
-  modal.classList.add('active');
-
-  try {
-    const [allPerms, roleDetail] = await Promise.all([
-      apiFetch('/api/roles/permissions/all'),
-      apiFetch(`/api/roles/${roleId}`)
-    ]);
-
-    const activePerms = new Set(roleDetail.permissions || []);
-
-    grid.innerHTML = allPerms.map(p => {
-      const isChecked = activePerms.has(p.id) ? 'checked' : '';
+    container.innerHTML = roleList.map(r => {
+      const colors = levelColors[r.level] || levelColors[10];
       return `
-        <label class="perm-item">
-          <input type="checkbox" value="${p.id}" ${isChecked}>
-          <div>
-            <div style="font-weight: 600;">${p.id}</div>
-            <div style="font-size: 0.7rem; color: var(--text-dim);">${p.description}</div>
+        <div style="background:var(--bg-card); border:1px solid var(--border-light); border-radius:var(--radius-lg); padding:1.25rem; box-shadow:var(--shadow-sm); border-left:4px solid ${colors.border};">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+              <span style="font-size:0.8rem; padding:0.2rem 0.65rem; background:${colors.bg}; color:${colors.text}; font-weight:700; border-radius:var(--radius-full);">${escapeHTML(r.name)}</span>
+              <span style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">Level ${r.level}</span>
+            </div>
           </div>
-        </label>
+          <p style="font-size:0.825rem; color:var(--text-secondary); margin-bottom:0.75rem; line-height:1.5;">${escapeHTML(r.description)}</p>
+          <div style="font-size:0.75rem; color:var(--primary-600); font-weight:700;">
+            🔑 ${r.permissions.length} quyền được gán
+          </div>
+        </div>
       `;
     }).join('');
 
   } catch (err) {
-    grid.innerHTML = `<p style="color: var(--accent-red);">Lỗi: ${err.message}</p>`;
+    container.innerHTML = `<div class="text-center text-danger">Lỗi: ${escapeHTML(err.message)}</div>`;
   }
 }
 
-async function savePermissions() {
-  if (!selectedRoleId) return;
-  
-  const checkboxes = document.querySelectorAll('#perm-checkbox-grid input[type="checkbox"]:checked');
-  const selectedPerms = Array.from(checkboxes).map(cb => cb.value);
+// ========================================
+// Modal System (Single, unified)
+// ========================================
+function showModal(title, contentHTML) {
+  const modal = document.getElementById('global-modal');
+  const titleEl = document.getElementById('modal-title');
+  const bodyEl = document.getElementById('modal-body');
 
-  try {
-    await apiFetch(`/api/roles/${selectedRoleId}/permissions`, {
-      method: 'PUT',
-      body: JSON.stringify({ permissions: selectedPerms })
-    });
+  if (!modal || !titleEl || !bodyEl) return;
 
-    showToast('Đã cập nhật cây phân quyền thành công!', 'success');
-    closeModal('modal-permissions');
-    loadRolesGrid();
-  } catch (err) {
-    showToast(err.message || 'Lỗi cập nhật phân quyền', 'error');
-  }
+  titleEl.textContent = title;
+  bodyEl.innerHTML = contentHTML;
+  modal.style.display = 'flex';
+
+  // Close on backdrop click
+  modal.onclick = (e) => {
+    if (e.target === modal) closeModal();
+  };
+
+  // Close on Escape key
+  document.addEventListener('keydown', handleEscapeClose);
 }
 
-function openEditUserModal(userId, name, currentRole, isActive) {
-  const modal = document.getElementById('modal-edit-user');
-  if (!modal) return;
-
-  document.getElementById('edit-user-id').value = userId;
-  document.getElementById('edit-user-name').textContent = name;
-  document.getElementById('edit-user-role').value = currentRole;
-  document.getElementById('edit-user-active').checked = isActive;
-
-  modal.classList.add('active');
+function closeModal() {
+  const modal = document.getElementById('global-modal');
+  if (modal) modal.style.display = 'none';
+  document.removeEventListener('keydown', handleEscapeClose);
 }
 
-async function saveUserEdit() {
-  const userId = document.getElementById('edit-user-id').value;
-  const roleId = document.getElementById('edit-user-role').value;
-  const isActive = document.getElementById('edit-user-active').checked;
-
-  try {
-    await apiFetch(`/api/users/${userId}?role_id=${roleId}&is_active=${isActive}`, {
-      method: 'PUT',
-      body: JSON.stringify({})
-    });
-
-    showToast('Đã cập nhật tài khoản thành công!', 'success');
-    closeModal('modal-edit-user');
-    loadUsersTable();
-  } catch (err) {
-    showToast(err.message || 'Cập nhật thất bại', 'error');
-  }
+function handleEscapeClose(e) {
+  if (e.key === 'Escape') closeModal();
 }
 
-function closeModal(modalId) {
-  const modal = document.getElementById(modalId);
-  if (modal) modal.classList.remove('active');
+// ========================================
+// HTML Escape Utility
+// ========================================
+function escapeHTML(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
-function initEventListeners() {
-  const btnSavePerms = document.getElementById('btn-save-permissions');
-  if (btnSavePerms) btnSavePerms.addEventListener('click', savePermissions);
-
-  const btnSaveUser = document.getElementById('btn-save-user');
-  if (btnSaveUser) btnSaveUser.addEventListener('click', saveUserEdit);
-
-  // Close buttons
-  document.querySelectorAll('.btn-close, .btn-modal-close').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const modal = e.target.closest('.modal-overlay');
-      if (modal) modal.classList.remove('active');
-    });
-  });
-}
-
-window.openPermissionsModal = openPermissionsModal;
-window.openEditUserModal = openEditUserModal;
+// ========================================
+// Expose globals
+// ========================================
+window.showView = showView;
+window.showModal = showModal;
 window.closeModal = closeModal;
+window.escapeHTML = escapeHTML;
+window.refreshCurrentView = refreshCurrentView;
+window.loadOverviewStats = loadOverviewStats;

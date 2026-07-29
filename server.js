@@ -48,60 +48,115 @@ const server = http.createServer(async (req, res) => {
 
         // 1. Auth Login
         if (req.url === '/api/auth/login' && req.method === 'POST') {
-          const authRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-            method: 'POST',
-            headers: {
-              'apikey': SUPABASE_ANON_KEY,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              email: parsedBody.email,
-              password: parsedBody.password
-            })
-          });
+          const { email, password } = parsedBody;
 
-          const authData = await authRes.json();
-          if (!authRes.ok) {
-            res.writeHead(401, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ detail: authData.error_description || 'Đăng nhập thất bại' }));
-            return;
+          // Local demo login fallback (when Supabase is not configured)
+          if (!SUPABASE_ANON_KEY || SUPABASE_ANON_KEY === '') {
+            // Demo credentials check
+            if (email === 'admin@sentranghub.vn' && password === 'SenTrang@2026!') {
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({
+                access_token: 'demo_token_' + Date.now(),
+                refresh_token: 'demo_refresh_' + Date.now(),
+                expires_in: 86400,
+                user: {
+                  id: 'admin_uid',
+                  email: 'admin@sentranghub.vn',
+                  display_name: 'Admin Hệ Thống',
+                  role_id: 'role_super_admin',
+                  role_name: 'Super Admin',
+                  role_level: 0,
+                  is_active: true,
+                  permissions: ['users.read', 'users.create', 'users.update', 'roles.manage', 'events.create', 'articles.create', 'quizzes.create', 'quizzes.take'],
+                  created_at: new Date()
+                }
+              }));
+              return;
+            } else {
+              res.writeHead(401, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ detail: 'Email hoặc mật khẩu không chính xác. Hãy sử dụng tài khoản demo mặc định.' }));
+              return;
+            }
           }
 
-          // Lấy thông tin user
-          const userId = authData.user.id;
-          const userRes = await fetch(`${SUPABASE_URL}/rest/v1/users?id=eq.${userId}&select=*`, {
-            headers: {
-              'apikey': SUPABASE_SERVICE_KEY || SUPABASE_ANON_KEY,
-              'Authorization': `Bearer ${SUPABASE_SERVICE_KEY || SUPABASE_ANON_KEY}`
-            }
-          });
-          const userDb = await userRes.json();
-          const userData = (userDb && userDb[0]) || {
-            id: userId,
-            email: parsedBody.email,
-            display_name: parsedBody.email.split('@')[0],
-            role_id: 'role_super_admin',
-            is_active: true
-          };
+          // Supabase auth (when configured)
+          try {
+            const authRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+              method: 'POST',
+              headers: {
+                'apikey': SUPABASE_ANON_KEY,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ email, password })
+            });
 
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({
-            access_token: authData.access_token,
-            refresh_token: authData.refresh_token,
-            expires_in: authData.expires_in,
-            user: {
-              id: userData.id,
-              email: userData.email,
-              display_name: userData.display_name,
-              role_id: userData.role_id || 'role_super_admin',
-              role_name: 'Super Admin',
-              role_level: 0,
-              is_active: true,
-              permissions: ['users.read', 'users.create', 'users.update', 'roles.manage', 'events.create', 'articles.create', 'quizzes.create', 'quizzes.take'],
-              created_at: new Date()
+            const authData = await authRes.json();
+            if (!authRes.ok) {
+              res.writeHead(401, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ detail: authData.error_description || 'Đăng nhập thất bại' }));
+              return;
             }
-          }));
-          return;
+
+            const userId = authData.user.id;
+            const userRes = await fetch(`${SUPABASE_URL}/rest/v1/users?id=eq.${userId}&select=*`, {
+              headers: {
+                'apikey': SUPABASE_SERVICE_KEY || SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_SERVICE_KEY || SUPABASE_ANON_KEY}`
+              }
+            });
+            const userDb = await userRes.json();
+            const userData = (userDb && userDb[0]) || {
+              id: userId,
+              email: email,
+              display_name: email.split('@')[0],
+              role_id: 'role_super_admin',
+              is_active: true
+            };
+
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+              access_token: authData.access_token,
+              refresh_token: authData.refresh_token,
+              expires_in: authData.expires_in,
+              user: {
+                id: userData.id,
+                email: userData.email,
+                display_name: userData.display_name,
+                role_id: userData.role_id || 'role_super_admin',
+                role_name: 'Super Admin',
+                role_level: 0,
+                is_active: true,
+                permissions: ['users.read', 'users.create', 'users.update', 'roles.manage', 'events.create', 'articles.create', 'quizzes.create', 'quizzes.take'],
+                created_at: new Date()
+              }
+            }));
+            return;
+          } catch (authErr) {
+            // If Supabase is unreachable, fall back to demo login
+            if (email === 'admin@sentranghub.vn' && password === 'SenTrang@2026!') {
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({
+                access_token: 'fallback_token_' + Date.now(),
+                refresh_token: 'fallback_refresh_' + Date.now(),
+                expires_in: 86400,
+                user: {
+                  id: 'admin_uid',
+                  email: 'admin@sentranghub.vn',
+                  display_name: 'Admin Hệ Thống',
+                  role_id: 'role_super_admin',
+                  role_name: 'Super Admin',
+                  role_level: 0,
+                  is_active: true,
+                  permissions: ['users.read', 'users.create', 'users.update', 'roles.manage', 'events.create', 'articles.create', 'quizzes.create', 'quizzes.take'],
+                  created_at: new Date()
+                }
+              }));
+              return;
+            }
+            res.writeHead(401, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ detail: 'Không thể kết nối đến server xác thực.' }));
+            return;
+          }
         }
 
         // 2. Auth Register
@@ -195,8 +250,93 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
-        // 5. Events
+        // 5. Members
+        if (req.url.match(/^\/api\/members\/[^/]+$/) && req.method === 'GET') {
+          const memberId = req.url.split('/').pop();
+          const memberDetail = {
+            profile: {
+              id: memberId,
+              full_name: 'Nguyễn Văn An',
+              email: 'an.nguyen@sentranghub.vn',
+              student_id: '2026001',
+              generation: 'Gen 12',
+              department: 'Ban Phong trào',
+              current_position: 'Chủ nhiệm',
+              status: 'active',
+              joined_at: '2024-09-01'
+            },
+            external_positions: [
+              { position: 'Phó Bí thư Chi Đoàn', organization: 'Chi Đoàn Khoa CNTT - ĐH Bách Khoa' },
+              { position: 'UV BCH Hội SV', organization: 'Hội Sinh viên Trường ĐH Bách Khoa TP.HCM' }
+            ],
+            position_history: [
+              { role_id: 'Thành viên', start_date: '2024-09-01', end_date: '2025-03-01' },
+              { role_id: 'Phó Chủ nhiệm', start_date: '2025-03-01', end_date: '2026-01-01' },
+              { role_id: 'Chủ nhiệm', start_date: '2026-01-01', end_date: null }
+            ]
+          };
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ data: memberDetail }));
+          return;
+        }
+
+        if (req.url === '/api/members' && req.method === 'GET') {
+          const members = [
+            { id: 'mem_001', full_name: 'Nguyễn Văn An', email: 'an.nguyen@sentranghub.vn', student_id: '2026001', generation: 'Gen 12', department: 'Ban Phong trào', current_position: 'Chủ nhiệm', status: 'active' },
+            { id: 'mem_002', full_name: 'Trần Thị Bình', email: 'binh.tran@sentranghub.vn', student_id: '2026002', generation: 'Gen 12', department: 'Ban Truyền thông', current_position: 'Phó Chủ nhiệm', status: 'active' },
+            { id: 'mem_003', full_name: 'Lê Hoàng Cường', email: 'cuong.le@sentranghub.vn', student_id: '2026003', generation: 'Gen 11', department: 'Ban Chuyên môn', current_position: 'Trưởng ban', status: 'active' },
+            { id: 'mem_004', full_name: 'Phạm Minh Đức', email: 'duc.pham@sentranghub.vn', student_id: '2026004', generation: 'Gen 12', department: 'Ban Phong trào', current_position: 'Thành viên', status: 'active' },
+            { id: 'mem_005', full_name: 'Võ Thị Mai Hương', email: 'huong.vo@sentranghub.vn', student_id: '2026005', generation: 'Gen 11', department: 'Ban Chủ nhiệm', current_position: 'Thư ký', status: 'inactive' }
+          ];
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ data: members }));
+          return;
+        }
+
+        if (req.url === '/api/members' && req.method === 'POST') {
+          res.writeHead(201, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ message: 'Tạo hồ sơ thành viên mới thành công!', data: { id: 'mem_new_' + Date.now(), ...parsedBody } }));
+          return;
+        }
+
+        // 5b. Certificates & Leaderboard
+        if (req.url === '/api/certificates/leaderboard' && req.method === 'GET') {
+          const leaderboard = [
+            { id: 'mem_001', rank: 1, full_name: 'Nguyễn Văn An', generation: 'Gen 12', department: 'Ban Phong trào', total_points: 285 },
+            { id: 'mem_002', rank: 2, full_name: 'Trần Thị Bình', generation: 'Gen 12', department: 'Ban Truyền thông', total_points: 240 },
+            { id: 'mem_003', rank: 3, full_name: 'Lê Hoàng Cường', generation: 'Gen 11', department: 'Ban Chuyên môn', total_points: 195 },
+            { id: 'mem_004', rank: 4, full_name: 'Phạm Minh Đức', generation: 'Gen 12', department: 'Ban Phong trào', total_points: 150 },
+            { id: 'mem_005', rank: 5, full_name: 'Võ Thị Mai Hương', generation: 'Gen 11', department: 'Ban Chủ nhiệm', total_points: 120 }
+          ];
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ data: leaderboard }));
+          return;
+        }
+
+        if (req.url.match(/^\/api\/certificates\/[^/]+\/issue/) && req.method === 'GET') {
+          const cert = {
+            certificate_id: 'CERT-STH-2026-' + String(Math.floor(Math.random() * 9000) + 1000),
+            title: 'GIẤY CHỨNG NHẬN THÀNH TÍCH XUẤT SẮC',
+            recipient_name: 'Nguyễn Văn An',
+            generation: 'Gen 12',
+            department: 'Ban Phong trào',
+            reason: 'Ghi nhận thành tích xuất sắc trong hoạt động tình nguyện vì cộng đồng, hoàn thành vượt mức chỉ tiêu điểm rèn luyện và đóng góp tích cực vào sự phát triển của CLB Thanh niên Tình nguyện Sen Trắng năm 2026.',
+            total_points: 285,
+            issued_date: new Date().toLocaleDateString('vi-VN'),
+            issued_by: 'Ban Chủ nhiệm CLB Sen Trắng'
+          };
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ certificate: cert }));
+          return;
+        }
+
+        // 6. Events
         if (req.url.startsWith('/api/events')) {
+          if (req.url.includes('/attendance') && req.method === 'POST') {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, message: 'Điểm danh QR Code thành công! +10 Điểm rèn luyện.' }));
+            return;
+          }
           if (req.url.includes('/check-in')) {
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ success: true, message: 'Điểm danh QR Code thành công! +10 Điểm rèn luyện.' }));
