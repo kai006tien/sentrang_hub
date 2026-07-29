@@ -125,17 +125,18 @@ img { max-width: 100%; display: block; }
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2rem 1rem;
+  padding: 1.5rem 1rem;
   position: relative;
   background: var(--primary-gradient);
   background-attachment: fixed;
   background-size: cover;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   box-sizing: border-box;
 }
 
 .login-bg-overlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
   overflow: hidden;
   pointer-events: none;
@@ -188,7 +189,7 @@ img { max-width: 100%; display: block; }
 .login-wrapper {
   width: 100%;
   max-width: 440px;
-  margin: 0 auto;
+  margin: auto;
   position: relative;
   z-index: 2;
   display: flex;
@@ -200,18 +201,18 @@ img { max-width: 100%; display: block; }
 /* Login Header */
 .login-header {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.25rem;
   position: relative;
   z-index: 2;
 }
 
 .login-header__logo-container {
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .logo-medallion {
-  width: 80px;
-  height: 80px;
+  width: 64px;
+  height: 64px;
   margin: 0 auto;
   position: relative;
   display: flex;
@@ -222,7 +223,7 @@ img { max-width: 100%; display: block; }
 
 @keyframes floatMedallion {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  50% { transform: translateY(-6px); }
 }
 
 .logo-medallion__ring {
@@ -230,16 +231,16 @@ img { max-width: 100%; display: block; }
   inset: 0;
   border-radius: 50%;
   background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.4) 100%);
-  padding: 3px;
-  box-shadow: 0 0 40px rgba(255, 255, 255, 0.3);
+  padding: 2px;
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
 }
 
 .logo-medallion__icon {
-  width: 68px;
-  height: 68px;
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(10px);
@@ -247,27 +248,27 @@ img { max-width: 100%; display: block; }
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  font-size: 1.5rem;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
 
 .login-header__title {
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   font-weight: 800;
   color: #ffffff;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.2rem;
 }
 
 .login-header__subtitle {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.85);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  max-width: 400px;
+  max-width: 380px;
   margin: 0 auto;
 }
 
@@ -282,9 +283,9 @@ img { max-width: 100%; display: block; }
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: var(--radius-2xl);
-  padding: 2.5rem 2rem 2rem;
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255,255,255,0.1);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem 1.5rem 1.25rem;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255,255,255,0.1);
   position: relative;
   overflow: hidden;
 }
@@ -299,16 +300,16 @@ img { max-width: 100%; display: block; }
 }
 
 .login-card__title {
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   font-weight: 800;
   color: var(--text-primary);
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.2rem;
 }
 
 .login-card__desc {
-  font-size: 0.875rem;
+  font-size: 0.825rem;
   color: var(--text-muted);
-  margin-bottom: 1.75rem;
+  margin-bottom: 1.25rem;
 }
 
 /* Login Error */
