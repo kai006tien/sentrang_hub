@@ -10,10 +10,7 @@ async function loadLeaderboard() {
   const canManage = hasPermission('certificates.issue') || isSuperAdmin();
   if (actionsEl) {
     actionsEl.innerHTML = canManage ? `
-      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-        <button class="btn btn-primary btn-sm" onclick="openCreateCertificateModal()">🎖️ Cấp chứng nhận</button>
-        <button class="btn btn-secondary btn-sm" onclick="openPointsAdjustmentModal()">⚖️ Cộng / Trừ điểm vi phạm</button>
-      </div>
+      <button class="btn btn-primary btn-sm" onclick="openPointsAdjustmentModal()">⚖️ Cộng / Trừ điểm vi phạm</button>
     ` : '';
   }
   container.innerHTML = '<div class="text-center">Đang tải...</div>';
@@ -332,7 +329,61 @@ async function handlePointsAdjustmentSubmit(e) {
   }
 }
 
+async function loadCertificatesList() {
+  const container = document.getElementById('certificates-list-container');
+  const actionsEl = document.getElementById('cert-view-action-buttons');
+  if (!container) return;
+
+  const canManage = hasPermission('certificates.issue') || isSuperAdmin();
+  if (actionsEl) {
+    actionsEl.innerHTML = canManage ? `<button class="btn btn-primary btn-sm" onclick="openCreateCertificateModal()">🎖️ Cấp chứng nhận mới</button>` : '';
+  }
+  container.innerHTML = '<div class="text-center">Đang tải danh sách chứng nhận...</div>';
+
+  try {
+    const res = await apiFetch('/api/certificates');
+    const certs = res.data || (Array.isArray(res) ? res : []);
+
+    if (certs.length === 0) {
+      container.innerHTML = `
+        <div style="text-align:center;padding:2.5rem;color:var(--text-muted);">
+          <div style="font-size:3rem;margin-bottom:0.5rem;">📜</div>
+          <div>Chưa có giấy chứng nhận nào được cấp trong hệ thống.</div>
+        </div>
+      `;
+      return;
+    }
+
+    const cardsHTML = certs.map(c => `
+      <div style="background:linear-gradient(135deg,#FFF8E1,#FFF3E0);border:1.5px solid #FFB74D;border-radius:var(--radius-xl);padding:1.25rem;box-shadow:var(--shadow-sm);display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:1rem;min-width:240px;">
+          <div style="width:52px;height:52px;border-radius:50%;background:#FF9800;color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;">🎖️</div>
+          <div>
+            <div style="font-weight:800;font-size:1rem;color:#BF360C;">${escapeHTML(c.title)}</div>
+            <div style="font-size:0.85rem;font-weight:700;color:#1A237E;margin:0.15rem 0;">👤 ${escapeHTML(c.recipient_name)} (${escapeHTML(c.department || 'Ban Hoạt động')})</div>
+            <div style="font-size:0.775rem;color:var(--text-secondary);">"${escapeHTML(c.reason)}"</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.4rem;">
+          <span style="font-size:0.75rem;font-weight:700;color:#1565C0;background:rgba(21,101,192,0.1);padding:0.25rem 0.6rem;border-radius:var(--radius-full);">${escapeHTML(c.certificate_id || 'CERT-STH')}</span>
+          <span style="font-size:0.725rem;color:var(--text-muted);">📅 ${escapeHTML(c.issued_date || '2026')}</span>
+          <button class="btn btn-secondary btn-sm" onclick='displayCertificateModal(${JSON.stringify(c)})'>📜 Xem Bằng Khen</button>
+        </div>
+      </div>
+    `).join('');
+
+    container.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:1.25rem;">
+        ${cardsHTML}
+      </div>
+    `;
+  } catch (err) {
+    container.innerHTML = `<div class="text-center text-danger">Lỗi: ${escapeHTML(err.message)}</div>`;
+  }
+}
+
 window.loadLeaderboard = loadLeaderboard;
+window.loadCertificatesList = loadCertificatesList;
 window.issueCertificate = issueCertificate;
 window.displayCertificateModal = displayCertificateModal;
 window.openCreateCertificateModal = openCreateCertificateModal;

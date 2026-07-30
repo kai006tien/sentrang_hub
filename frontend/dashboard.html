@@ -88,7 +88,11 @@
         </a>
         <a class="nav-item" data-view="leaderboard">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
-          <span>Vinh danh & Chứng nhận</span>
+          <span>Thành tích & Điểm số</span>
+        </a>
+        <a class="nav-item" data-view="certificates">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15l-2 5l9 -9l-9 -9l2 5l-7 4z"/></svg>
+          <span>Giấy chứng nhận</span>
         </a>
         <a class="nav-item" data-view="articles">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
@@ -274,15 +278,28 @@
           </div>
         </section>
 
-        <!-- VIEW 5: LEADERBOARD & CERTIFICATES -->
+        <!-- VIEW 5: LEADERBOARD / THÀNH TÍCH -->
         <section id="view-leaderboard" class="view-section">
           <div class="card-panel">
             <div class="panel-header">
-              <h3 class="panel-title">🏆 Bảng xếp hạng & Chứng nhận</h3>
+              <h3 class="panel-title">🏆 Thống kê Thành tích & Điểm số</h3>
               <div id="cert-action-buttons"></div>
             </div>
             <div id="leaderboard-container">
-              <div class="text-center">Đang tải bảng xếp hạng...</div>
+              <div class="text-center">Đang tải bảng xếp hạng thành tích...</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW 5.5: CERTIFICATES / GIẤY CHỨNG NHẬN -->
+        <section id="view-certificates" class="view-section">
+          <div class="card-panel">
+            <div class="panel-header">
+              <h3 class="panel-title">🎖️ Danh sách Giấy chứng nhận Vinh danh</h3>
+              <div id="cert-view-action-buttons"></div>
+            </div>
+            <div id="certificates-list-container">
+              <div class="text-center">Đang tải danh sách giấy chứng nhận...</div>
             </div>
           </div>
         </section>

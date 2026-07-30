@@ -98,7 +98,7 @@ function showView(viewId) {
 
   const titleMap = {
     'overview':'Tổng quan hệ thống', 'users':'Hồ sơ Nhân sự', 'roles':'Phân quyền & System Log',
-    'events':'Sự kiện & Điểm danh QR', 'leaderboard':'Vinh danh & Chứng nhận',
+    'events':'Sự kiện & Điểm danh QR', 'leaderboard':'Thống kê Thành tích & Điểm số', 'certificates':'Giấy chứng nhận & Vinh danh',
     'articles':'Truyền thông CMS', 'quizzes':'Thi trực tuyến', 'notifications':'Thông báo hệ thống'
   };
   const pageTitle = document.getElementById('page-title');
@@ -109,6 +109,7 @@ function showView(viewId) {
     case 'users': if (typeof loadMembersList === 'function') loadMembersList(); break;
     case 'events': if (typeof loadEventsList === 'function') loadEventsList(); break;
     case 'leaderboard': if (typeof loadLeaderboard === 'function') loadLeaderboard(); break;
+    case 'certificates': if (typeof loadCertificatesList === 'function') loadCertificatesList(); break;
     case 'articles': if (typeof loadArticlesList === 'function') loadArticlesList(); break;
     case 'quizzes': if (typeof loadQuizzesList === 'function') loadQuizzesList(); break;
     case 'notifications': if (typeof loadNotificationsList === 'function') loadNotificationsList(); break;
@@ -451,6 +452,9 @@ function refreshActiveViewSilently() {
       break;
     case 'leaderboard':
       if (typeof loadLeaderboard === 'function') loadLeaderboard();
+      break;
+    case 'certificates':
+      if (typeof loadCertificatesList === 'function') loadCertificatesList();
       break;
     case 'articles':
       if (typeof loadArticlesList === 'function') loadArticlesList();
