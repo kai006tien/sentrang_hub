@@ -10,6 +10,13 @@ function renderEventsUI(events, allMembers) {
   const safeEscape = typeof escapeHTML === 'function' ? escapeHTML : (s => s ? String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;') : '');
   const checkSuperAdmin = typeof isSuperAdmin === 'function' ? isSuperAdmin : (() => true);
   const checkPerm = typeof hasPermission === 'function' ? hasPermission : (() => true);
+  const formatDate = typeof safeFormatDate === 'function' ? safeFormatDate : ((d, fb = 'Mới đây') => {
+    if (!d) return fb;
+    try {
+      const dt = new Date(d);
+      return isNaN(dt.getTime()) ? String(d) : dt.toLocaleDateString('vi-VN');
+    } catch { return String(d) || fb; }
+  });
 
   try {
     if (actionsEl) {
@@ -62,7 +69,7 @@ function renderEventsUI(events, allMembers) {
           return `<div style="background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-xl);padding:1.25rem;box-shadow:var(--shadow-sm);transition:all 0.25s ease;" onmouseenter="this.style.transform='translateY(-2px)'" onmouseleave="this.style.transform='none'">
             <div style="display:flex;justify-content:space-between;margin-bottom:0.6rem;">
               <span style="font-size:0.72rem;padding:0.2rem 0.6rem;background:${cat.bg};color:${cat.text};font-weight:700;border-radius:var(--radius-full);">${cat.label}</span>
-              <span style="font-size:0.72rem;color:var(--text-muted);">${safeFormatDate(e.start_date, 'Mới đây')}</span>
+              <span style="font-size:0.72rem;color:var(--text-muted);">${formatDate(e.start_date, 'Mới đây')}</span>
             </div>
             <h4 style="font-size:1rem;font-weight:700;margin-bottom:0.35rem;">${title}</h4>
             <p style="font-size:0.825rem;color:var(--text-muted);margin-bottom:0.75rem;">📍 ${safeEscape(e.location || 'CLB')}</p>
@@ -82,7 +89,7 @@ function renderEventsUI(events, allMembers) {
       ? `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted);">Chưa có dữ liệu thống kê sự kiện nào.</td></tr>`
       : safeEvents.map(e => {
           const cat = catColors[e.category] || catColors.volunteer;
-          const dateStr = safeFormatDate(e.start_date, 'N/A');
+          const dateStr = formatDate(e.start_date, 'N/A');
           const title = safeEscape(e.title || 'Sự kiện');
           const titleAttr = attrEscape(e.title || 'Sự kiện');
           const eventId = attrEscape(e.id || '');
@@ -178,7 +185,11 @@ function renderEventsUI(events, allMembers) {
       </div>
     `;
 
-    container.innerHTML = cardsHTML + statsTableHTML;
+    const cardsContainerWrapper = (safeEvents.length === 0)
+      ? cardsHTML
+      : `<div style="grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem;">${cardsHTML}</div>`;
+
+    container.innerHTML = cardsContainerWrapper + statsTableHTML;
   } catch (err) {
     console.error('[renderEventsUI Error]', err);
     container.innerHTML = `
