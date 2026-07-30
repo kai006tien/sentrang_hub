@@ -1026,8 +1026,13 @@ async function apiFetch(endpoint, options = {}) {
 
   const url = `${CONFIG.API_BASE_URL}${endpoint}`;
 
+  // Add 2.5-second timeout for server response to guarantee instantaneous client fallback
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 2500);
+
   try {
-    const response = await fetch(url, { ...options, headers });
+    const response = await fetch(url, { ...options, headers, signal: controller.signal });
+    clearTimeout(timeoutId);
     const text = await response.text();
 
     // Check if response is HTML error page (<!DOCTYPE ...) from static hosting
@@ -1045,7 +1050,8 @@ async function apiFetch(endpoint, options = {}) {
       return getMockApiResponse(resolveEndpoint(endpoint), options);
     }
   } catch (error) {
-    console.warn(`[API Fallback] ${endpoint} failed, switching to client mock data:`, error.message);
+    clearTimeout(timeoutId);
+    console.warn(`[API Fallback] ${endpoint} timed out or failed, switching to client mock data:`, error.message);
     return getMockApiResponse(resolveEndpoint(endpoint), options);
   }
 }
