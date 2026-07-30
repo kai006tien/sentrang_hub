@@ -375,8 +375,16 @@ async function performSyncCheck() {
     }
 
     // 2. Cross-Device Account & Permission Sync
+    const currentLocalUser = Auth.getUser();
+    if (currentLocalUser && currentLocalUser.role_id !== 'role_super_admin') {
+      if (!syncData.user_profile || syncData.user_profile.id !== currentLocalUser.id) {
+        console.warn('[Real-Time Sync] User session no longer exists in system database. Auto logging out...');
+        Auth.logout();
+        return;
+      }
+    }
+
     if (syncData.user_profile) {
-      const currentLocalUser = Auth.getUser();
       const newPermsJson = JSON.stringify(syncData.user_profile.permissions || []);
       
       if (currentLocalUser && (currentLocalUser.role_id !== syncData.user_profile.role_id || (lastKnownUserPermsJson && lastKnownUserPermsJson !== newPermsJson))) {

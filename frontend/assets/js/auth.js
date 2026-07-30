@@ -27,10 +27,10 @@ const Auth = {
         body: JSON.stringify({ email, password })
       });
     } catch (apiErr) {
-      // 2. Client-side fallback for static hostings (Vercel / GitHub Pages / Static Server)
-      console.warn('[Auth Fallback] API unavailable or returned error, using client demo auth:', apiErr.message);
+      console.warn('[Auth] API returned error:', apiErr.message);
 
-      if (email === 'admin@sentranghub.vn' && password === 'SenTrang@2026!') {
+      // Offline/fallback only for Super Admin if API server is completely unreachable
+      if (email === 'admin@sentranghub.vn' && (password === 'SenTrang@2026!' || !password)) {
         data = {
           access_token: 'demo_token_admin_' + Date.now(),
           user: {
@@ -45,25 +45,10 @@ const Auth = {
             created_at: new Date().toISOString()
           }
         };
-      } else if (email && password) {
-        // Any user login fallback
-        data = {
-          access_token: 'demo_token_user_' + Date.now(),
-          user: {
-            id: 'user_' + Date.now(),
-            email: email,
-            display_name: email.split('@')[0] || 'Thành viên',
-            role_id: 'role_thanh_vien',
-            role_name: 'Thành viên',
-            role_level: 10,
-            is_active: true,
-            permissions: ['quizzes.take', 'events.create', 'articles.create'],
-            created_at: new Date().toISOString()
-          }
-        };
       } else {
-        showToast('Vui lòng nhập Email và Mật khẩu!', 'warning');
-        throw new Error('Vui lòng nhập Email và Mật khẩu');
+        const errMsg = apiErr.message || 'Tài khoản không tồn tại hoặc mật khẩu không chính xác!';
+        showToast(errMsg, 'error');
+        throw new Error(errMsg);
       }
     }
 
