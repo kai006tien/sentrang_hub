@@ -38,7 +38,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         <span class="noti-badge" id="noti-badge" style="display:none;">0</span>
       </button>
-      <div class="user-profile-pill" onclick="openChangePasswordModal()" style="cursor:pointer;" title="Bấm để đổi mật khẩu">
+      <div class="user-profile-pill" onclick="openUserProfileModal()" style="cursor:pointer;" title="Bấm để xem thông tin cá nhân">
         <div class="user-avatar-circle" id="user-avatar">A</div>
         <div class="user-details">
           <span class="user-display-name" id="user-display-name">Super Admin</span>
@@ -117,6 +117,20 @@
       <div class="content-body">
         <!-- VIEW 1: OVERVIEW -->
         <section id="view-overview" class="view-section active">
+          <!-- Welcome Banner (TOP) -->
+          <div class="welcome-banner" style="margin-bottom:1.5rem;">
+            <div class="welcome-icon">🌸</div>
+            <div class="welcome-text">
+              <h3 id="welcome-title">Chào mừng đến với Sen Trắng Hub!</h3>
+              <p id="welcome-desc">Hệ thống quản trị nội bộ dành riêng cho CLB Thanh niên Tình nguyện Sen Trắng.</p>
+              <div class="welcome-actions">
+                <button class="btn btn-primary btn-sm" onclick="showView('users')">Quản lý nhân sự →</button>
+                <button class="btn btn-secondary btn-sm" onclick="showView('events')">Sự kiện & Điểm danh →</button>
+                <button class="btn btn-secondary btn-sm" onclick="openUserProfileModal()" style="background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.4);">👤 Hồ sơ cá nhân</button>
+              </div>
+            </div>
+          </div>
+
           <div class="stats-grid">
             <div class="stat-card stat-card--users">
               <div class="stat-card__icon">👥</div>
@@ -148,18 +162,8 @@
             </div>
           </div>
 
-          <!-- Welcome Banner -->
-          <div class="welcome-banner" style="margin-bottom:1.5rem;">
-            <div class="welcome-icon">🌸</div>
-            <div class="welcome-text">
-              <h3 id="welcome-title">Chào mừng đến với Sen Trắng Hub!</h3>
-              <p id="welcome-desc">Hệ thống quản trị nội bộ dành riêng cho CLB Thanh niên Tình nguyện Sen Trắng.</p>
-              <div class="welcome-actions">
-                <button class="btn btn-primary btn-sm" onclick="showView('users')">Quản lý nhân sự →</button>
-                <button class="btn btn-secondary btn-sm" onclick="showView('events')">Sự kiện & Điểm danh →</button>
-              </div>
-            </div>
-          </div>
+          <!-- User Certificates Overview -->
+          <div id="user-my-certificates-container" style="margin-bottom:1.5rem;"></div>
 
           <!-- Latest News Bulletin -->
           <div class="card-panel">

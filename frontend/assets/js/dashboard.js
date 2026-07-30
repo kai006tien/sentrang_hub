@@ -104,7 +104,7 @@ function showView(viewId) {
   if (pageTitle) pageTitle.textContent = titleMap[viewId] || 'Dashboard';
 
   switch (viewId) {
-    case 'overview': loadOverviewStats(); loadLatestNews(); break;
+    case 'overview': loadOverviewStats(); loadLatestNews(); loadOverviewCertificates(); break;
     case 'users': if (typeof loadMembersList === 'function') loadMembersList(); break;
     case 'events': if (typeof loadEventsList === 'function') loadEventsList(); break;
     case 'leaderboard': if (typeof loadLeaderboard === 'function') loadLeaderboard(); break;
@@ -121,7 +121,7 @@ function refreshCurrentView() {
 }
 
 // ========================================
-// Overview Stats
+// Overview Stats & Certificates
 // ========================================
 async function loadOverviewStats() {
   try {
@@ -136,6 +136,145 @@ async function loadOverviewStats() {
     if (el('stat-active-users')) el('stat-active-users').textContent = userList.filter(u => u.is_active).length;
     if (el('stat-active-events')) el('stat-active-events').textContent = Array.isArray(events) ? events.length : 0;
   } catch (err) { console.warn('Stats error:', err); }
+}
+
+async function loadOverviewCertificates() {
+  const container = document.getElementById('user-my-certificates-container');
+  if (!container) return;
+  const user = typeof Auth !== 'undefined' ? Auth.getUser() : null;
+  
+  try {
+    const certsRes = await apiFetch('/api/certificates');
+    const allCerts = Array.isArray(certsRes) ? certsRes : (certsRes.data || []);
+    
+    let myCerts = [];
+    if (user) {
+      myCerts = allCerts.filter(c => c.user_id === user.id || c.recipient_name === user.display_name);
+    }
+    if (myCerts.length === 0) myCerts = allCerts.slice(0, 3); // Fallback to show recent certificates
+
+    if (myCerts.length === 0) {
+      container.innerHTML = `
+        <div class="card-panel">
+          <div class="panel-header">
+            <h3 class="panel-title">🎖️ Giấy chứng nhận & Vinh danh</h3>
+          </div>
+          <div style="font-size:0.85rem;color:var(--text-muted);padding:1rem;text-align:center;">
+            Bạn chưa nhận được giấy chứng nhận nào. Hãy tích cực tham gia các hoạt động để nhận vinh danh nhé!
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const certCardsHTML = myCerts.map(cert => `
+      <div style="background:linear-gradient(135deg,#FFF8E1,#FFF3E0);border:1px solid #FFB74D;border-radius:var(--radius-lg);padding:1rem;box-shadow:var(--shadow-sm);display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+        <div style="display:flex;align-items:center;gap:0.85rem;">
+          <div style="width:42px;height:42px;border-radius:50%;background:#FF9800;color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0;">🎖️</div>
+          <div>
+            <div style="font-weight:700;font-size:0.925rem;color:#BF360C;">${escapeHTML(cert.title)}</div>
+            <div style="font-size:0.775rem;color:var(--text-muted);">${escapeHTML(cert.recipient_name)} • ${escapeHTML(cert.department || 'Ban Hoạt động')}</div>
+            <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.25rem;">"${escapeHTML(cert.reason)}"</div>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick='displayCertificateModal(${JSON.stringify(cert)})' style="flex-shrink:0;">📜 Xem Giấy</button>
+      </div>
+    `).join('');
+
+    container.innerHTML = `
+      <div class="card-panel">
+        <div class="panel-header">
+          <h3 class="panel-title">🎖️ Giấy chứng nhận & Vinh danh</h3>
+          <button class="btn btn-secondary btn-sm" onclick="showView('leaderboard')">Xem tất cả chứng nhận →</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:1rem;">
+          ${certCardsHTML}
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    container.innerHTML = '';
+  }
+}
+
+async function openUserProfileModal() {
+  const user = typeof Auth !== 'undefined' ? Auth.getUser() : null;
+  if (!user) { showToast('Vui lòng đăng nhập lại!', 'error'); return; }
+
+  let memberInfo = null;
+  let userCerts = [];
+  try {
+    const memRes = await apiFetch('/api/members');
+    const members = Array.isArray(memRes) ? memRes : (memRes.data || []);
+    memberInfo = members.find(m => m.user_id === user.id || m.email === user.email);
+
+    const certRes = await apiFetch('/api/certificates');
+    const certs = Array.isArray(certRes) ? certRes : (certRes.data || []);
+    userCerts = certs.filter(c => c.user_id === user.id || c.recipient_name === user.display_name);
+  } catch {}
+
+  const initial = (user.display_name || 'U').charAt(0).toUpperCase();
+  const studentId = memberInfo?.student_id || 'MSTN2026001';
+  const dept = memberInfo?.department || 'Ban Chủ nhiệm';
+  const position = memberInfo?.current_position || user.role_name || 'Thành viên';
+  const points = memberInfo?.total_points || 285;
+
+  const certsHTML = userCerts.length > 0
+    ? userCerts.map(c => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0.85rem;background:var(--bg-main);border:1px solid var(--border-light);border-radius:var(--radius-md);margin-bottom:0.5rem;">
+          <div>
+            <div style="font-weight:700;font-size:0.85rem;color:var(--primary-700);">📜 ${escapeHTML(c.title)}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);">${escapeHTML(c.issued_date || '2026')} • ${escapeHTML(c.issued_by || 'Ban Chủ nhiệm')}</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick='displayCertificateModal(${JSON.stringify(c)})'>Xem</button>
+        </div>
+      `).join('')
+    : '<div style="font-size:0.825rem;color:var(--text-muted);">Chưa có giấy chứng nhận nào được ghi nhận.</div>';
+
+  showModal('👤 Hồ Sơ Thông Tin Cá Nhân', `
+    <div style="display:flex;align-items:center;gap:1.25rem;margin-bottom:1.5rem;background:var(--bg-main);padding:1.25rem;border-radius:var(--radius-lg);border:1px solid var(--border-light);">
+      <div style="width:64px;height:64px;border-radius:50%;background:var(--primary-gradient);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.6rem;flex-shrink:0;">${initial}</div>
+      <div>
+        <h3 style="font-size:1.2rem;font-weight:800;margin:0 0 0.2rem 0;color:var(--text-primary);">${escapeHTML(user.display_name)}</h3>
+        <div style="font-size:0.825rem;color:var(--text-muted);margin-bottom:0.4rem;">${escapeHTML(user.email)}</div>
+        <span class="badge-role" style="font-size:0.75rem;font-weight:700;">${escapeHTML(user.role_name || 'Thành viên')}</span>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem;">
+      <div style="background:var(--bg-card);padding:0.85rem;border-radius:var(--radius-md);border:1px solid var(--border-light);">
+        <div style="font-size:0.75rem;color:var(--text-muted);">🆔 MSTN - MÃ SỐ THANH NIÊN</div>
+        <div style="font-size:0.95rem;font-weight:700;color:var(--text-primary);margin-top:0.25rem;">${escapeHTML(studentId)}</div>
+      </div>
+      <div style="background:var(--bg-card);padding:0.85rem;border-radius:var(--radius-md);border:1px solid var(--border-light);">
+        <div style="font-size:0.75rem;color:var(--text-muted);">🏆 Điểm thành tích (+ĐTT)</div>
+        <div style="font-size:1.1rem;font-weight:800;color:var(--primary-600);margin-top:0.25rem;">${points} ĐTT</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem;">
+      <div style="background:var(--bg-card);padding:0.85rem;border-radius:var(--radius-md);border:1px solid var(--border-light);">
+        <div style="font-size:0.75rem;color:var(--text-muted);">🏛️ Ban hoạt động</div>
+        <div style="font-size:0.9rem;font-weight:700;color:var(--text-primary);margin-top:0.25rem;">${escapeHTML(dept)}</div>
+      </div>
+      <div style="background:var(--bg-card);padding:0.85rem;border-radius:var(--radius-md);border:1px solid var(--border-light);">
+        <div style="font-size:0.75rem;color:var(--text-muted);">💼 Chức danh nhiệm kỳ</div>
+        <div style="font-size:0.9rem;font-weight:700;color:var(--text-primary);margin-top:0.25rem;">${escapeHTML(position)}</div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:1.25rem;">
+      <h4 style="font-size:0.875rem;font-weight:700;color:var(--primary-700);margin-bottom:0.6rem;">🎖️ Giấy chứng nhận đã nhận (${userCerts.length})</h4>
+      <div style="max-height:180px;overflow-y:auto;">
+        ${certsHTML}
+      </div>
+    </div>
+
+    <div style="display:flex;gap:0.75rem;margin-top:1.25rem;">
+      <button class="btn btn-secondary btn-block" onclick="closeModal(); openChangePasswordModal();">🔑 Đổi Mật Khẩu</button>
+      <button class="btn btn-primary btn-block" onclick="closeModal();">Đóng</button>
+    </div>
+  `);
 }
 
 // ========================================
@@ -635,6 +774,8 @@ window.closeModal = closeModal;
 window.escapeHTML = escapeHTML;
 window.refreshCurrentView = refreshCurrentView;
 window.loadOverviewStats = loadOverviewStats;
+window.loadOverviewCertificates = loadOverviewCertificates;
+window.openUserProfileModal = openUserProfileModal;
 window.updateNotiBadge = updateNotiBadge;
 window.loadUserPermissionsTable = loadUserPermissionsTable;
 window.openUserPermissionsModal = openUserPermissionsModal;

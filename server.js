@@ -399,7 +399,6 @@ const server = http.createServer(async (req, res) => {
             certificate_id: 'CERT-STH-2026-' + String(Math.floor(Math.random() * 9000) + 1000),
             title: 'GIẤY CHỨNG NHẬN THÀNH TÍCH XUẤT SẮC',
             recipient_name: member.full_name,
-            generation: member.generation,
             department: member.department,
             reason: `Ghi nhận thành tích xuất sắc trong hoạt động tình nguyện vì cộng đồng, hoàn thành vượt mức chỉ tiêu Điểm thành tích và đóng góp tích cực vào sự phát triển của CLB Thanh niên Tình nguyện Sen Trắng năm 2026.`,
             total_points: lb.total_points,
