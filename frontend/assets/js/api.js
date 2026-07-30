@@ -12,7 +12,6 @@ function escapeHTML(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
-}
 
 // Global Safe Date Formatter Utility (prevents Invalid Date throwing RangeError)
 function safeFormatDate(dateVal, fallback = 'Mới đây') {
