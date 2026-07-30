@@ -154,7 +154,7 @@ function renderEventsUI(events, allMembers) {
     }).join('');
 
     const statsTableHTML = `
-      <div style="grid-column:1/-1;margin-top:1.5rem;background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-xl);padding:1.25rem;box-shadow:var(--shadow-sm);">
+      <div style="margin-top:1.5rem;background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-xl);padding:1.25rem;box-shadow:var(--shadow-sm);">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
           <div>
             <h3 style="font-size:1.05rem;font-weight:800;color:var(--primary-700);margin:0;">📊 Bảng Thống Kê Điểm Danh Hoạt Động</h3>
@@ -187,7 +187,7 @@ function renderEventsUI(events, allMembers) {
 
     const cardsContainerWrapper = (safeEvents.length === 0)
       ? cardsHTML
-      : `<div style="grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem;">${cardsHTML}</div>`;
+      : `<div class="events-list" style="margin-bottom:1.5rem;">${cardsHTML}</div>`;
 
     container.innerHTML = cardsContainerWrapper + statsTableHTML;
   } catch (err) {
