@@ -2,6 +2,17 @@
  * Sen Trắng Hub v2 — API Wrapper, Toast, Permission System & Client Mock Fallback
  */
 
+// Global HTML Escape Utility
+function escapeHTML(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 // Toast Notifications System
 function showToast(message, type = 'success', duration = 3500) {
   let container = document.getElementById('toast-container');
@@ -1117,6 +1128,7 @@ function isSuperAdmin() {
 }
 
 // Expose globals
+window.escapeHTML = escapeHTML;
 window.showToast = showToast;
 window.apiFetch = apiFetch;
 window.API = API;
