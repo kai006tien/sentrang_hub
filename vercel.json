@@ -1,7 +1,4 @@
 {
   "outputDirectory": "frontend",
-  "cleanUrls": true,
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index.py" }
-  ]
+  "cleanUrls": true
 }

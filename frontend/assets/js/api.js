@@ -721,7 +721,11 @@ async function getMockApiResponse(endpoint, options = {}) {
     pushToGlobalCloud();
     return Promise.resolve({ message: 'Tạo sự kiện mới thành công!', data: newEvt });
   }
-  if (endpoint.startsWith('/api/events')) return Promise.resolve(MOCK_DB.events);
+  if (endpoint.startsWith('/api/events')) {
+    ensureSeedData();
+    return Promise.resolve(MOCK_DB.events || []);
+  }
+
 
   // Articles
   if (endpoint === '/api/articles' && method === 'POST') {
