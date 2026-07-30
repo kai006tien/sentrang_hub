@@ -91,6 +91,7 @@ function initNavigation() {
 
 function showView(viewId) {
   currentView = viewId;
+  lastRenderedVersion = 0;
   document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
   const target = document.getElementById(`view-${viewId}`);
@@ -955,13 +956,14 @@ function escapeHTML(str) {
 // ========================================
 let syncIntervalTimer = null;
 let lastKnownNotiCount = 0;
+let lastRenderedVersion = 0;
 
 function startRealTimeSyncManager() {
   if (syncIntervalTimer) clearInterval(syncIntervalTimer);
 
   updateNotiBadge();
 
-  // Polling check every 4 seconds
+  // Polling check every 6 seconds
   syncIntervalTimer = setInterval(async () => {
     try {
       if (typeof syncWithGlobalCloud === 'function') {
@@ -971,7 +973,7 @@ function startRealTimeSyncManager() {
     } catch (e) {
       console.warn('[RealTime Sync Manager] Polling check failed:', e);
     }
-  }, 4000);
+  }, 6000);
 
   // Broadcast / Storage event callback
   window.onRealtimeDataUpdated = (eventData) => {
@@ -988,6 +990,13 @@ async function performSyncCheck(isImmediate = false) {
       showToast('🔔 Có thông báo / cập nhật hệ thống mới!', 'info');
     }
     lastKnownNotiCount = currentBadgeCount;
+
+    // Check version to prevent unnecessary re-renders that cause screen flickering/stuttering
+    const currentDbVer = typeof mockDbVersion !== 'undefined' ? mockDbVersion : 0;
+    if (!isImmediate && currentDbVer > 0 && currentDbVer <= lastRenderedVersion) {
+      return; // Skip re-rendering when database version has not changed!
+    }
+    lastRenderedVersion = currentDbVer;
 
     // Refresh current view components if window is active
     if (typeof currentView !== 'undefined' && currentView) {

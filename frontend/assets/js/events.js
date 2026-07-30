@@ -14,7 +14,9 @@ async function loadEventsList() {
     }
     actionsEl.innerHTML = btns;
   }
-  container.innerHTML = '<div class="text-center">Đang tải...</div>';
+  if (!container.children || container.children.length === 0 || container.innerHTML.includes('Đang tải')) {
+    container.innerHTML = '<div class="text-center" style="padding:2rem;">Đang tải danh sách sự kiện...</div>';
+  }
   try {
     const res = await apiFetch('/api/events');
     const events = Array.isArray(res) ? res : (res.data || []);
