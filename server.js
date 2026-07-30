@@ -85,6 +85,12 @@ const demoLeaderboard = [
 
 const demoCertificates = [];
 
+const demoLogs = [
+  { timestamp: new Date().toLocaleString('vi-VN'), admin: 'Super Admin', action: 'SYS.LOGIN', module: 'Hệ thống', detail: 'Đăng nhập thành công vào hệ thống' },
+  { timestamp: new Date(Date.now() - 1800000).toLocaleString('vi-VN'), admin: 'Super Admin', action: 'USER.PERM_UPDATE', module: 'Phân quyền', detail: 'Cập nhật phân quyền trực tiếp cho tài khoản an.nguyen@sentranghub.vn' },
+  { timestamp: new Date(Date.now() - 3600000).toLocaleString('vi-VN'), admin: 'Chủ nhiệm', action: 'EVENT.CREATE', module: 'Sự kiện', detail: 'Tạo mới sự kiện Chiến dịch Mùa hè xanh 2026' }
+];
+
 // =====================================================================
 // HELPER: Check if token is a demo/fallback token
 // =====================================================================
@@ -167,9 +173,14 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
-        // ========== USERS ==========
+        // ========== USERS & PERMISSIONS ==========
         if (urlPath === '/api/users' && req.method === 'GET') {
-          const users = demoUsers.map(u => ({ id: u.id, email: u.email, display_name: u.display_name, role_id: u.role_id, role_name: u.role_name, is_active: u.is_active, created_at: u.created_at }));
+          const users = demoUsers.map(u => ({
+            id: u.id, email: u.email, display_name: u.display_name,
+            role_id: u.role_id, role_name: u.role_name, role_level: u.role_level,
+            is_active: u.is_active, permissions: u.permissions || [],
+            created_at: u.created_at
+          }));
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify(users));
           return;
@@ -205,8 +216,25 @@ const server = http.createServer(async (req, res) => {
           if (!user) { res.writeHead(404, {'Content-Type':'application/json'}); res.end(JSON.stringify({detail:'User không tồn tại'})); return; }
           if (!role) { res.writeHead(400, {'Content-Type':'application/json'}); res.end(JSON.stringify({detail:'Vai trò không hợp lệ'})); return; }
           user.role_id = role.id; user.role_name = role.name; user.role_level = role.level; user.permissions = [...role.permissions];
+          demoLogs.unshift({ timestamp: new Date().toLocaleString('vi-VN'), admin: 'Super Admin', action: 'USER.ROLE_UPDATE', module: 'Phân quyền', detail: `Đã đổi vai trò thành ${role.name} cho ${user.display_name}` });
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ message: `Đã cập nhật vai trò "${role.name}" cho ${user.display_name}!` }));
+          return;
+        }
+
+        if (urlPath.match(/^\/api\/users\/[^/]+\/permissions$/) && req.method === 'PUT') {
+          const userId = urlPath.split('/')[3];
+          const { role_id, permissions } = parsedBody;
+          const user = demoUsers.find(u => u.id === userId);
+          if (!user) { res.writeHead(404, {'Content-Type':'application/json'}); res.end(JSON.stringify({detail:'User không tồn tại'})); return; }
+          if (role_id) {
+            const role = demoRoles.find(r => r.id === role_id);
+            if (role) { user.role_id = role.id; user.role_name = role.name; user.role_level = role.level; }
+          }
+          if (Array.isArray(permissions)) user.permissions = permissions;
+          demoLogs.unshift({ timestamp: new Date().toLocaleString('vi-VN'), admin: 'Super Admin', action: 'USER.PERM_UPDATE', module: 'Phân quyền', detail: `Cập nhật ${user.permissions.length} quyền trực tiếp cho ${user.display_name} (${user.email})` });
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ message: `Đã lưu phân quyền trực tiếp cho ${user.display_name}!`, data: user }));
           return;
         }
 
@@ -216,13 +244,18 @@ const server = http.createServer(async (req, res) => {
             { id: 'users.create', module: 'users', description: 'Tạo tài khoản người dùng', group: 'Quản trị' },
             { id: 'users.read', module: 'users', description: 'Xem danh sách tài khoản', group: 'Quản trị' },
             { id: 'users.update', module: 'users', description: 'Cập nhật tài khoản', group: 'Quản trị' },
+            { id: 'users.delete', module: 'users', description: 'Xóa tài khoản', group: 'Quản trị' },
             { id: 'roles.manage', module: 'roles', description: 'Quản lý vai trò & phân quyền', group: 'Quản trị' },
+            { id: 'logs.view', module: 'roles', description: 'Xem nhật ký hệ thống', group: 'Quản trị' },
+            { id: 'events.read', module: 'events', description: 'Xem sự kiện', group: 'Hoạt động' },
             { id: 'events.create', module: 'events', description: 'Tạo sự kiện mới', group: 'Hoạt động' },
-            { id: 'attendance.manage', module: 'attendance', description: 'Quản lý điểm danh', group: 'Hoạt động' },
+            { id: 'attendance.manage', module: 'attendance', description: 'Quản lý điểm danh QR', group: 'Hoạt động' },
+            { id: 'articles.read', module: 'articles', description: 'Xem bài viết', group: 'Truyền thông' },
             { id: 'articles.create', module: 'articles', description: 'Tạo bài viết mới', group: 'Truyền thông' },
             { id: 'articles.publish', module: 'articles', description: 'Xuất bản bài viết', group: 'Truyền thông' },
+            { id: 'quizzes.take', module: 'quizzes', description: 'Làm bài thi trắc nghiệm', group: 'Thi trực tuyến' },
             { id: 'quizzes.create', module: 'quizzes', description: 'Tạo đề thi trắc nghiệm', group: 'Thi trực tuyến' },
-            { id: 'quizzes.take', module: 'quizzes', description: 'Làm bài thi', group: 'Thi trực tuyến' },
+            { id: 'certificates.view', module: 'certificates', description: 'Xem bảng xếp hạng & chứng nhận', group: 'Vinh danh' },
             { id: 'certificates.issue', module: 'certificates', description: 'Cấp giấy chứng nhận', group: 'Vinh danh' },
             { id: 'notifications.create', module: 'notifications', description: 'Tạo thông báo', group: 'Quản trị' }
           ];
@@ -234,6 +267,26 @@ const server = http.createServer(async (req, res) => {
         if (urlPath === '/api/roles' && req.method === 'GET') {
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify(demoRoles));
+          return;
+        }
+
+        if (urlPath.match(/^\/api\/roles\/[^/]+$/) && req.method === 'PUT') {
+          const roleId = urlPath.split('/').pop();
+          const { permissions, description } = parsedBody;
+          const role = demoRoles.find(r => r.id === roleId);
+          if (role) {
+            if (Array.isArray(permissions)) role.permissions = permissions;
+            if (description) role.description = description;
+            demoLogs.unshift({ timestamp: new Date().toLocaleString('vi-VN'), admin: 'Super Admin', action: 'ROLE.PERM_UPDATE', module: 'Phân quyền', detail: `Cập nhật quyền mặc định cho vai trò ${role.name}` });
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ message: 'Cập nhật cấu hình vai trò thành công!', data: role }));
+          return;
+        }
+
+        if (urlPath === '/api/logs' && req.method === 'GET') {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(demoLogs));
           return;
         }
 

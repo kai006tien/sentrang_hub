@@ -74,6 +74,11 @@ const MOCK_DB = {
     { id: 'mem_003', rank: 3, full_name: 'Lê Hoàng Cường', generation: 'Gen 11', department: 'Ban Chuyên môn', total_points: 195 },
     { id: 'mem_004', rank: 4, full_name: 'Phạm Minh Đức', generation: 'Gen 12', department: 'Ban Phong trào', total_points: 150 },
     { id: 'mem_005', rank: 5, full_name: 'Võ Thị Mai Hương', generation: 'Gen 11', department: 'Ban Chủ nhiệm', total_points: 120 }
+  ],
+  logs: [
+    { timestamp: new Date().toLocaleString('vi-VN'), admin: 'Super Admin', action: 'SYS.LOGIN', module: 'Hệ thống', detail: 'Đăng nhập thành công vào hệ thống' },
+    { timestamp: new Date(Date.now() - 1800000).toLocaleString('vi-VN'), admin: 'Super Admin', action: 'USER.PERM_UPDATE', module: 'Phân quyền', detail: 'Cập nhật phân quyền trực tiếp cho tài khoản an.nguyen@sentranghub.vn' },
+    { timestamp: new Date(Date.now() - 3600000).toLocaleString('vi-VN'), admin: 'Chủ nhiệm', action: 'EVENT.CREATE', module: 'Sự kiện', detail: 'Tạo mới sự kiện Chiến dịch Mùa hè xanh 2026' }
   ]
 };
 
@@ -124,9 +129,22 @@ function getMockApiResponse(endpoint, options = {}) {
 
   // Users
   if (endpoint.includes('/users/create-account') && method === 'POST') {
-    const newUser = { id: 'user_' + Date.now(), ...body, is_active: true, created_at: new Date().toISOString() };
+    const newUser = { id: 'user_' + Date.now(), ...body, permissions: ['quizzes.take'], is_active: true, created_at: new Date().toISOString() };
     MOCK_DB.users.push(newUser);
     return Promise.resolve({ message: `Tạo tài khoản "${body.display_name}" thành công!`, data: newUser });
+  }
+  if (endpoint.includes('/users/') && endpoint.includes('/permissions') && method === 'PUT') {
+    const userId = endpoint.split('/')[3];
+    const user = MOCK_DB.users.find(u => u.id === userId);
+    if (user) {
+      if (body.role_id) {
+        const role = MOCK_DB.roles.find(r => r.id === body.role_id);
+        if (role) { user.role_id = role.id; user.role_name = role.name; user.role_level = role.level; }
+      }
+      if (Array.isArray(body.permissions)) user.permissions = body.permissions;
+      MOCK_DB.logs.unshift({ timestamp: new Date().toLocaleString('vi-VN'), admin: 'Super Admin', action: 'USER.PERM_UPDATE', module: 'Phân quyền', detail: `Phân quyền trực tiếp cho ${user.display_name} (${user.permissions.length} quyền)` });
+    }
+    return Promise.resolve({ message: `Đã lưu phân quyền trực tiếp cho ${user ? user.display_name : 'User'}!`, data: user });
   }
   if (endpoint.includes('/users/') && endpoint.includes('/role') && method === 'PUT') {
     const userId = endpoint.split('/')[3];
@@ -137,6 +155,15 @@ function getMockApiResponse(endpoint, options = {}) {
   if (endpoint.startsWith('/api/users')) return Promise.resolve(MOCK_DB.users);
 
   // Roles
+  if (endpoint.match(/\/roles\/[^/]+$/) && method === 'PUT') {
+    const roleId = endpoint.split('/').pop();
+    const role = MOCK_DB.roles.find(r => r.id === roleId);
+    if (role && Array.isArray(body.permissions)) role.permissions = body.permissions;
+    return Promise.resolve({ message: 'Cập nhật cấu hình vai trò thành công!', data: role });
+  }
+  if (endpoint === '/api/logs' && method === 'GET') {
+    return Promise.resolve(MOCK_DB.logs || []);
+  }
   if (endpoint.includes('/roles/permissions/all')) {
     return Promise.resolve([
       { id: 'users.create', module: 'users', description: 'Tạo tài khoản người dùng', group: 'Quản trị' },

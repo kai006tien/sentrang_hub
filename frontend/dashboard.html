@@ -199,27 +199,54 @@
           </div>
         </section>
 
-        <!-- VIEW 3: ROLES & SYSTEM LOGS -->
+        <!-- VIEW 3: ROLES & USER PERMISSIONS & SYSTEM LOGS -->
         <section id="view-roles" class="view-section">
+          <!-- 1. Cấu hình Cây phân quyền Vai trò -->
           <div class="card-panel" style="margin-bottom: 1.5rem;">
             <div class="panel-header">
-              <h3 class="panel-title">🛡️ Cấu hình Cây phân quyền</h3>
+              <h3 class="panel-title">🛡️ 1. Cấu hình Cây phân quyền Vai trò</h3>
+              <span style="font-size:0.8rem;color:var(--text-muted);">Quyền mặc định định nghĩa theo từng chức danh hệ thống</span>
             </div>
             <div class="roles-grid" id="roles-cards-container">
-              <div class="text-center">Đang tải vai trò...</div>
+              <div class="text-center">Đang tải danh sách vai trò...</div>
             </div>
           </div>
+
+          <!-- 2. Bảng Phân Quyền Trực Tiếp Cho User -->
+          <div class="card-panel" style="margin-bottom: 1.5rem;">
+            <div class="panel-header">
+              <h3 class="panel-title">👤 2. Phân quyền Trực tiếp cho từng User</h3>
+              <span style="font-size:0.8rem;color:var(--primary-600);font-weight:600;">⚡ Admin phân quyền & gán tính năng trực tiếp cho từng tài khoản</span>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Tài khoản / Email</th>
+                    <th>Vai trò chính</th>
+                    <th>Chi tiết Quyền hạn đang sở hữu</th>
+                    <th>Hành động</th>
+                  </tr>
+                </thead>
+                <tbody id="user-permissions-table-body">
+                  <tr><td colspan="4" class="text-center">Đang tải danh sách tài khoản phân quyền...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 3. Nhật ký hoạt động hệ thống -->
           <div class="card-panel">
             <div class="panel-header">
-              <h3 class="panel-title">📜 Nhật ký hoạt động hệ thống</h3>
+              <h3 class="panel-title">📜 3. Nhật ký hoạt động hệ thống</h3>
             </div>
             <div id="logs-container">
-              <div style="font-size:0.85rem; color:var(--text-muted); padding:0.5rem 0;">Ghi nhận lịch sử thao tác của quản trị viên.</div>
+              <div style="font-size:0.85rem; color:var(--text-muted); padding:0.5rem 0;">Ghi nhận lịch sử thao tác phân quyền và quản trị của Admin.</div>
               <div class="table-responsive">
                 <table class="data-table">
                   <thead><tr><th>Thời gian</th><th>Quản trị viên</th><th>Hành động</th><th>Phân hệ</th><th>Chi tiết</th></tr></thead>
-                  <tbody>
-                    <tr><td>29/07/2026 16:30</td><td><strong>Super Admin</strong></td><td><span class="badge-active">SYS.LOGIN</span></td><td>Hệ thống</td><td>Đăng nhập thành công</td></tr>
+                  <tbody id="system-logs-table-body">
+                    <tr><td colspan="5" class="text-center">Đang tải nhật ký hệ thống...</td></tr>
                   </tbody>
                 </table>
               </div>
