@@ -374,11 +374,54 @@ async function getMockApiResponse(endpoint, options = {}) {
   if (endpoint.startsWith('/api/members')) return Promise.resolve({ data: MOCK_DB.members });
 
   // Leaderboard & Certificates
-  if (endpoint.includes('/certificates/leaderboard')) return Promise.resolve({ data: MOCK_DB.leaderboard });
+  if (endpoint.includes('/certificates/leaderboard')) {
+    const list = [...(MOCK_DB.members || [])].sort((a, b) => (b.total_points || 0) - (a.total_points || 0));
+    list.forEach((m, idx) => { m.rank = idx + 1; });
+    return Promise.resolve({ data: list });
+  }
+  if (endpoint === '/api/certificates/points-adjustment' && method === 'POST') {
+    const { member_id, type, points, reason } = body;
+    const mem = MOCK_DB.members.find(m => m.id === member_id || m.student_id === member_id || m.email === member_id);
+    if (!mem) return Promise.reject(new Error('Không tìm thấy thành viên!'));
+    
+    const pVal = Math.abs(parseFloat(points) || 0);
+    const isPenalty = (type === 'penalty' || type === 'subtract');
+    const pointDelta = isPenalty ? -pVal : pVal;
+    
+    mem.total_points = Math.max(0, (mem.total_points || 0) + pointDelta);
+    if (isPenalty) {
+      mem.penalty_points = (mem.penalty_points || 0) + pVal;
+    } else {
+      mem.bonus_points = (mem.bonus_points || 0) + pVal;
+    }
+    
+    const actionLabel = isPenalty ? 'TRỪ ĐIỂM VI PHẠM' : 'CỘNG ĐIỂM THÀNH TÍCH';
+    MOCK_DB.logs.unshift({
+      timestamp: new Date().toLocaleString('vi-VN'),
+      admin: typeof Auth !== 'undefined' ? (Auth.getUser()?.display_name || 'Admin') : 'Admin',
+      action: isPenalty ? 'POINTS.PENALTY' : 'POINTS.BONUS',
+      module: 'Thành tích',
+      detail: `${actionLabel}: ${pointDelta > 0 ? '+' : ''}${pointDelta} ĐTT cho ${mem.full_name} (${reason || 'N/A'})`
+    });
+    
+    MOCK_DB.notifications.unshift({
+      id: 'noti_' + Date.now(),
+      title: `${actionLabel}: ${pointDelta > 0 ? '+' : ''}${pointDelta} ĐTT`,
+      content: `Bạn đã được ${isPenalty ? 'trừ' : 'cộng'} ${pVal} điểm thành tích. Lý do: ${reason || 'N/A'}`,
+      created_at: new Date().toISOString(),
+      read_by: []
+    });
+
+    pushToGlobalCloud();
+    return Promise.resolve({
+      message: `Đã ${isPenalty ? 'trừ' : 'cộng'} ${pVal} ĐTT cho ${mem.full_name} thành công!`,
+      data: mem
+    });
+  }
   if (endpoint.includes('/certificates/') && endpoint.includes('/issue')) {
     const memId = endpoint.split('/')[3];
     const mem = MOCK_DB.members.find(m => m.id === memId) || MOCK_DB.members[0];
-    return Promise.resolve({ certificate: { certificate_id: 'CERT-STH-2026-' + Math.floor(1000 + Math.random()*9000), title: 'GIẤY CHỨNG NHẬN THÀNH TÍCH XUẤT SẮC', recipient_name: mem.full_name, generation: mem.generation, department: mem.department, reason: 'Ghi nhận thành tích xuất sắc trong hoạt động tình nguyện vì cộng đồng năm 2026.', total_points: 285, issued_date: new Date().toLocaleDateString('vi-VN'), issued_by: 'Ban Chủ nhiệm CLB Sen Trắng' } });
+    return Promise.resolve({ certificate: { certificate_id: 'CERT-STH-2026-' + Math.floor(1000 + Math.random()*9000), title: 'GIẤY CHỨNG NHẬN THÀNH TÍCH XUẤT SẮC', recipient_name: mem.full_name, generation: mem.generation, department: mem.department, reason: 'Ghi nhận thành tích xuất sắc trong hoạt động tình nguyện vì cộng đồng năm 2026.', total_points: mem.total_points||285, issued_date: new Date().toLocaleDateString('vi-VN'), issued_by: 'Ban Chủ nhiệm CLB Sen Trắng' } });
   }
   if (endpoint === '/api/certificates' && method === 'POST') {
     const cert = { id: 'cert_' + Date.now(), ...body, issued_date: new Date().toLocaleDateString('vi-VN') };

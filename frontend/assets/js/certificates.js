@@ -7,8 +7,14 @@ async function loadLeaderboard() {
   const actionsEl = document.getElementById('cert-action-buttons');
   if (!container) return;
 
+  const canManage = hasPermission('certificates.issue') || isSuperAdmin();
   if (actionsEl) {
-    actionsEl.innerHTML = (hasPermission('certificates.issue') || isSuperAdmin()) ? `<button class="btn btn-primary btn-sm" onclick="openCreateCertificateModal()">🎖️ Cấp chứng nhận</button>` : '';
+    actionsEl.innerHTML = canManage ? `
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+        <button class="btn btn-primary btn-sm" onclick="openCreateCertificateModal()">🎖️ Cấp chứng nhận</button>
+        <button class="btn btn-secondary btn-sm" onclick="openPointsAdjustmentModal()">⚖️ Cộng / Trừ điểm vi phạm</button>
+      </div>
+    ` : '';
   }
   container.innerHTML = '<div class="text-center">Đang tải...</div>';
   try {
@@ -93,18 +99,28 @@ async function loadLeaderboard() {
 
     // 2. Leaderboard Table
     const medals = ['🥇','🥈','🥉'];
-    const canIssue = hasPermission('certificates.issue') || isSuperAdmin();
     const tableHTML = `
       <div class="table-responsive"><table class="data-table">
         <thead><tr><th>Hạng</th><th>Thành viên</th><th>Ban hoạt động</th><th>Điểm thành tích</th><th>Hành động</th></tr></thead>
         <tbody>${list.map(m => `
           <tr>
             <td><span style="font-size:1.5rem;">${medals[m.rank-1]||m.rank}</span></td>
-            <td><strong>${escapeHTML(m.full_name)}</strong></td>
-            <td><span style="font-size:0.825rem;color:var(--text-muted);">${escapeHTML(m.department || 'Ban Điều hành')}</span></td>
-            <td><span style="font-weight:800;color:var(--primary-700);font-size:1.1rem;">${m.total_points}</span> ĐTT</td>
             <td>
-              ${canIssue ? `<button class="btn btn-secondary btn-sm" onclick="openCreateCertificateModalForUser('${m.id}')">📜 Cấp</button>` : '<span style="font-size:0.75rem;color:var(--text-muted);">—</span>'}
+              <strong>${escapeHTML(m.full_name)}</strong>
+              <div style="font-size:0.75rem;color:var(--text-muted);">MSTN: ${escapeHTML(m.student_id||'N/A')}</div>
+            </td>
+            <td><span style="font-size:0.825rem;color:var(--text-muted);">${escapeHTML(m.department || 'Ban Điều hành')}</span></td>
+            <td>
+              <span style="font-weight:800;color:var(--primary-700);font-size:1.1rem;">${m.total_points||0}</span> ĐTT
+              <div style="font-size:0.72rem;color:var(--text-muted);">Điểm danh: ${m.attendance_points||0} | Thưởng: +${m.bonus_points||0} | Phạt: -${m.penalty_points||0}</div>
+            </td>
+            <td>
+              <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
+                ${canManage ? `
+                  <button class="btn btn-secondary btn-sm" onclick="openCreateCertificateModalForUser('${m.id}')">📜 Cấp</button>
+                  <button class="btn btn-secondary btn-sm" onclick="openPointsAdjustmentModal('${m.id}')">⚖️ Cộng/Trừ</button>
+                ` : '<span style="font-size:0.75rem;color:var(--text-muted);">—</span>'}
+              </div>
             </td>
           </tr>
         `).join('')}</tbody>
@@ -247,6 +263,75 @@ async function handleCreateCertSubmit(e) {
   } catch (err) { showToast('Lỗi: ' + err.message, 'error'); }
 }
 
+async function openPointsAdjustmentModal(memberId = null) {
+  if (!isSuperAdmin() && !hasPermission('roles.manage') && !hasPermission('certificates.issue')) {
+    showToast('🔒 Bạn không có quyền cộng/trừ điểm thành tích!', 'error');
+    return;
+  }
+  let members = [];
+  try {
+    const res = await apiFetch('/api/members');
+    members = Array.isArray(res) ? res : (res.data || []);
+  } catch {}
+
+  const memberOptions = members.map(m => `
+    <option value="${m.id}" ${memberId && memberId === m.id ? 'selected' : ''}>
+      ${escapeHTML(m.full_name)} — ${escapeHTML(m.department || 'CLB')} (${m.total_points || 0} ĐTT)
+    </option>
+  `).join('');
+
+  showModal('⚖️ Quản Lý Điểm Thành Tích (Cộng / Trừ Điểm Vi Phạm)', `
+    <form onsubmit="handlePointsAdjustmentSubmit(event)">
+      <div style="margin-bottom:0.85rem;">
+        <label style="display:block;font-size:0.85rem;font-weight:700;margin-bottom:0.35rem;">Chọn thành viên *</label>
+        <select id="adj-member-id" required style="width:100%;padding:0.65rem;border-radius:var(--radius-md);border:1px solid var(--border-light);">
+          <option value="">-- Chọn thành viên --</option>
+          ${memberOptions}
+        </select>
+      </div>
+
+      <div style="margin-bottom:0.85rem;">
+        <label style="display:block;font-size:0.85rem;font-weight:700;margin-bottom:0.35rem;">Loại điều chỉnh *</label>
+        <select id="adj-type" required style="width:100%;padding:0.65rem;border-radius:var(--radius-md);border:1px solid var(--border-light);">
+          <option value="bonus">➕ Cộng điểm thưởng thành tích (+ĐTT)</option>
+          <option value="penalty">➖ Trừ điểm vi phạm quy chế (-ĐTT)</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom:0.85rem;">
+        <label style="display:block;font-size:0.85rem;font-weight:700;margin-bottom:0.35rem;">Số điểm (+ĐTT hoặc -ĐTT) *</label>
+        <input type="number" id="adj-points" value="10" min="1" max="100" required style="width:100%;padding:0.65rem;border-radius:var(--radius-md);border:1px solid var(--border-light);">
+      </div>
+
+      <div style="margin-bottom:1.25rem;">
+        <label style="display:block;font-size:0.85rem;font-weight:700;margin-bottom:0.35rem;">Lý do khen thưởng / vi phạm *</label>
+        <textarea id="adj-reason" rows="3" required placeholder="Ví dụ: Tăng cường hỗ trợ Ban Kỹ thuật sự kiện Mùa Hè Xanh / Vi phạm thời gian sinh hoạt CLB..."></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block">💾 Cập Nhật Điểm Thành Tích</button>
+    </form>
+  `);
+}
+
+async function handlePointsAdjustmentSubmit(e) {
+  e.preventDefault();
+  try {
+    const payload = {
+      member_id: document.getElementById('adj-member-id').value,
+      type: document.getElementById('adj-type').value,
+      points: parseFloat(document.getElementById('adj-points').value) || 0,
+      reason: document.getElementById('adj-reason').value
+    };
+    const res = await API.post('/certificates/points-adjustment', payload);
+    showToast(res.message || 'Cập nhật điểm thành tích thành công!', 'success');
+    closeModal();
+    loadLeaderboard();
+    if (typeof loadOverviewStats === 'function') loadOverviewStats();
+  } catch (err) {
+    showToast('Lỗi: ' + err.message, 'error');
+  }
+}
+
 window.loadLeaderboard = loadLeaderboard;
 window.issueCertificate = issueCertificate;
 window.displayCertificateModal = displayCertificateModal;
@@ -254,3 +339,5 @@ window.openCreateCertificateModal = openCreateCertificateModal;
 window.openCreateCertificateModalForUser = openCreateCertificateModalForUser;
 window.handleCertUserSelectChange = handleCertUserSelectChange;
 window.handleCreateCertSubmit = handleCreateCertSubmit;
+window.openPointsAdjustmentModal = openPointsAdjustmentModal;
+window.handlePointsAdjustmentSubmit = handlePointsAdjustmentSubmit;
