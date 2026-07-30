@@ -224,6 +224,7 @@ function handleCertUserSelectChange(selectEl) {
 async function handleCreateCertSubmit(e) {
   e.preventDefault();
   const title = document.getElementById('cert-title').value;
+  const memberId = document.getElementById('cert-recipient-select')?.value;
   const recipientName = document.getElementById('cert-recipient-name').value || document.getElementById('cert-recipient-select').value;
   const dept = document.getElementById('cert-dept').value;
   const reason = document.getElementById('cert-reason').value;
@@ -238,24 +239,15 @@ async function handleCreateCertSubmit(e) {
       reason: reason,
       issued_by: issuer,
       user_id: targetUserId,
+      member_id: memberId,
       issued_date: new Date().toLocaleDateString('vi-VN')
     };
 
     const res = await API.post('/certificates', certPayload);
-    
-    // Auto-create notification for the user
-    try {
-      await API.post('/notifications', {
-        title: '🎖️ Thông báo: Bạn vừa nhận Giấy Chứng Nhận mới!',
-        content: `Chúc mừng ${recipientName}! Bạn vừa được ${issuer} cấp: "${title}". Lý do: ${reason}`,
-        type: 'important',
-        target: targetUserId || 'all'
-      });
-      if (typeof updateNotiBadge === 'function') updateNotiBadge();
-    } catch {}
 
     showToast(res.message || `Đã cấp chứng nhận thành công cho ${recipientName}!`, 'success');
     closeModal();
+    if (typeof loadCertificatesList === 'function') loadCertificatesList();
     if (typeof loadOverviewCertificates === 'function') loadOverviewCertificates();
   } catch (err) { showToast('Lỗi: ' + err.message, 'error'); }
 }

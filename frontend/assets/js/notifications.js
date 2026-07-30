@@ -72,32 +72,66 @@ async function markAllNotificationsRead() {
   } catch (err) { showToast('Lỗi: ' + err.message, 'error'); }
 }
 
-function openCreateNotificationModal() {
+async function openCreateNotificationModal() {
+  let members = [];
+  try {
+    const res = await apiFetch('/api/members');
+    members = Array.isArray(res) ? res : (res.data || []);
+  } catch {}
+
+  const memberOptions = members.map(m => `
+    <option value="${m.user_id || m.id}">👤 ${escapeHTML(m.full_name)} (${escapeHTML(m.department || 'CLB')})</option>
+  `).join('');
+
   showModal('📢 Tạo Thông Báo Mới', `
     <form onsubmit="handleCreateNotificationSubmit(event)">
       <div style="margin-bottom:0.85rem;"><label>Tiêu đề thông báo *</label><input type="text" id="noti-title" required placeholder="Thông báo quan trọng..."></div>
       <div style="margin-bottom:0.85rem;"><label>Nội dung thông báo *</label><textarea id="noti-content" rows="4" required placeholder="Nội dung chi tiết thông báo..."></textarea></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;margin-bottom:1.25rem;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;margin-bottom:0.85rem;">
         <div><label>Mức độ</label><select id="noti-type"><option value="info">Thông thường</option><option value="warning">Cảnh báo</option><option value="important">Quan trọng</option></select></div>
-        <div><label>Gửi đến</label><select id="noti-target"><option value="all">Tất cả thành viên</option><option value="role_chu_nhiem">Chỉ BCN</option><option value="role_truong_ban">Chỉ Trưởng ban</option></select></div>
+        <div><label>Đối tượng nhận *</label><select id="noti-target" onchange="handleNotiTargetChange(this)"><option value="all">📢 Tất cả thành viên</option><option value="role_chu_nhiem">👑 Chỉ Ban Chủ nhiệm</option><option value="user_specific">👤 Chọn cá nhân thành viên...</option></select></div>
+      </div>
+      <div id="noti-user-select-container" style="display:none;margin-bottom:1.25rem;">
+        <label style="font-size:0.8rem;font-weight:700;">Chọn thành viên cụ thể *</label>
+        <select id="noti-specific-user-id" style="width:100%;padding:0.65rem;border-radius:var(--radius-md);border:1px solid var(--border-light);margin-top:0.35rem;">
+          <option value="">-- Chọn thành viên nhận thông báo riêng --</option>
+          ${memberOptions}
+        </select>
       </div>
       <button type="submit" class="btn btn-primary btn-block">📢 Gửi Thông Báo</button>
-    </form>`);
+    </form>
+  `);
+}
+
+function handleNotiTargetChange(selectEl) {
+  const container = document.getElementById('noti-user-select-container');
+  if (container) {
+    container.style.display = selectEl.value === 'user_specific' ? 'block' : 'none';
+  }
 }
 
 async function handleCreateNotificationSubmit(e) {
   e.preventDefault();
   const user = Auth.getUser();
+  const targetMode = document.getElementById('noti-target').value;
+  let targetVal = targetMode;
+  if (targetMode === 'user_specific') {
+    targetVal = document.getElementById('noti-specific-user-id')?.value;
+    if (!targetVal) { showToast('Vui lòng chọn thành viên nhận thông báo!', 'warning'); return; }
+  }
+
   try {
     const res = await API.post('/notifications', {
       title: document.getElementById('noti-title').value,
       content: document.getElementById('noti-content').value,
       type: document.getElementById('noti-type').value,
-      target: document.getElementById('noti-target').value,
+      target: targetVal,
       created_by: user?.display_name || 'Admin'
     });
     showToast(res.message || 'Gửi thông báo thành công!', 'success');
-    closeModal(); loadNotificationsList(); updateNotiBadge();
+    closeModal();
+    loadNotificationsList();
+    if (typeof updateNotiBadge === 'function') updateNotiBadge();
   } catch (err) { showToast('Lỗi: ' + err.message, 'error'); }
 }
 
@@ -105,4 +139,5 @@ window.loadNotificationsList = loadNotificationsList;
 window.markNotificationRead = markNotificationRead;
 window.markAllNotificationsRead = markAllNotificationsRead;
 window.openCreateNotificationModal = openCreateNotificationModal;
+window.handleNotiTargetChange = handleNotiTargetChange;
 window.handleCreateNotificationSubmit = handleCreateNotificationSubmit;
