@@ -3,15 +3,15 @@
  */
 
 function renderEventsUI(events, allMembers) {
+  const container = document.getElementById('events-container');
+  const actionsEl = document.getElementById('events-action-buttons');
+  if (!container) return;
+
+  const safeEscape = typeof escapeHTML === 'function' ? escapeHTML : (s => s ? String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;') : '');
+  const checkSuperAdmin = typeof isSuperAdmin === 'function' ? isSuperAdmin : (() => true);
+  const checkPerm = typeof hasPermission === 'function' ? hasPermission : (() => true);
+
   try {
-    const container = document.getElementById('events-container');
-    const actionsEl = document.getElementById('events-action-buttons');
-    if (!container) return;
-
-    const safeEscape = typeof escapeHTML === 'function' ? escapeHTML : (s => s ? String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '');
-    const checkSuperAdmin = typeof isSuperAdmin === 'function' ? isSuperAdmin : (() => true);
-    const checkPerm = typeof hasPermission === 'function' ? hasPermission : (() => true);
-
     if (actionsEl) {
       let btns = (checkPerm('events.create') || checkSuperAdmin()) ? `<button class="btn btn-primary btn-sm" onclick="openCreateEventModal()">+ Tạo sự kiện</button>` : '';
       if (checkSuperAdmin()) {
@@ -28,64 +28,97 @@ function renderEventsUI(events, allMembers) {
       (user && (user.role_id === 'role_super_admin' || user.role_name === 'Super Admin' || (user.role_level !== undefined && parseInt(user.role_level) <= 3)))
     );
 
-    const userMem = (allMembers || []).find(m => m && (m.user_id === user?.id || m.email === user?.email));
+    const safeEvents = Array.isArray(events) ? events.filter(e => e && typeof e === 'object') : (events && Array.isArray(events.data) ? events.data.filter(e => e && typeof e === 'object') : []);
+    const safeMembers = Array.isArray(allMembers) ? allMembers.filter(m => m && typeof m === 'object') : (allMembers && Array.isArray(allMembers.data) ? allMembers.data.filter(m => m && typeof m === 'object') : []);
+
+    const userMem = safeMembers.find(m => m && (m.user_id === user?.id || m.email === user?.email));
     const catColors = { volunteer:{bg:'#FFEBEE',text:'#C62828',label:'Tình nguyện'}, training:{bg:'#E3F2FD',text:'#0D47A1',label:'Đào tạo'}, social:{bg:'#E8F5E9',text:'#1B5E20',label:'Sinh hoạt'}, meeting:{bg:'#FFF3E0',text:'#E65100',label:'Họp BCN'} };
+
+    // Helper for safe inline JS parameter
+    const attrEscape = (str) => safeEscape(str).replace(/'/g, "\\'");
     
     // 1. Render Event Cards
-    const cardsHTML = (!events || events.length === 0)
+    const cardsHTML = (safeEvents.length === 0)
       ? `
-        <div style="grid-column:1/-1;text-align:center;padding:3.5rem 1rem;background:var(--bg-card);border:2px dashed var(--border-light);border-radius:var(--radius-xl);">
+        <div style="grid-column:1/-1;text-align:center;padding:3rem 1rem;background:var(--bg-card);border:2px dashed var(--border-light);border-radius:var(--radius-xl);">
           <div style="font-size:3.5rem;margin-bottom:0.5rem;">📅</div>
           <h4 style="font-size:1.1rem;font-weight:800;color:var(--text-primary);margin-bottom:0.35rem;">Danh sách Sự kiện đang trống</h4>
-          <p style="font-size:0.85rem;color:var(--text-muted);">Hệ thống chưa có sự kiện nào. Hãy bấm nút "+ Tạo sự kiện" bên trên để bắt đầu tạo mới.</p>
+          <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1.25rem;">Hệ thống chưa có sự kiện nào. Bấm nút bên dưới để tạo mới hoặc khôi phục dữ liệu mẫu.</p>
+          <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
+            ${(checkPerm('events.create') || checkSuperAdmin()) ? `<button class="btn btn-primary btn-sm" onclick="openCreateEventModal()">+ Tạo sự kiện mới</button>` : ''}
+            <button class="btn btn-secondary btn-sm" onclick="if(typeof ensureSeedData==='function'){ensureSeedData();}loadEventsList();showToast('Đã nạp dữ liệu sự kiện mẫu!','success');">🔄 Nạp dữ liệu sự kiện mẫu</button>
+          </div>
         </div>
       ` 
-      : events.map(e => {
+      : safeEvents.map(e => {
           const cat = catColors[e.category] || catColors.volunteer;
-          const pct = Math.round(((e.current_count||0)/(e.max_participants||50))*100);
+          const currentCount = parseInt(e.current_count) || 0;
+          const maxCapacity = parseInt(e.max_participants) || 50;
+          const pct = Math.min(100, Math.round((currentCount / maxCapacity) * 100));
+          const title = safeEscape(e.title || 'Sự kiện');
+          const titleAttr = attrEscape(e.title || 'Sự kiện');
+          const eventId = attrEscape(e.id || '');
+
           return `<div style="background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-xl);padding:1.25rem;box-shadow:var(--shadow-sm);transition:all 0.25s ease;" onmouseenter="this.style.transform='translateY(-2px)'" onmouseleave="this.style.transform='none'">
             <div style="display:flex;justify-content:space-between;margin-bottom:0.6rem;">
               <span style="font-size:0.72rem;padding:0.2rem 0.6rem;background:${cat.bg};color:${cat.text};font-weight:700;border-radius:var(--radius-full);">${cat.label}</span>
-              <span style="font-size:0.72rem;color:var(--text-muted);">${new Date(e.start_date||Date.now()).toLocaleDateString('vi-VN')}</span>
+              <span style="font-size:0.72rem;color:var(--text-muted);">${e.start_date ? new Date(e.start_date).toLocaleDateString('vi-VN') : 'Mới đây'}</span>
             </div>
-            <h4 style="font-size:1rem;font-weight:700;margin-bottom:0.35rem;">${safeEscape(e.title)}</h4>
-            <p style="font-size:0.825rem;color:var(--text-muted);margin-bottom:0.75rem;">📍 ${safeEscape(e.location||'CLB')}</p>
+            <h4 style="font-size:1rem;font-weight:700;margin-bottom:0.35rem;">${title}</h4>
+            <p style="font-size:0.825rem;color:var(--text-muted);margin-bottom:0.75rem;">📍 ${safeEscape(e.location || 'CLB')}</p>
             <div style="background:var(--bg-main);border-radius:var(--radius-full);height:6px;margin-bottom:0.75rem;overflow:hidden;"><div style="background:var(--primary-gradient-light);height:100%;width:${pct}%;border-radius:var(--radius-full);"></div></div>
             <div style="display:flex;justify-content:space-between;align-items:center;">
-              <span style="font-size:0.8rem;color:var(--accent-green);font-weight:700;">👥 ${e.current_count||0}/${e.max_participants||50}</span>
+              <span style="font-size:0.8rem;color:var(--accent-green);font-weight:700;">👥 ${currentCount}/${maxCapacity}</span>
               ${canCheckIn 
-                ? `<button class="btn btn-secondary btn-sm" onclick="openQrCheckInModal('${e.id}','${safeEscape(e.title)}')">📷 Điểm danh</button>`
-                : `<button class="btn btn-secondary btn-sm" onclick="openEventAttendeesModal('${e.id}','${safeEscape(e.title)}')">📋 Xem danh sách</button>`
+                ? `<button class="btn btn-secondary btn-sm" onclick="openQrCheckInModal('${eventId}','${titleAttr}')">📷 Điểm danh</button>`
+                : `<button class="btn btn-secondary btn-sm" onclick="openEventAttendeesModal('${eventId}','${titleAttr}')">📋 Xem danh sách</button>`
               }
             </div>
           </div>`;
         }).join('');
 
     // 2. Render Activity Attendance Statistics Table
-    const tableRowsHTML = (!events || events.length === 0)
+    const tableRowsHTML = (safeEvents.length === 0)
       ? `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted);">Chưa có dữ liệu thống kê sự kiện nào.</td></tr>`
-      : events.map(e => {
+      : safeEvents.map(e => {
           const cat = catColors[e.category] || catColors.volunteer;
-          const dateStr = new Date(e.start_date || Date.now()).toLocaleDateString('vi-VN');
+          const dateStr = e.start_date ? new Date(e.start_date).toLocaleDateString('vi-VN') : 'N/A';
+          const title = safeEscape(e.title || 'Sự kiện');
+          const titleAttr = attrEscape(e.title || 'Sự kiện');
+          const eventId = attrEscape(e.id || '');
 
-          const attendedMembers = (allMembers || []).filter(m => 
-            m && (m.points_history || []).some(ph => ph && (ph.event_id === e.id || (ph.title || '').includes(e.title)))
-          );
+          const attendedMembers = safeMembers.filter(m => {
+            if (!m || !Array.isArray(m.points_history)) return false;
+            return m.points_history.some(ph => {
+              if (!ph) return false;
+              if (ph.event_id && e.id && String(ph.event_id) === String(e.id)) return true;
+              const phTitle = String(ph.title || '');
+              const eTitle = String(e.title || '');
+              return Boolean(eTitle && phTitle.includes(eTitle));
+            });
+          });
 
-          const history = userMem?.points_history || [];
-          const isAttended = Array.isArray(history) && history.some(ph => ph && (ph.event_id === e.id || (ph.title || '').includes(e.title)));
-          const totalCount = Math.max(e.current_count || 0, attendedMembers.length);
+          const history = (userMem && Array.isArray(userMem.points_history)) ? userMem.points_history : [];
+          const isAttended = history.some(ph => {
+            if (!ph) return false;
+            if (ph.event_id && e.id && String(ph.event_id) === String(e.id)) return true;
+            const phTitle = String(ph.title || '');
+            const eTitle = String(e.title || '');
+            return Boolean(eTitle && phTitle.includes(eTitle));
+          });
+          const totalCount = Math.max(parseInt(e.current_count) || 0, attendedMembers.length);
+          const maxCap = parseInt(e.max_participants) || 50;
 
           if (canCheckIn) {
             return `
               <tr>
-                <td><strong>${safeEscape(e.title)}</strong></td>
+                <td><strong>${title}</strong></td>
                 <td><span style="font-size:0.72rem;padding:0.2rem 0.6rem;background:${cat.bg};color:${cat.text};font-weight:700;border-radius:var(--radius-full);">${cat.label}</span></td>
                 <td><span style="font-size:0.825rem;color:var(--text-muted);">${dateStr}</span></td>
                 <td><span style="font-size:0.825rem;color:var(--text-muted);">📍 ${safeEscape(e.location || 'CLB')}</span></td>
-                <td><span style="font-weight:700;color:var(--accent-green);">👥 ${totalCount} / ${e.max_participants || 50}</span></td>
+                <td><span style="font-weight:700;color:var(--accent-green);">👥 ${totalCount} / ${maxCap}</span></td>
                 <td>
-                  <button class="btn btn-secondary btn-sm" onclick="openEventAttendeesModal('${e.id}','${safeEscape(e.title)}')">
+                  <button class="btn btn-secondary btn-sm" onclick="openEventAttendeesModal('${eventId}','${titleAttr}')">
                     📋 Xem danh sách đã điểm danh (${totalCount})
                   </button>
                 </td>
@@ -94,18 +127,18 @@ function renderEventsUI(events, allMembers) {
           } else {
             return `
               <tr>
-                <td><strong>${safeEscape(e.title)}</strong></td>
+                <td><strong>${title}</strong></td>
                 <td><span style="font-size:0.72rem;padding:0.2rem 0.6rem;background:${cat.bg};color:${cat.text};font-weight:700;border-radius:var(--radius-full);">${cat.label}</span></td>
                 <td><span style="font-size:0.825rem;color:var(--text-muted);">${dateStr}</span></td>
                 <td><span style="font-size:0.825rem;color:var(--text-muted);">📍 ${safeEscape(e.location || 'CLB')}</span></td>
-                <td><span style="font-weight:700;color:var(--accent-green);">👥 ${totalCount} / ${e.max_participants || 50}</span></td>
+                <td><span style="font-weight:700;color:var(--accent-green);">👥 ${totalCount} / ${maxCap}</span></td>
                 <td>
                   <div style="display:flex;align-items:center;gap:0.5rem;">
                     ${isAttended 
                       ? '<span style="color:#2E7D32;font-weight:700;background:#E8F5E9;padding:0.25rem 0.65rem;border-radius:var(--radius-full);font-size:0.775rem;">✅ Đã tham gia (+10 ĐTT)</span>'
                       : '<span style="color:#C62828;font-weight:600;background:#FFEBEE;padding:0.25rem 0.65rem;border-radius:var(--radius-full);font-size:0.775rem;">⏳ Chưa điểm danh</span>'
                     }
-                    <button class="btn btn-secondary btn-sm" style="font-size:0.72rem;padding:0.2rem 0.5rem;" onclick="openEventAttendeesModal('${e.id}','${safeEscape(e.title)}')">📋 Xem sĩ số</button>
+                    <button class="btn btn-secondary btn-sm" style="font-size:0.72rem;padding:0.2rem 0.5rem;" onclick="openEventAttendeesModal('${eventId}','${titleAttr}')">📋 Xem sĩ số</button>
                   </div>
                 </td>
               </tr>
@@ -148,6 +181,14 @@ function renderEventsUI(events, allMembers) {
     container.innerHTML = cardsHTML + statsTableHTML;
   } catch (err) {
     console.error('[renderEventsUI Error]', err);
+    container.innerHTML = `
+      <div style="grid-column:1/-1;text-align:center;padding:2.5rem 1rem;background:var(--bg-card);border:1px solid #FFCDD2;border-radius:var(--radius-xl);">
+        <div style="font-size:3rem;margin-bottom:0.5rem;">⚠️</div>
+        <h4 style="font-size:1.1rem;font-weight:800;color:#C62828;margin-bottom:0.35rem;">Không thể nạp danh sách sự kiện</h4>
+        <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem;">Đã xảy ra sự cố khi xử lý dữ liệu: ${safeEscape(err.message)}</p>
+        <button class="btn btn-primary btn-sm" onclick="if(typeof ensureSeedData==='function'){ensureSeedData();}loadEventsList();">🔄 Khôi phục & Thử lại</button>
+      </div>
+    `;
   }
 }
 
@@ -159,22 +200,27 @@ async function loadEventsList() {
     { id: 'event_02', title: 'Tập huấn Kỹ năng Đội Nhóm & Sơ cứu', category: 'training', location: 'Hội trường B - Bách Khoa', start_date: '2026-07-25T14:00:00Z', max_participants: 40, current_count: 8, points_reward: 10, status: 'active' },
     { id: 'event_03', title: 'Sinh hoạt Định kỳ CLB Tháng 7', category: 'social', location: 'Phòng Sinh hoạt Sen Trắng', start_date: '2026-07-30T18:00:00Z', max_participants: 60, current_count: 15, points_reward: 10, status: 'active' }
   ];
-  const initialEvents = (typeof MOCK_DB !== 'undefined' && Array.isArray(MOCK_DB.events) && MOCK_DB.events.length > 0) ? MOCK_DB.events : fallbackEvts;
-  const initialMembers = (typeof MOCK_DB !== 'undefined' && Array.isArray(MOCK_DB.members)) ? MOCK_DB.members : [];
+  
+  let initialEvents = (typeof MOCK_DB !== 'undefined' && Array.isArray(MOCK_DB.events) && MOCK_DB.events.length > 0) ? MOCK_DB.events : fallbackEvts;
+  let initialMembers = (typeof MOCK_DB !== 'undefined' && Array.isArray(MOCK_DB.members)) ? MOCK_DB.members : [];
 
-  // Step 1: Render INSTANTLY synchronously (0ms) - Zero Loading Screen!
+  // Step 1: Render INSTANTLY synchronously (0ms)
   renderEventsUI(initialEvents, initialMembers);
 
   // Step 2: Background refresh if network has fresh updates
   try {
     const res = await apiFetch('/api/events');
-    let events = Array.isArray(res) && res.length > 0 ? res : (res.data || initialEvents);
+    let events = Array.isArray(res) && res.length > 0 ? res : ((res && Array.isArray(res.data) && res.data.length > 0) ? res.data : initialEvents);
     if (!Array.isArray(events) || events.length === 0) events = initialEvents;
     
     let allMembers = initialMembers;
     try {
       const memRes = await apiFetch('/api/members');
-      allMembers = Array.isArray(memRes) && memRes.length > 0 ? memRes : (memRes.data || initialMembers);
+      if (Array.isArray(memRes) && memRes.length > 0) {
+        allMembers = memRes;
+      } else if (memRes && Array.isArray(memRes.data) && memRes.data.length > 0) {
+        allMembers = memRes.data;
+      }
     } catch {}
 
     renderEventsUI(events, allMembers);
@@ -182,6 +228,7 @@ async function loadEventsList() {
     console.warn('[Events Load Warning]', err);
   }
 }
+
 
 function openCreateEventModal() {
   if (!hasPermission('events.create') && !isSuperAdmin()) {
@@ -301,9 +348,17 @@ async function openEventAttendeesModal(eventId, eventTitle) {
       (user && (user.role_id === 'role_super_admin' || user.role_name === 'Super Admin' || (user.role_level !== undefined && parseInt(user.role_level) <= 3)))
     );
 
-    const attendedMembers = allMembers.filter(m => 
-      (m.points_history || []).some(ph => ph.event_id === eventId || (ph.title || '').includes(eventTitle))
-    );
+    const safeAllMembers = Array.isArray(allMembers) ? allMembers.filter(m => m && typeof m === 'object') : [];
+    const attendedMembers = safeAllMembers.filter(m => {
+      if (!m || !Array.isArray(m.points_history)) return false;
+      return m.points_history.some(ph => {
+        if (!ph) return false;
+        if (ph.event_id && eventId && String(ph.event_id) === String(eventId)) return true;
+        const phTitle = String(ph.title || '');
+        const eTitle = String(eventTitle || '');
+        return Boolean(eTitle && phTitle.includes(eTitle));
+      });
+    });
 
     const totalCount = Math.max(evt ? (evt.current_count || 0) : 0, attendedMembers.length);
     const maxCapacity = evt ? (evt.max_participants || 50) : 50;

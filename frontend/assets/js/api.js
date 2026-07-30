@@ -1135,3 +1135,6 @@ window.API = API;
 window.hasPermission = hasPermission;
 window.isSuperAdmin = isSuperAdmin;
 window.getCurrentUserPermissions = getCurrentUserPermissions;
+window.MOCK_DB = MOCK_DB;
+window.ensureSeedData = ensureSeedData;
+
