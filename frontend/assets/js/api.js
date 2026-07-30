@@ -12,6 +12,20 @@ function escapeHTML(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+}
+
+// Global Safe Date Formatter Utility (prevents Invalid Date throwing RangeError)
+function safeFormatDate(dateVal, fallback = 'Mới đây') {
+  if (!dateVal) return fallback;
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return String(dateVal);
+    return d.toLocaleDateString('vi-VN');
+  } catch {
+    return String(dateVal) || fallback;
+  }
+}
+window.safeFormatDate = safeFormatDate;
 
 // Toast Notifications System
 function showToast(message, type = 'success', duration = 3500) {

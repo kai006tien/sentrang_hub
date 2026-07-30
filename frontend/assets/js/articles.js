@@ -106,7 +106,7 @@ function viewArticleModal(articleId) {
     showModal('📰 ' + a.title, `
       <div>
         ${hasImg ? `<img src="${a.image_url}" style="width:100%;max-height:250px;object-fit:cover;border-radius:var(--radius-md);margin-bottom:1rem;">` : ''}
-        <div style="font-size:0.825rem;color:var(--text-muted);margin-bottom:1rem;">✍️ ${escapeHTML(a.author_name||'Ban TT')} • ${new Date(a.created_at||Date.now()).toLocaleDateString('vi-VN')}</div>
+        <div style="font-size:0.825rem;color:var(--text-muted);margin-bottom:1rem;">✍️ ${escapeHTML(a.author_name||'Ban TT')} • ${safeFormatDate(a.created_at || Date.now(), 'Vừa xong')}</div>
         <div style="font-size:0.9rem;color:var(--text-secondary);line-height:1.7;white-space:pre-wrap;">${escapeHTML(a.content||a.excerpt||'Nội dung bài viết.')}</div>
       </div>
     `);

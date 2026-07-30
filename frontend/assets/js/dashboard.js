@@ -354,7 +354,7 @@ async function loadLatestNews() {
         <div style="flex:1;min-width:0;">
           <h4 style="font-size:0.9rem;font-weight:700;color:var(--text-primary);margin:0 0 0.2rem;">${escapeHTML(a.title)}</h4>
           <p style="font-size:0.8rem;color:var(--text-muted);margin:0;">${escapeHTML(a.excerpt || '')}</p>
-          <span style="font-size:0.7rem;color:var(--text-muted);margin-top:0.3rem;display:block;">✍️ ${escapeHTML(a.author_name || 'Ban Truyền thông')} • ${new Date(a.created_at || Date.now()).toLocaleDateString('vi-VN')}</span>
+          <span style="font-size:0.7rem;color:var(--text-muted);margin-top:0.3rem;display:block;">✍️ ${escapeHTML(a.author_name || 'Ban Truyền thông')} • ${safeFormatDate(a.created_at || Date.now(), 'Mới đây')}</span>
         </div>
       </div>
     `).join('');

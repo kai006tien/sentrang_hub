@@ -62,7 +62,7 @@ function renderEventsUI(events, allMembers) {
           return `<div style="background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-xl);padding:1.25rem;box-shadow:var(--shadow-sm);transition:all 0.25s ease;" onmouseenter="this.style.transform='translateY(-2px)'" onmouseleave="this.style.transform='none'">
             <div style="display:flex;justify-content:space-between;margin-bottom:0.6rem;">
               <span style="font-size:0.72rem;padding:0.2rem 0.6rem;background:${cat.bg};color:${cat.text};font-weight:700;border-radius:var(--radius-full);">${cat.label}</span>
-              <span style="font-size:0.72rem;color:var(--text-muted);">${e.start_date ? new Date(e.start_date).toLocaleDateString('vi-VN') : 'Mới đây'}</span>
+              <span style="font-size:0.72rem;color:var(--text-muted);">${safeFormatDate(e.start_date, 'Mới đây')}</span>
             </div>
             <h4 style="font-size:1rem;font-weight:700;margin-bottom:0.35rem;">${title}</h4>
             <p style="font-size:0.825rem;color:var(--text-muted);margin-bottom:0.75rem;">📍 ${safeEscape(e.location || 'CLB')}</p>
@@ -82,7 +82,7 @@ function renderEventsUI(events, allMembers) {
       ? `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted);">Chưa có dữ liệu thống kê sự kiện nào.</td></tr>`
       : safeEvents.map(e => {
           const cat = catColors[e.category] || catColors.volunteer;
-          const dateStr = e.start_date ? new Date(e.start_date).toLocaleDateString('vi-VN') : 'N/A';
+          const dateStr = safeFormatDate(e.start_date, 'N/A');
           const title = safeEscape(e.title || 'Sự kiện');
           const titleAttr = attrEscape(e.title || 'Sự kiện');
           const eventId = attrEscape(e.id || '');

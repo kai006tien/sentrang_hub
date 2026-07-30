@@ -39,7 +39,7 @@ async function loadNotificationsList() {
         <div style="flex:1;min-width:0;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;flex-wrap:wrap;">
             <h4 style="font-size:0.95rem;font-weight:700;margin:0;">${escapeHTML(n.title)}</h4>
-            <span style="font-size:0.7rem;color:var(--text-muted);white-space:nowrap;">${new Date(n.created_at||Date.now()).toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</span>
+            <span style="font-size:0.7rem;color:var(--text-muted);white-space:nowrap;">${safeFormatDate(n.created_at || Date.now(), 'Vừa xong')}</span>
           </div>
           <p style="font-size:0.85rem;color:var(--text-secondary);margin:0.35rem 0 0.5rem;line-height:1.55;">${escapeHTML(n.content)}</p>
           <div style="display:flex;justify-content:space-between;align-items:center;">
