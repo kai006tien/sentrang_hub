@@ -67,7 +67,7 @@ function openCreateMemberAndAccountModal() {
         <div><label>Mật khẩu đăng nhập *</label><input type="text" id="mem-pass" required value="User@2026!" placeholder="Mật khẩu"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;margin-bottom:0.85rem;">
-        <div><label>MSSV</label><input type="text" id="mem-student-id" placeholder="2026001"></div>
+        <div><label>MSTN - MÃ SỐ THANH NIÊN</label><input type="text" id="mem-student-id" placeholder="MSTN2026001"></div>
         <div><label>Thế hệ</label><select id="mem-gen"><option value="Gen 12">Gen 12</option><option value="Gen 11">Gen 11</option><option value="Gen 10">Gen 10</option></select></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;margin-bottom:1.25rem;">
@@ -129,7 +129,7 @@ async function openEditMemberModal(memberId) {
         <div style="margin-bottom:0.85rem;"><label>Họ và tên *</label><input type="text" id="edit-mem-name" required value="${escapeHTML(m.full_name)}"></div>
         <div style="margin-bottom:0.85rem;"><label>Email *</label><input type="email" id="edit-mem-email" required value="${escapeHTML(m.email)}"></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;margin-bottom:0.85rem;">
-          <div><label>MSSV</label><input type="text" id="edit-mem-student-id" value="${escapeHTML(m.student_id||'')}"></div>
+          <div><label>MSTN - MÃ SỐ THANH NIÊN</label><input type="text" id="edit-mem-student-id" value="${escapeHTML(m.student_id||'')}"></div>
           <div><label>Thế hệ</label><select id="edit-mem-gen">
             <option value="Gen 12" ${m.generation==='Gen 12'?'selected':''}>Gen 12</option>
             <option value="Gen 11" ${m.generation==='Gen 11'?'selected':''}>Gen 11</option>
@@ -151,6 +151,7 @@ async function openEditMemberModal(memberId) {
             <option value="Thủ quỹ" ${m.current_position==='Thủ quỹ'?'selected':''}>Thủ quỹ</option>
           </select></div>
         </div>
+        <div style="margin-bottom:0.85rem;"><label>🔑 Đổi mật khẩu tài khoản (để trống nếu giữ nguyên)</label><input type="password" id="edit-mem-pass" placeholder="Nhập mật khẩu mới..."></div>
         <div style="margin-bottom:1.25rem;"><label>Trạng thái hoạt động</label><select id="edit-mem-status">
           <option value="active" ${m.status!=='inactive'?'selected':''}>Hoạt động</option>
           <option value="inactive" ${m.status==='inactive'?'selected':''}>Tạm nghỉ</option>
@@ -164,6 +165,7 @@ async function openEditMemberModal(memberId) {
 async function handleEditMemberSubmit(e, memberId) {
   e.preventDefault();
   try {
+    const newPass = document.getElementById('edit-mem-pass')?.value;
     const payload = {
       full_name: document.getElementById('edit-mem-name').value,
       email: document.getElementById('edit-mem-email').value,
@@ -173,6 +175,9 @@ async function handleEditMemberSubmit(e, memberId) {
       current_position: document.getElementById('edit-mem-pos').value,
       status: document.getElementById('edit-mem-status').value
     };
+    if (newPass && newPass.trim() !== '') {
+      payload.password = newPass.trim();
+    }
     const res = await API.put(`/members/${memberId}`, payload);
     showToast(res.message || 'Cập nhật thông tin thành viên thành công!', 'success');
     closeModal();
@@ -202,7 +207,7 @@ async function viewMemberDetail(memberId) {
       <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem;">
         <div style="width:56px;height:56px;border-radius:50%;background:var(--primary-gradient);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.4rem;">${(p.full_name||'M').charAt(0).toUpperCase()}</div>
         <div><h3 style="font-size:1.2rem;font-weight:700;margin:0;">${escapeHTML(p.full_name)}</h3>
-        <p style="font-size:0.825rem;color:var(--text-muted);margin:0;">MSSV: ${escapeHTML(p.student_id||'N/A')} • ${escapeHTML(p.generation||'')} • ${escapeHTML(p.department||'')}</p></div>
+        <p style="font-size:0.825rem;color:var(--text-muted);margin:0;">MSTN - MÃ SỐ THANH NIÊN: ${escapeHTML(p.student_id||'N/A')} • ${escapeHTML(p.generation||'')} • ${escapeHTML(p.department||'')}</p></div>
       </div>
       <div style="background:var(--bg-main);padding:1rem;border-radius:var(--radius-md);margin-bottom:1rem;border:1px solid var(--border-light);">
         <h4 style="font-size:0.85rem;font-weight:700;color:var(--primary-700);margin-bottom:0.5rem;">🏢 Chức vụ kiêm nhiệm</h4>

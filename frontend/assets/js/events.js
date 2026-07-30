@@ -77,14 +77,14 @@ function openQrCheckInModal(eventId, eventTitle) {
     <div style="text-align:center;padding:0.5rem;">
       <p style="margin-bottom:1rem;">Sự kiện: <strong>${escapeHTML(eventTitle)}</strong></p>
       <div style="width:160px;height:160px;margin:0 auto 1rem;background:var(--bg-main);border:2px dashed var(--primary-300);border-radius:var(--radius-xl);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0.5rem;"><span style="font-size:3rem;">📱</span><span style="font-size:0.75rem;color:var(--text-muted);">Camera QR</span></div>
-      <div style="margin-bottom:1rem;text-align:left;"><label>MSSV / Member ID:</label><input type="text" id="checkin-member-id" placeholder="STH-2026-001"></div>
+      <div style="margin-bottom:1rem;text-align:left;"><label>MSTN - MÃ SỐ THANH NIÊN / ID:</label><input type="text" id="checkin-member-id" placeholder="MSTN-2026-001"></div>
       <button class="btn btn-primary btn-block" onclick="executeCheckIn('${eventId}')">✅ Xác nhận Check-in (+10 ĐTT)</button>
     </div>`);
 }
 
 async function executeCheckIn(eventId) {
   const memberId = document.getElementById('checkin-member-id')?.value.trim();
-  if (!memberId) { showToast('Nhập MSSV hoặc ID!', 'warning'); return; }
+  if (!memberId) { showToast('Nhập MSTN hoặc ID!', 'warning'); return; }
   try {
     const res = await API.post(`/events/${eventId}/attendance`, { member_id: memberId, check_in_method: 'qr_code' });
     showToast(res.message || 'Check-in thành công!', 'success');

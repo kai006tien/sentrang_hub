@@ -107,6 +107,21 @@ function getMockApiResponse(endpoint, options = {}) {
     });
   }
 
+  // Auth Change Password
+  if (endpoint.includes('/auth/change-password') && method === 'POST') {
+    const oldPass = body.old_password || body.current_password;
+    const newPass = body.new_password;
+    const currentUser = Auth.getUser();
+    if (currentUser && currentUser.password && oldPass && currentUser.password !== oldPass) {
+      return Promise.reject(new Error('Mật khẩu hiện tại không chính xác!'));
+    }
+    if (currentUser && newPass) {
+      currentUser.password = newPass;
+      localStorage.setItem(CONFIG.STORAGE_KEYS.USER_DATA, JSON.stringify(currentUser));
+    }
+    return Promise.resolve({ success: true, message: 'Đổi mật khẩu thành công!' });
+  }
+
   // Users
   if (endpoint.includes('/users/create-account') && method === 'POST') {
     const newUser = { id: 'user_' + Date.now(), ...body, is_active: true, created_at: new Date().toISOString() };

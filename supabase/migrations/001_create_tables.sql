@@ -71,7 +71,7 @@ CREATE TABLE public.members (
     full_name       TEXT NOT NULL,
     date_of_birth   DATE,
     gender          TEXT CHECK (gender IN ('male', 'female', 'other')),
-    student_id      TEXT UNIQUE,                  -- MSSV
+    student_id      TEXT UNIQUE,                  -- MSTN - MÃ SỐ THANH NIÊN
     university      TEXT,
     faculty         TEXT,
     major           TEXT,

@@ -142,6 +142,31 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
+        if ((urlPath === '/api/auth/change-password' || urlPath === '/api/change-password') && req.method === 'POST') {
+          const { old_password, current_password, new_password } = parsedBody;
+          const oldPass = old_password || current_password;
+          const user = getUserFromToken(req);
+          if (!user) {
+            res.writeHead(401, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ detail: 'Phiên làm việc hết hạn hoặc không hợp lệ!' }));
+            return;
+          }
+          if (user.password && oldPass && user.password !== oldPass) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ detail: 'Mật khẩu hiện tại không chính xác!' }));
+            return;
+          }
+          if (!new_password || new_password.trim().length < 6) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ detail: 'Mật khẩu mới phải có ít nhất 6 ký tự!' }));
+            return;
+          }
+          user.password = new_password.trim();
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, message: 'Đổi mật khẩu thành công!' }));
+          return;
+        }
+
         // ========== USERS ==========
         if (urlPath === '/api/users' && req.method === 'GET') {
           const users = demoUsers.map(u => ({ id: u.id, email: u.email, display_name: u.display_name, role_id: u.role_id, role_name: u.role_name, is_active: u.is_active, created_at: u.created_at }));
@@ -240,7 +265,13 @@ const server = http.createServer(async (req, res) => {
         if (urlPath.match(/^\/api\/members\/[^/]+$/) && req.method === 'PUT') {
           const memberId = urlPath.split('/').pop();
           const member = demoMembers.find(m => m.id === memberId);
-          if (member) { Object.assign(member, parsedBody); }
+          if (member) {
+            Object.assign(member, parsedBody);
+            if (parsedBody.password) {
+              const usr = demoUsers.find(u => u.email === member.email || u.id === member.user_id);
+              if (usr) usr.password = parsedBody.password;
+            }
+          }
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ message: 'Cập nhật thông tin thành viên thành công!', data: member }));
           return;
