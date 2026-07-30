@@ -53,6 +53,7 @@ const MOCK_DB = {
 
 const GLOBAL_CLOUD_DB_URL = 'https://jsonblob.com/api/jsonBlob/019fb1f2-890d-72b3-ae1d-621f05acd070';
 let isCloudSyncing = false;
+let mockDbVersion = Date.now();
 
 async function syncWithGlobalCloud() {
   if (isCloudSyncing) return;
@@ -64,6 +65,7 @@ async function syncWithGlobalCloud() {
     if (res.ok) {
       const data = await res.json();
       if (data && Array.isArray(data.users) && data.users.length > 0) {
+        if (data.version) mockDbVersion = data.version;
         MOCK_DB.users = data.users;
         if (Array.isArray(data.members)) MOCK_DB.members = data.members;
         if (Array.isArray(data.events)) MOCK_DB.events = data.events;
@@ -81,6 +83,7 @@ async function syncWithGlobalCloud() {
 }
 
 async function pushToGlobalCloud() {
+  mockDbVersion = Date.now();
   saveMockDbToStorage();
   try {
     await fetch(GLOBAL_CLOUD_DB_URL, {
@@ -90,6 +93,7 @@ async function pushToGlobalCloud() {
         'Accept': 'application/json'
       },
       body: JSON.stringify({
+        version: mockDbVersion,
         users: MOCK_DB.users,
         members: MOCK_DB.members,
         events: MOCK_DB.events,
@@ -167,7 +171,7 @@ async function getMockApiResponse(endpoint, options = {}) {
     const latestNoti = notis[0] || null;
     const currentUserInDb = MOCK_DB.users.find(u => u.id === user?.id || u.email === user?.email);
     return Promise.resolve({
-      timestamp: Date.now(),
+      timestamp: mockDbVersion,
       unread_notifications: unread,
       latest_notification: latestNoti,
       user_profile: currentUserInDb || user,

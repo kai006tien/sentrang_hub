@@ -348,10 +348,20 @@ function startRealTimeSyncManager() {
   }
 }
 
+let lastSyncTimestamp = 0;
+
 async function performSyncCheck() {
   try {
     const syncData = await apiFetch('/api/sync');
     if (!syncData) return;
+
+    // 0. Auto Refresh Active View when Global Cloud DB Version Updates
+    const hasDataChanged = (syncData.timestamp && syncData.timestamp !== lastSyncTimestamp);
+    if (hasDataChanged && lastSyncTimestamp !== 0) {
+      console.log('[Real-Time Sync] Database version updated, refreshing active view silently...');
+      refreshActiveViewSilently();
+    }
+    if (syncData.timestamp) lastSyncTimestamp = syncData.timestamp;
 
     // 1. Live Notification Alert & Badge Pulse
     if (syncData.latest_notification) {
@@ -399,6 +409,34 @@ async function performSyncCheck() {
     }
   } catch (err) {
     /* Silent catch for network sync issues */
+  }
+}
+
+function refreshActiveViewSilently() {
+  switch (currentView) {
+    case 'overview':
+      if (typeof loadOverviewStats === 'function') loadOverviewStats();
+      if (typeof loadLatestNews === 'function') loadLatestNews();
+      if (typeof loadOverviewCertificates === 'function') loadOverviewCertificates();
+      break;
+    case 'users':
+      if (typeof loadMembersList === 'function') loadMembersList();
+      break;
+    case 'events':
+      if (typeof loadEventsList === 'function') loadEventsList();
+      break;
+    case 'leaderboard':
+      if (typeof loadLeaderboard === 'function') loadLeaderboard();
+      break;
+    case 'articles':
+      if (typeof loadArticlesList === 'function') loadArticlesList();
+      break;
+    case 'quizzes':
+      if (typeof loadQuizzesList === 'function') loadQuizzesList();
+      break;
+    case 'notifications':
+      if (typeof loadNotificationsList === 'function') loadNotificationsList();
+      break;
   }
 }
 
