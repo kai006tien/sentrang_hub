@@ -240,6 +240,10 @@ const PERMISSION_MODULES = [
 let cachedUsers = [];
 let cachedRoles = [];
 
+function canManagePermissions() {
+  return (typeof isSuperAdmin === 'function' && isSuperAdmin()) || (typeof hasPermission === 'function' && hasPermission('roles.manage'));
+}
+
 // 1. Roles Grid
 async function loadRolesGrid() {
   const container = document.getElementById('roles-cards-container');
@@ -249,10 +253,15 @@ async function loadRolesGrid() {
     cachedRoles = Array.isArray(roles) ? roles : [];
     if (cachedRoles.length === 0) { container.innerHTML = '<div class="text-center">Chưa có vai trò nào.</div>'; return; }
 
+    const canEdit = canManagePermissions();
     const levelColors = { 0:{bg:'#FFEBEE',border:'#EF5350',text:'#C62828'}, 1:{bg:'#FFF3E0',border:'#FF9800',text:'#E65100'}, 2:{bg:'#E3F2FD',border:'#42A5F5',text:'#0D47A1'}, 3:{bg:'#F3E5F5',border:'#AB47BC',text:'#6A1B9A'}, 10:{bg:'#E8F5E9',border:'#66BB6A',text:'#1B5E20'} };
     container.innerHTML = cachedRoles.map(r => {
       const c = levelColors[r.level] || levelColors[10];
       const permList = r.permissions.includes('*') ? 'Toàn quyền hệ thống (*)' : r.permissions.join(', ');
+      const actionButton = canEdit
+        ? `<button class="btn btn-secondary btn-sm" style="margin-top:0.5rem;align-self:flex-start;" onclick="openEditRolePermissionsModal('${r.id}')">✏️ Cấu hình quyền vai trò</button>`
+        : `<span style="font-size:0.75rem;color:var(--text-muted);margin-top:0.5rem;display:inline-block;">🔒 Chỉ Admin mới được chỉnh sửa</span>`;
+
       return `<div style="background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:1.25rem;box-shadow:var(--shadow-sm);border-left:4px solid ${c.border};display:flex;flex-direction:column;justify-content:space-between;">
         <div>
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
@@ -262,13 +271,17 @@ async function loadRolesGrid() {
           <p style="font-size:0.825rem;color:var(--text-secondary);margin-bottom:0.75rem;">${escapeHTML(r.description)}</p>
           <div style="font-size:0.75rem;color:var(--primary-600);font-weight:600;margin-bottom:0.75rem;word-break:break-word;">🔑 Quyền mặc định: ${escapeHTML(permList)}</div>
         </div>
-        <button class="btn btn-secondary btn-sm" style="margin-top:0.5rem;align-self:flex-start;" onclick="openEditRolePermissionsModal('${r.id}')">✏️ Cấu hình quyền vai trò</button>
+        ${actionButton}
       </div>`;
     }).join('');
   } catch (err) { container.innerHTML = `<div class="text-center text-danger">Lỗi: ${escapeHTML(err.message)}</div>`; }
 }
 
 function openEditRolePermissionsModal(roleId) {
+  if (!canManagePermissions()) {
+    showToast('🔒 Chỉ Admin / Super Admin mới có quyền chỉnh sửa phân quyền!', 'warning');
+    return;
+  }
   const r = cachedRoles.find(x => x.id === roleId);
   if (!r) return;
 
@@ -316,6 +329,10 @@ function openEditRolePermissionsModal(roleId) {
 
 async function handleSaveRolePermissions(e, roleId) {
   e.preventDefault();
+  if (!canManagePermissions()) {
+    showToast('🔒 Chỉ Admin / Super Admin mới có quyền chỉnh sửa phân quyền!', 'error');
+    return;
+  }
   const checkboxes = document.querySelectorAll('.role-perm-checkbox:checked');
   const selectedPerms = Array.from(checkboxes).map(cb => cb.value);
 
@@ -349,6 +366,7 @@ async function loadUserPermissionsTable() {
       return;
     }
 
+    const canEdit = canManagePermissions();
     const colors = ['#1E88E5','#00C853','#FF6D00','#7C4DFF','#FF1744','#00BCD4'];
     container.innerHTML = cachedUsers.map((u, i) => {
       const color = colors[i % colors.length];
@@ -364,6 +382,10 @@ async function loadUserPermissionsTable() {
         permsBadge = perms.map(p => `<span class="badge-role" style="margin-right:0.25rem;margin-bottom:0.25rem;display:inline-block;font-size:0.725rem;">${escapeHTML(p)}</span>`).join('');
       }
 
+      const actionBtn = canEdit
+        ? `<button class="btn btn-primary btn-sm" onclick="openUserPermissionsModal('${u.id}')">⚙️ Phân quyền trực tiếp</button>`
+        : `<span style="font-size:0.8rem;color:var(--text-muted);font-weight:600;">🔒 Chỉ Admin</span>`;
+
       return `<tr>
         <td>
           <div style="display:flex;align-items:center;gap:0.65rem;">
@@ -376,9 +398,7 @@ async function loadUserPermissionsTable() {
         </td>
         <td><span class="badge-role" style="font-weight:700;">${escapeHTML(u.role_name || 'Thành viên')}</span></td>
         <td style="max-width:320px;">${permsBadge}</td>
-        <td>
-          <button class="btn btn-primary btn-sm" onclick="openUserPermissionsModal('${u.id}')">⚙️ Phân quyền trực tiếp</button>
-        </td>
+        <td>${actionBtn}</td>
       </tr>`;
     }).join('');
   } catch (err) {
@@ -387,6 +407,10 @@ async function loadUserPermissionsTable() {
 }
 
 function openUserPermissionsModal(userId) {
+  if (!canManagePermissions()) {
+    showToast('🔒 Chỉ Super Admin / Quản trị viên cao nhất mới có quyền chỉnh sửa phân quyền!', 'warning');
+    return;
+  }
   const u = cachedUsers.find(x => x.id === userId);
   if (!u) { showToast('Không tìm thấy người dùng!', 'error'); return; }
 
@@ -484,6 +508,10 @@ function applyRoleDefaultPermissions(roleId) {
 
 async function handleSaveUserPermissions(e, userId) {
   e.preventDefault();
+  if (!canManagePermissions()) {
+    showToast('🔒 Chỉ Super Admin / Quản trị viên cao nhất mới có quyền chỉnh sửa phân quyền!', 'error');
+    return;
+  }
   const roleId = document.getElementById('user-perm-role-select').value;
   const checkboxes = document.querySelectorAll('.user-perm-checkbox:checked');
   const selectedPerms = Array.from(checkboxes).map(cb => cb.value);

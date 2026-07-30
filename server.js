@@ -208,7 +208,19 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
+        function checkAdminPermission(req, res) {
+          const user = getUserFromToken(req);
+          const isAdmin = user && (user.role_id === 'role_super_admin' || user.role_level === 0 || (user.permissions || []).includes('*') || (user.permissions || []).includes('roles.manage'));
+          if (!isAdmin) {
+            res.writeHead(403, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ detail: 'Chỉ Super Admin mới có quyền chỉnh sửa phân quyền hệ thống!' }));
+            return false;
+          }
+          return true;
+        }
+
         if (urlPath.match(/^\/api\/users\/[^/]+\/role$/) && req.method === 'PUT') {
+          if (!checkAdminPermission(req, res)) return;
           const userId = urlPath.split('/')[3];
           const { role_id } = parsedBody;
           const user = demoUsers.find(u => u.id === userId);
@@ -223,6 +235,7 @@ const server = http.createServer(async (req, res) => {
         }
 
         if (urlPath.match(/^\/api\/users\/[^/]+\/permissions$/) && req.method === 'PUT') {
+          if (!checkAdminPermission(req, res)) return;
           const userId = urlPath.split('/')[3];
           const { role_id, permissions } = parsedBody;
           const user = demoUsers.find(u => u.id === userId);
@@ -271,6 +284,7 @@ const server = http.createServer(async (req, res) => {
         }
 
         if (urlPath.match(/^\/api\/roles\/[^/]+$/) && req.method === 'PUT') {
+          if (!checkAdminPermission(req, res)) return;
           const roleId = urlPath.split('/').pop();
           const { permissions, description } = parsedBody;
           const role = demoRoles.find(r => r.id === roleId);

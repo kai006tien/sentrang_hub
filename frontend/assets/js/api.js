@@ -134,6 +134,9 @@ function getMockApiResponse(endpoint, options = {}) {
     return Promise.resolve({ message: `Tạo tài khoản "${body.display_name}" thành công!`, data: newUser });
   }
   if (endpoint.includes('/users/') && endpoint.includes('/permissions') && method === 'PUT') {
+    if (typeof isSuperAdmin === 'function' && !isSuperAdmin() && typeof hasPermission === 'function' && !hasPermission('roles.manage')) {
+      return Promise.reject(new Error('Chỉ Super Admin / Quản trị viên mới được phép chỉnh sửa phân quyền!'));
+    }
     const userId = endpoint.split('/')[3];
     const user = MOCK_DB.users.find(u => u.id === userId);
     if (user) {
@@ -147,6 +150,9 @@ function getMockApiResponse(endpoint, options = {}) {
     return Promise.resolve({ message: `Đã lưu phân quyền trực tiếp cho ${user ? user.display_name : 'User'}!`, data: user });
   }
   if (endpoint.includes('/users/') && endpoint.includes('/role') && method === 'PUT') {
+    if (typeof isSuperAdmin === 'function' && !isSuperAdmin() && typeof hasPermission === 'function' && !hasPermission('roles.manage')) {
+      return Promise.reject(new Error('Chỉ Super Admin / Quản trị viên mới được phép chỉnh sửa phân quyền!'));
+    }
     const userId = endpoint.split('/')[3];
     const user = MOCK_DB.users.find(u => u.id === userId);
     if (user) { user.role_id = body.role_id; }
@@ -156,6 +162,9 @@ function getMockApiResponse(endpoint, options = {}) {
 
   // Roles
   if (endpoint.match(/\/roles\/[^/]+$/) && method === 'PUT') {
+    if (typeof isSuperAdmin === 'function' && !isSuperAdmin() && typeof hasPermission === 'function' && !hasPermission('roles.manage')) {
+      return Promise.reject(new Error('Chỉ Super Admin / Quản trị viên mới được phép chỉnh sửa phân quyền!'));
+    }
     const roleId = endpoint.split('/').pop();
     const role = MOCK_DB.roles.find(r => r.id === roleId);
     if (role && Array.isArray(body.permissions)) role.permissions = body.permissions;
