@@ -118,6 +118,23 @@ function notifyRealtimeSync(eventType = 'DATA_UPDATED', payload = {}) {
   }
 }
 
+function ensureSeedData() {
+  const seedEvents = [
+    { id: 'event_01', title: 'Chiến dịch Mùa Hè Tình Nguyện 2026', category: 'volunteer', location: 'Huyện Hóc Môn, TP.HCM', start_date: '2026-07-20T08:00:00Z', max_participants: 50, current_count: 12, points_reward: 10, status: 'active' },
+    { id: 'event_02', title: 'Tập huấn Kỹ năng Đội Nhóm & Sơ cứu', category: 'training', location: 'Hội trường B - Bách Khoa', start_date: '2026-07-25T14:00:00Z', max_participants: 40, current_count: 8, points_reward: 10, status: 'active' },
+    { id: 'event_03', title: 'Sinh hoạt Định kỳ CLB Tháng 7', category: 'social', location: 'Phòng Sinh hoạt Sen Trắng', start_date: '2026-07-30T18:00:00Z', max_participants: 60, current_count: 15, points_reward: 10, status: 'active' }
+  ];
+  if (!Array.isArray(MOCK_DB.events) || MOCK_DB.events.length === 0) {
+    MOCK_DB.events = seedEvents;
+  }
+  const seedMembers = [
+    { id: 'mem_01', user_id: 'admin_uid', full_name: 'Admin Hệ Thống', email: 'admin@sentranghub.vn', student_id: 'MSTN2026001', department: 'Ban Chủ nhiệm', current_position: 'Chủ nhiệm', status: 'active', total_points: 120, bonus_points: 40, attendance_points: 80, penalty_points: 0, points_history: [{ id: 'ph_init', event_id: 'event_01', title: 'Điểm danh: Chiến dịch Mùa Hè Tình Nguyện 2026', points: 10, type: 'attendance', date: new Date().toISOString() }] }
+  ];
+  if (!Array.isArray(MOCK_DB.members) || MOCK_DB.members.length === 0) {
+    MOCK_DB.members = seedMembers;
+  }
+}
+
 async function syncWithGlobalCloud() {
   if (isCloudSyncing) return;
   isCloudSyncing = true;
@@ -138,6 +155,7 @@ async function syncWithGlobalCloud() {
         if (Array.isArray(data.certificates)) MOCK_DB.certificates = data.certificates;
         if (Array.isArray(data.logs)) MOCK_DB.logs = data.logs;
         if (Array.isArray(data.years)) MOCK_DB.years = data.years;
+        ensureSeedData();
         saveMockDbToStorage();
       }
     }
@@ -150,6 +168,7 @@ async function syncWithGlobalCloud() {
 
 async function pushToGlobalCloud() {
   mockDbVersion = Date.now();
+  ensureSeedData();
   saveMockDbToStorage();
   notifyRealtimeSync('CLOUD_PUSH', { version: mockDbVersion });
   try {
@@ -189,12 +208,12 @@ function loadMockDbFromStorage() {
     const savedMembers = localStorage.getItem('sentrang_db_members');
     if (savedMembers) {
       const parsed = JSON.parse(savedMembers);
-      if (Array.isArray(parsed)) MOCK_DB.members = parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) MOCK_DB.members = parsed;
     }
     const savedEvents = localStorage.getItem('sentrang_db_events');
     if (savedEvents) {
       const parsed = JSON.parse(savedEvents);
-      if (Array.isArray(parsed)) MOCK_DB.events = parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) MOCK_DB.events = parsed;
     }
     const savedArticles = localStorage.getItem('sentrang_db_articles');
     if (savedArticles) {
@@ -206,6 +225,7 @@ function loadMockDbFromStorage() {
       const parsed = JSON.parse(savedCerts);
       if (Array.isArray(parsed)) MOCK_DB.certificates = parsed;
     }
+    ensureSeedData();
   } catch (e) {}
 }
 
@@ -1016,7 +1036,11 @@ async function apiFetch(endpoint, options = {}) {
     }
 
     try {
-      return JSON.parse(text);
+      const parsed = JSON.parse(text);
+      if (parsed && (parsed.detail || parsed.error || (endpoint.includes('/events') && !Array.isArray(parsed) && !Array.isArray(parsed.data)))) {
+        return getMockApiResponse(resolveEndpoint(endpoint), options);
+      }
+      return parsed;
     } catch {
       return getMockApiResponse(resolveEndpoint(endpoint), options);
     }
