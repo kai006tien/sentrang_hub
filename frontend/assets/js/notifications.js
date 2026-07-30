@@ -9,7 +9,13 @@ async function loadNotificationsList() {
   if (!container) return;
 
   if (actionsEl) {
-    actionsEl.innerHTML = (hasPermission('notifications.create') || isSuperAdmin()) ? `<button class="btn btn-primary btn-sm" onclick="openCreateNotificationModal()">+ Tạo thông báo</button>` : '';
+    const canCreate = (hasPermission('notifications.create') || isSuperAdmin());
+    actionsEl.innerHTML = `
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+        <button class="btn btn-secondary btn-sm" onclick="markAllNotificationsRead()">✓ Đánh dấu tất cả đã đọc</button>
+        ${canCreate ? `<button class="btn btn-primary btn-sm" onclick="openCreateNotificationModal()">+ Tạo thông báo</button>` : ''}
+      </div>
+    `;
   }
   container.innerHTML = '<div class="text-center">Đang tải...</div>';
   try {
@@ -50,7 +56,19 @@ async function markNotificationRead(notiId, btn) {
     const user = Auth.getUser();
     await API.put(`/notifications/${notiId}/read`, { user_id: user?.id });
     if (btn) { btn.outerHTML = '<span style="font-size:0.72rem;color:var(--accent-green);font-weight:600;">✓ Đã xem</span>'; }
-    updateNotiBadge();
+    if (typeof updateNotiBadge === 'function') updateNotiBadge();
+    if (typeof performSyncCheck === 'function') performSyncCheck();
+  } catch (err) { showToast('Lỗi: ' + err.message, 'error'); }
+}
+
+async function markAllNotificationsRead() {
+  try {
+    const user = Auth.getUser();
+    await API.put('/notifications/read-all', { user_id: user?.id });
+    showToast('Đã đánh dấu tất cả thông báo là đã đọc!', 'success');
+    loadNotificationsList();
+    if (typeof updateNotiBadge === 'function') updateNotiBadge();
+    if (typeof performSyncCheck === 'function') performSyncCheck();
   } catch (err) { showToast('Lỗi: ' + err.message, 'error'); }
 }
 
@@ -85,5 +103,6 @@ async function handleCreateNotificationSubmit(e) {
 
 window.loadNotificationsList = loadNotificationsList;
 window.markNotificationRead = markNotificationRead;
+window.markAllNotificationsRead = markAllNotificationsRead;
 window.openCreateNotificationModal = openCreateNotificationModal;
 window.handleCreateNotificationSubmit = handleCreateNotificationSubmit;

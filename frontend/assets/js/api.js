@@ -424,10 +424,47 @@ async function getMockApiResponse(endpoint, options = {}) {
     return Promise.resolve({ certificate: { certificate_id: 'CERT-STH-2026-' + Math.floor(1000 + Math.random()*9000), title: 'GIẤY CHỨNG NHẬN THÀNH TÍCH XUẤT SẮC', recipient_name: mem.full_name, generation: mem.generation, department: mem.department, reason: 'Ghi nhận thành tích xuất sắc trong hoạt động tình nguyện vì cộng đồng năm 2026.', total_points: mem.total_points||285, issued_date: new Date().toLocaleDateString('vi-VN'), issued_by: 'Ban Chủ nhiệm CLB Sen Trắng' } });
   }
   if (endpoint === '/api/certificates' && method === 'POST') {
-    const cert = { id: 'cert_' + Date.now(), ...body, issued_date: new Date().toLocaleDateString('vi-VN') };
-    MOCK_DB.certificates.push(cert);
+    const cert = {
+      id: 'cert_' + Date.now(),
+      certificate_id: 'CERT-STH-2026-' + Math.floor(1000 + Math.random() * 9000),
+      ...body,
+      issued_date: body.issued_date || new Date().toLocaleDateString('vi-VN')
+    };
+
+    let matchedUser = null;
+    if (body.user_id) {
+      matchedUser = MOCK_DB.users.find(u => u.id === body.user_id);
+    }
+    if (!matchedUser && body.recipient_name) {
+      matchedUser = MOCK_DB.users.find(u =>
+        u.display_name.toLowerCase() === body.recipient_name.toLowerCase() ||
+        u.email.toLowerCase() === body.recipient_name.toLowerCase()
+      );
+    }
+    if (!matchedUser && body.member_id) {
+      const mem = MOCK_DB.members.find(m => m.id === body.member_id);
+      if (mem) matchedUser = MOCK_DB.users.find(u => u.email === mem.email);
+    }
+
+    if (matchedUser) {
+      cert.user_id = matchedUser.id;
+      cert.user_email = matchedUser.email;
+      cert.recipient_name = matchedUser.display_name;
+    }
+
+    MOCK_DB.certificates.unshift(cert);
+
+    // Auto-create live notification for the target user
+    MOCK_DB.notifications.unshift({
+      id: 'noti_' + Date.now(),
+      title: '🎖️ Giấy chứng nhận mới: ' + cert.title,
+      content: `Chúc mừng ${cert.recipient_name}! Bạn vừa được ${cert.issued_by || 'Ban Chủ nhiệm'} trao tặng "${cert.title}". Lý do: ${cert.reason}`,
+      created_at: new Date().toISOString(),
+      read_by: []
+    });
+
     pushToGlobalCloud();
-    return Promise.resolve({ message: 'Cấp chứng nhận thành công!', certificate: cert });
+    return Promise.resolve({ message: `Đã cấp chứng nhận thành công cho ${cert.recipient_name}!`, certificate: cert });
   }
 
   // Events
@@ -463,7 +500,30 @@ async function getMockApiResponse(endpoint, options = {}) {
   if (endpoint.startsWith('/api/quizzes')) return Promise.resolve(MOCK_DB.quizzes);
 
   // Notifications
+  if (endpoint.includes('/notifications/read-all') && method === 'PUT') {
+    const user = typeof Auth !== 'undefined' ? Auth.getUser() : null;
+    const userId = body.user_id || user?.id;
+    if (userId && Array.isArray(MOCK_DB.notifications)) {
+      MOCK_DB.notifications.forEach(n => {
+        if (!n.read_by) n.read_by = [];
+        if (!n.read_by.includes(userId)) n.read_by.push(userId);
+      });
+      pushToGlobalCloud();
+    }
+    return Promise.resolve({ message: 'Đã đánh dấu tất cả là đã đọc' });
+  }
   if (endpoint.includes('/notifications/') && endpoint.includes('/read')) {
+    const notiId = endpoint.split('/')[3];
+    const user = typeof Auth !== 'undefined' ? Auth.getUser() : null;
+    const userId = body.user_id || user?.id;
+    const noti = (MOCK_DB.notifications || []).find(n => n.id === notiId);
+    if (noti && userId) {
+      if (!noti.read_by) noti.read_by = [];
+      if (!noti.read_by.includes(userId)) {
+        noti.read_by.push(userId);
+      }
+      pushToGlobalCloud();
+    }
     return Promise.resolve({ message: 'Đã đánh dấu đã đọc' });
   }
   if (endpoint === '/api/notifications' && method === 'POST') {
