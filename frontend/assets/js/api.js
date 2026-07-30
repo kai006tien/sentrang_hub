@@ -318,13 +318,34 @@ async function getMockApiResponse(endpoint, options = {}) {
     const mem = MOCK_DB.members.find(m => m.id === memId);
     if (mem) {
       Object.assign(mem, body);
-      if (body.password) {
-        const userAcc = MOCK_DB.users.find(u => u.email === mem.email);
-        if (userAcc) userAcc.password = body.password;
+      const userAcc = MOCK_DB.users.find(u => u.email === mem.email || u.id === mem.user_id);
+      if (userAcc) {
+        if (body.full_name) userAcc.display_name = body.full_name;
+        if (body.email) userAcc.email = body.email;
+        if (body.password) userAcc.password = body.password;
+        if (body.current_position) {
+          const roleMap = {
+            'Chủ nhiệm': 'role_chu_nhiem',
+            'Phó Chủ nhiệm Thường trực': 'role_pcn_thuong_truc',
+            'Phó Chủ nhiệm': 'role_pho_chu_nhiem',
+            'Ủy viên Ban Chủ nhiệm': 'role_uy_vien_bcn',
+            'Thư ký': 'role_thu_ky',
+            'Thủ quỹ': 'role_thu_quy',
+            'Thành viên': 'role_thanh_vien',
+            'Cộng tác viên': 'role_cong_tac_vien'
+          };
+          const roleId = roleMap[body.current_position] || 'role_thanh_vien';
+          const roleObj = MOCK_DB.roles.find(r => r.id === roleId);
+          if (roleObj) {
+            userAcc.role_id = roleObj.id;
+            userAcc.role_name = roleObj.name;
+            userAcc.role_level = roleObj.level;
+          }
+        }
       }
       pushToGlobalCloud();
     }
-    return Promise.resolve({ message: 'Cập nhật thông tin thành công!', data: mem });
+    return Promise.resolve({ message: 'Cập nhật thông tin thành viên & đồng bộ thành công!', data: mem });
   }
   if (endpoint.match(/\/members\/[^/]+$/) && method === 'DELETE') {
     const memId = endpoint.split('/').pop();
@@ -339,7 +360,10 @@ async function getMockApiResponse(endpoint, options = {}) {
   if (endpoint.match(/\/members\/[^/]+$/) && method === 'GET') {
     const memId = endpoint.split('/').pop();
     const mem = MOCK_DB.members.find(m => m.id === memId) || MOCK_DB.members[0];
-    return Promise.resolve({ data: { profile: mem, external_positions: [{ position: 'Phó Bí thư Chi Đoàn', organization: 'Chi Đoàn Khoa CNTT - ĐH Bách Khoa' }], position_history: [{ role_id: mem?.current_position || 'Thành viên', start_date: '2025-01-01', end_date: null }] } });
+    if (!mem) return Promise.resolve({ data: null });
+    const ext = mem.external_positions || [{ position: 'Phó Bí thư Chi Đoàn', organization: 'Chi Đoàn Khoa CNTT - ĐH Bách Khoa' }];
+    const hist = mem.position_history || [{ role_id: mem.current_position || 'Thành viên', start_date: '2025-01-01', end_date: 'Hiện tại' }];
+    return Promise.resolve({ data: { profile: mem, external_positions: ext, position_history: hist } });
   }
   if (endpoint === '/api/members' && method === 'POST') {
     const newMem = { id: 'mem_' + Date.now(), ...body, status: 'active' };

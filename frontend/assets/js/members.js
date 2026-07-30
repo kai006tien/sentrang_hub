@@ -212,30 +212,142 @@ async function deleteMember(memberId, memberName) {
   } catch (err) { showToast('Lỗi: ' + err.message, 'error'); }
 }
 
-// === MEMBER DETAIL ===
+// === MEMBER DETAIL (EDITABLE & SYNCHRONIZED) ===
 async function viewMemberDetail(memberId) {
   try {
     const res = await API.get(`/members/${memberId}`);
     const data = res.data || res;
+    if (!data || !data.profile) { showToast('Không tìm thấy hồ sơ thành viên!', 'error'); return; }
+
     const p = data.profile;
-    const ext = data.external_positions || [];
-    const hist = data.position_history || [];
-    showModal('Hồ sơ Chi tiết', `
-      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem;">
-        <div style="width:56px;height:56px;border-radius:50%;background:var(--primary-gradient);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.4rem;">${(p.full_name||'M').charAt(0).toUpperCase()}</div>
-        <div><h3 style="font-size:1.2rem;font-weight:700;margin:0;">${escapeHTML(p.full_name)}</h3>
-        <p style="font-size:0.825rem;color:var(--text-muted);margin:0;">MSTN - MÃ SỐ THANH NIÊN: ${escapeHTML(p.student_id||'N/A')} • ${escapeHTML(p.department||'')}</p></div>
-      </div>
-      <div style="background:var(--bg-main);padding:1rem;border-radius:var(--radius-md);margin-bottom:1rem;border:1px solid var(--border-light);">
-        <h4 style="font-size:0.85rem;font-weight:700;color:var(--primary-700);margin-bottom:0.5rem;">🏢 Chức vụ kiêm nhiệm</h4>
-        ${ext.length ? ext.map(e=>`<div style="font-size:0.85rem;margin-bottom:0.2rem;">• <strong>${escapeHTML(e.position)}</strong> tại <em>${escapeHTML(e.organization)}</em></div>`).join('') : '<div style="font-size:0.85rem;color:var(--text-muted);">Chưa ghi nhận.</div>'}
-      </div>
-      <div style="background:var(--success-bg);padding:1rem;border-radius:var(--radius-md);border:1px solid rgba(0,200,83,0.2);">
-        <h4 style="font-size:0.85rem;font-weight:700;color:#1B5E20;margin-bottom:0.5rem;">⏳ Lịch sử thăng tiến</h4>
-        ${hist.length ? hist.map(h=>`<div style="font-size:0.85rem;margin-bottom:0.2rem;">• <strong>${escapeHTML(h.role_id)}</strong> (${escapeHTML(h.start_date)} → ${h.end_date||'Hiện tại'})</div>`).join('') : '<div style="font-size:0.85rem;color:var(--text-muted);">Đang ở mốc ban đầu.</div>'}
-      </div>
+    const extList = p.external_positions || data.external_positions || [
+      { position: 'Phó Bí thư Chi Đoàn', organization: 'Chi Đoàn Khoa CNTT - ĐH Bách Khoa' }
+    ];
+    const histList = p.position_history || data.position_history || [
+      { role_id: p.current_position || 'Thành viên', start_date: '2025-01-01', end_date: 'Hiện tại' }
+    ];
+
+    const canEdit = isSuperAdmin() || hasPermission('users.update');
+
+    showModal(`📋 Hồ sơ Chi tiết: ${escapeHTML(p.full_name)}`, `
+      <form onsubmit="handleSaveDetailedMemberProfile(event, '${p.id}')">
+        <div style="display:flex;align-items:center;gap:1.25rem;margin-bottom:1.25rem;background:var(--bg-main);padding:1rem;border-radius:var(--radius-lg);border:1px solid var(--border-light);">
+          <div style="width:56px;height:56px;border-radius:50%;background:var(--primary-gradient);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.4rem;flex-shrink:0;">
+            ${(p.full_name||'M').charAt(0).toUpperCase()}
+          </div>
+          <div style="flex:1;">
+            <h3 style="font-size:1.15rem;font-weight:800;margin:0 0 0.2rem;color:var(--text-primary);">${escapeHTML(p.full_name)}</h3>
+            <div style="font-size:0.8rem;color:var(--text-muted);">📧 ${escapeHTML(p.email)}</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;margin-bottom:1rem;">
+          <div>
+            <label style="font-size:0.75rem;font-weight:700;">Họ và tên *</label>
+            <input type="text" id="detail-mem-name" value="${escapeHTML(p.full_name)}" ${canEdit?'':'disabled'} required>
+          </div>
+          <div>
+            <label style="font-size:0.75rem;font-weight:700;">MSTN - MÃ SỐ THANH NIÊN</label>
+            <input type="text" id="detail-mem-student-id" value="${escapeHTML(p.student_id||'')}" ${canEdit?'':'disabled'}>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;margin-bottom:1rem;">
+          <div>
+            <label style="font-size:0.75rem;font-weight:700;">Ban hoạt động</label>
+            <select id="detail-mem-dept" ${canEdit?'':'disabled'}>
+              <option value="Ban Chủ nhiệm" ${p.department==='Ban Chủ nhiệm'?'selected':''}>Ban Chủ nhiệm</option>
+              <option value="Ban Thư ký" ${p.department==='Ban Thư ký'?'selected':''}>Ban Thư ký</option>
+              <option value="Ban Điều hành" ${p.department==='Ban Điều hành'?'selected':''}>Ban Điều hành</option>
+              <option value="Ban Công tác Hoạt động" ${p.department==='Ban Công tác Hoạt động'?'selected':''}>Ban Công tác Hoạt động</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:0.75rem;font-weight:700;">Chức danh & Vai trò chính</label>
+            <select id="detail-mem-pos" ${canEdit?'':'disabled'}>
+              <option value="Chủ nhiệm" ${p.current_position==='Chủ nhiệm'?'selected':''}>Chủ nhiệm</option>
+              <option value="Phó Chủ nhiệm Thường trực" ${p.current_position==='Phó Chủ nhiệm Thường trực'?'selected':''}>Phó Chủ nhiệm Thường trực</option>
+              <option value="Phó Chủ nhiệm" ${p.current_position==='Phó Chủ nhiệm'?'selected':''}>Phó Chủ nhiệm</option>
+              <option value="Ủy viên Ban Chủ nhiệm" ${p.current_position==='Ủy viên Ban Chủ nhiệm'?'selected':''}>Ủy viên Ban Chủ nhiệm</option>
+              <option value="Thư ký" ${p.current_position==='Thư ký'?'selected':''}>Thư ký</option>
+              <option value="Thủ quỹ" ${p.current_position==='Thủ quỹ'?'selected':''}>Thủ quỹ</option>
+              <option value="Thành viên" ${p.current_position==='Thành viên'?'selected':''}>Thành viên</option>
+              <option value="Cộng tác viên" ${p.current_position==='Cộng tác viên'?'selected':''}>Cộng tác viên</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Chức vụ kiêm nhiệm (Editable) -->
+        <div style="background:var(--bg-main);padding:1rem;border-radius:var(--radius-lg);margin-bottom:1rem;border:1px solid var(--border-light);">
+          <h4 style="font-size:0.875rem;font-weight:700;color:var(--primary-700);margin-bottom:0.6rem;">🏢 Chức vụ kiêm nhiệm bên ngoài</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+            <div>
+              <label style="font-size:0.725rem;color:var(--text-muted);">Chức danh kiêm nhiệm</label>
+              <input type="text" id="detail-mem-ext-pos" value="${escapeHTML(extList[0]?.position||'')}" placeholder="Phó Bí thư Chi Đoàn" ${canEdit?'':'disabled'}>
+            </div>
+            <div>
+              <label style="font-size:0.725rem;color:var(--text-muted);">Tổ chức / Đơn vị kiêm nhiệm</label>
+              <input type="text" id="detail-mem-ext-org" value="${escapeHTML(extList[0]?.organization||'')}" placeholder="Chi Đoàn Khoa CNTT" ${canEdit?'':'disabled'}>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lịch sử thăng tiến (Editable) -->
+        <div style="background:var(--success-bg);padding:1rem;border-radius:var(--radius-lg);margin-bottom:1.25rem;border:1px solid rgba(0,200,83,0.2);">
+          <h4 style="font-size:0.875rem;font-weight:700;color:#1B5E20;margin-bottom:0.6rem;">⏳ Lịch sử thăng tiến & Nhiệm kỳ</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;">
+            <div>
+              <label style="font-size:0.725rem;color:var(--text-muted);">Chức danh quá trình</label>
+              <input type="text" id="detail-mem-hist-role" value="${escapeHTML(histList[0]?.role_id||p.current_position||'Thành viên')}" ${canEdit?'':'disabled'}>
+            </div>
+            <div>
+              <label style="font-size:0.725rem;color:var(--text-muted);">Ngày bắt đầu</label>
+              <input type="text" id="detail-mem-hist-start" value="${escapeHTML(histList[0]?.start_date||'2025-01-01')}" ${canEdit?'':'disabled'}>
+            </div>
+            <div>
+              <label style="font-size:0.725rem;color:var(--text-muted);">Ngày kết thúc</label>
+              <input type="text" id="detail-mem-hist-end" value="${escapeHTML(histList[0]?.end_date||'Hiện tại')}" ${canEdit?'':'disabled'}>
+            </div>
+          </div>
+        </div>
+
+        ${canEdit ? `<button type="submit" class="btn btn-primary btn-block">💾 Lưu & Đồng Bộ Hồ Sơ Chi Tiết</button>` : ''}
+      </form>
     `);
   } catch (err) { showToast('Lỗi: ' + err.message, 'error'); }
+}
+
+async function handleSaveDetailedMemberProfile(e, memberId) {
+  e.preventDefault();
+  try {
+    const payload = {
+      full_name: document.getElementById('detail-mem-name').value,
+      student_id: document.getElementById('detail-mem-student-id').value,
+      department: document.getElementById('detail-mem-dept').value,
+      current_position: document.getElementById('detail-mem-pos').value,
+      external_positions: [
+        {
+          position: document.getElementById('detail-mem-ext-pos').value,
+          organization: document.getElementById('detail-mem-ext-org').value
+        }
+      ],
+      position_history: [
+        {
+          role_id: document.getElementById('detail-mem-hist-role').value,
+          start_date: document.getElementById('detail-mem-hist-start').value,
+          end_date: document.getElementById('detail-mem-hist-end').value
+        }
+      ]
+    };
+
+    const res = await API.put(`/members/${memberId}`, payload);
+    showToast(res.message || 'Đã lưu & đồng bộ hồ sơ chi tiết thành công!', 'success');
+    closeModal();
+    if (typeof loadMembersList === 'function') loadMembersList();
+    if (typeof loadOverviewStats === 'function') loadOverviewStats();
+  } catch (err) {
+    showToast('Lỗi: ' + err.message, 'error');
+  }
 }
 
 window.loadMembersList = loadMembersList;
@@ -245,3 +357,4 @@ window.openEditMemberModal = openEditMemberModal;
 window.handleEditMemberSubmit = handleEditMemberSubmit;
 window.deleteMember = deleteMember;
 window.viewMemberDetail = viewMemberDetail;
+window.handleSaveDetailedMemberProfile = handleSaveDetailedMemberProfile;
