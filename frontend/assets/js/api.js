@@ -582,26 +582,19 @@ async function getMockApiResponse(endpoint, options = {}) {
     switch (moduleKey) {
       case 'members':
       case 'users':
-        MOCK_DB.members = [
-          { id: 'mem_1', full_name: 'Nguyễn Văn A', email: 'nguyenvana@gmail.com', student_id: '20260001', generation: 'G2024', department: 'Ban Công tác Hoạt động', current_position: 'Thành viên xuất sắc', status: 'active', total_points: 120, attendance_points: 80, bonus_points: 40, penalty_points: 0 },
-          { id: 'mem_2', full_name: 'Trần Thị B', email: 'tranthib@gmail.com', student_id: '20260002', generation: 'G2025', department: 'Ban Truyền thông', current_position: 'Trưởng Ban Truyền thông', status: 'active', total_points: 155, attendance_points: 100, bonus_points: 55, penalty_points: 0 },
-          { id: 'mem_3', full_name: 'Phạm Hoàng C', email: 'phamhoangc@gmail.com', student_id: '20260003', generation: 'G2023', department: 'Ban Chủ nhiệm', current_position: 'Phó Chủ nhiệm', status: 'active', total_points: 210, attendance_points: 150, bonus_points: 60, penalty_points: 0 }
-        ];
+        MOCK_DB.members = [];
         label = 'Hồ sơ Nhân sự & Thành viên';
         break;
       case 'events':
-        MOCK_DB.events = [
-          { id: 'event_1', title: '🚩 Chiến dịch Mùa Hè Xanh 2026 — Lễ Ra Quân', category: 'Chiến dịch trọng điểm', location: 'Sảnh chính Nhà Văn Hóa Thanh Niên', start_date: '2026-08-01T07:30:00Z', end_date: '2026-08-01T11:30:00Z', max_participants: 150, current_count: 42, points_reward: 15, status: 'active', qr_code: 'EVENT-MHX-2026' },
-          { id: 'event_2', title: '🌸 Sinh hoạt Chuyên đề Sen Trắng Tháng 8/2026', category: 'Sinh hoạt định kỳ', location: 'Phòng Hội thảo B4', start_date: '2026-08-15T14:00:00Z', end_date: '2026-08-15T17:00:00Z', max_participants: 80, current_count: 28, points_reward: 10, status: 'active', qr_code: 'EVENT-SH-082026' }
-        ];
+        MOCK_DB.events = [];
         label = 'Sự kiện & Lịch sử Điểm danh';
         break;
       case 'leaderboard':
         (MOCK_DB.members || []).forEach(m => {
           m.bonus_points = 0;
           m.penalty_points = 0;
-          m.attendance_points = m.attendance_points || 50;
-          m.total_points = m.attendance_points;
+          m.attendance_points = 0;
+          m.total_points = 0;
         });
         label = 'Bảng xếp hạng Điểm thành tích';
         break;
@@ -610,21 +603,15 @@ async function getMockApiResponse(endpoint, options = {}) {
         label = 'Danh sách Giấy chứng nhận';
         break;
       case 'articles':
-        MOCK_DB.articles = [
-          { id: 'art_1', title: '🔥 Khởi động Chuỗi Hoạt động Tình nguyện Mùa Hè Xanh 2026 CLB Sen Trắng', category: 'Tin tức', summary: 'Chào mừng chiến dịch Mùa Hè Xanh 2026 với hàng loạt hoạt động ý nghĩa vì cộng đồng...', content: 'CLB Sen Trắng chính thức khởi động chiến dịch Mùa Hè Xanh 2026...', author_name: 'Ban Truyền thông', status: 'published', view_count: 142, created_at: new Date().toISOString() }
-        ];
+        MOCK_DB.articles = [];
         label = 'Bài viết Truyền thông CMS';
         break;
       case 'quizzes':
-        MOCK_DB.quizzes = [
-          { id: 'quiz_1', title: '📝 Kiểm tra Kiến thức Kỹ năng Tình nguyện Sen Trắng 2026', duration_minutes: 15, question_count: 5, pass_score: 80, status: 'active', questions: [{ id: 'q1', text: 'CLB Sen Trắng được thành lập vào năm nào?', options: ['2018', '2019', '2020', '2021'], correct_option: 1 }] }
-        ];
+        MOCK_DB.quizzes = [];
         label = 'Thi trực tuyến';
         break;
       case 'notifications':
-        MOCK_DB.notifications = [
-          { id: 'noti_welcome', title: '🌸 Chào mừng đến với Sen Trắng Hub v2!', content: 'Hệ thống cổng quản trị nội bộ CLB Thanh niên Tình nguyện Sen Trắng đã sẵn sàng.', type: 'info', target: 'all', created_at: new Date().toISOString(), read_by: [] }
-        ];
+        MOCK_DB.notifications = [];
         label = 'Thông báo Hệ thống';
         break;
       default:
@@ -636,7 +623,7 @@ async function getMockApiResponse(endpoint, options = {}) {
       admin: typeof Auth !== 'undefined' ? (Auth.getUser()?.display_name || 'Admin') : 'Admin',
       action: 'SYSTEM.RESET',
       module: label,
-      detail: `Đã Reset (Đặt lại) dữ liệu phân hệ ${label} về trạng thái mặc định`
+      detail: `Đã Xóa sạch (Reset) toàn bộ dữ liệu phân hệ ${label} về trạng thái trống (Empty)`
     });
 
     pushToGlobalCloud();
