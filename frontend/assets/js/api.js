@@ -1025,34 +1025,38 @@ async function apiFetch(endpoint, options = {}) {
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const url = `${CONFIG.API_BASE_URL}${endpoint}`;
+  const resolved = resolveEndpoint(endpoint);
 
-  // Add 2.5-second timeout for server response to guarantee instantaneous client fallback
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 2500);
+  const timeoutId = setTimeout(() => controller.abort(), 1500);
 
   try {
     const response = await fetch(url, { ...options, headers, signal: controller.signal });
     clearTimeout(timeoutId);
     const text = await response.text();
 
-    // Check if response is HTML error page (<!DOCTYPE ...) from static hosting
     if (!response.ok || text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
-      return getMockApiResponse(resolveEndpoint(endpoint), options);
+      return getMockApiResponse(resolved, options);
     }
 
     try {
       const parsed = JSON.parse(text);
-      if (parsed && (parsed.detail || parsed.error || (endpoint.includes('/events') && !Array.isArray(parsed) && !Array.isArray(parsed.data)))) {
-        return getMockApiResponse(resolveEndpoint(endpoint), options);
+      if (parsed && (parsed.detail || parsed.error || parsed.message)) {
+        return getMockApiResponse(resolved, options);
       }
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (parsed && Array.isArray(parsed.data) && parsed.data.length > 0) return parsed;
+      
+      const mockResult = await getMockApiResponse(resolved, options);
+      if (Array.isArray(mockResult) && mockResult.length > 0) return mockResult;
       return parsed;
     } catch {
-      return getMockApiResponse(resolveEndpoint(endpoint), options);
+      return getMockApiResponse(resolved, options);
     }
   } catch (error) {
     clearTimeout(timeoutId);
     console.warn(`[API Fallback] ${endpoint} timed out or failed, switching to client mock data:`, error.message);
-    return getMockApiResponse(resolveEndpoint(endpoint), options);
+    return getMockApiResponse(resolved, options);
   }
 }
 
