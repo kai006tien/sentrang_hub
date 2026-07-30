@@ -38,6 +38,10 @@ async function loadEventsList() {
 }
 
 function openCreateEventModal() {
+  if (!hasPermission('events.create') && !isSuperAdmin()) {
+    showToast('🔒 Bạn không có quyền tạo sự kiện mới! Vui lòng liên hệ Admin.', 'warning');
+    return;
+  }
   const nowStr = new Date().toISOString().slice(0, 16);
   showModal('Tạo Sự Kiện Mới', `
     <form onsubmit="handleCreateEventSubmit(event)">
@@ -57,6 +61,10 @@ function openCreateEventModal() {
 
 async function handleCreateEventSubmit(e) {
   e.preventDefault();
+  if (!hasPermission('events.create') && !isSuperAdmin()) {
+    showToast('🔒 Bạn không có quyền tạo sự kiện mới!', 'error');
+    return;
+  }
   const dtVal = document.getElementById('evt-date')?.value;
   try {
     const res = await API.post('/events', {

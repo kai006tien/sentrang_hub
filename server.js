@@ -37,20 +37,23 @@ const demoUsers = [
 ];
 
 const demoMembers = [
-  { id: 'mem_001', full_name: 'Nguyễn Văn An', email: 'an.nguyen@sentranghub.vn', student_id: '2026001', generation: 'Gen 12', department: 'Ban Phong trào', current_position: 'Chủ nhiệm', status: 'active', user_id: 'user_001' },
-  { id: 'mem_002', full_name: 'Trần Thị Bình', email: 'binh.tran@sentranghub.vn', student_id: '2026002', generation: 'Gen 12', department: 'Ban Truyền thông', current_position: 'Phó Chủ nhiệm', status: 'active', user_id: 'user_002' },
-  { id: 'mem_003', full_name: 'Lê Hoàng Cường', email: 'cuong.le@sentranghub.vn', student_id: '2026003', generation: 'Gen 11', department: 'Ban Chuyên môn', current_position: 'Trưởng ban', status: 'active', user_id: 'user_003' },
-  { id: 'mem_004', full_name: 'Phạm Minh Đức', email: 'duc.pham@sentranghub.vn', student_id: '2026004', generation: 'Gen 12', department: 'Ban Phong trào', current_position: 'Thành viên', status: 'active', user_id: 'user_004' },
-  { id: 'mem_005', full_name: 'Võ Thị Mai Hương', email: 'huong.vo@sentranghub.vn', student_id: '2026005', generation: 'Gen 11', department: 'Ban Chủ nhiệm', current_position: 'Thư ký', status: 'inactive', user_id: 'user_005' }
+  { id: 'mem_001', full_name: 'Nguyễn Văn An', email: 'an.nguyen@sentranghub.vn', student_id: 'MSTN2026001', department: 'Ban Chủ nhiệm', current_position: 'Chủ nhiệm', status: 'active', user_id: 'user_001' },
+  { id: 'mem_002', full_name: 'Trần Thị Bình', email: 'binh.tran@sentranghub.vn', student_id: 'MSTN2026002', department: 'Ban Chủ nhiệm', current_position: 'Phó Chủ nhiệm Thường trực', status: 'active', user_id: 'user_002' },
+  { id: 'mem_003', full_name: 'Lê Hoàng Cường', email: 'cuong.le@sentranghub.vn', student_id: 'MSTN2026003', department: 'Ban Điều hành', current_position: 'Phó Chủ nhiệm', status: 'active', user_id: 'user_003' },
+  { id: 'mem_004', full_name: 'Phạm Minh Đức', email: 'duc.pham@sentranghub.vn', student_id: 'MSTN2026004', department: 'Ban Thư ký', current_position: 'Thư ký', status: 'active', user_id: 'user_004' },
+  { id: 'mem_005', full_name: 'Võ Thị Mai Hương', email: 'huong.vo@sentranghub.vn', student_id: 'MSTN2026005', department: 'Ban Công tác Hoạt động', current_position: 'Thành viên', status: 'inactive', user_id: 'user_005' }
 ];
 
 const demoRoles = [
   { id: 'role_super_admin', name: 'Super Admin', description: 'Quản trị viên cao nhất, toàn quyền hệ thống', level: 0, permissions: ['*'] },
-  { id: 'role_chu_nhiem', name: 'Chủ nhiệm', description: 'Chủ nhiệm câu lạc bộ', level: 1, permissions: ['users.read', 'users.create', 'events.create', 'articles.create', 'articles.publish', 'quizzes.create', 'certificates.issue'] },
-  { id: 'role_pho_chu_nhiem', name: 'Phó Chủ nhiệm', description: 'Phó Chủ nhiệm câu lạc bộ', level: 2, permissions: ['users.read', 'events.create', 'articles.create', 'articles.publish'] },
-  { id: 'role_thu_quy', name: 'Thủ quỹ', description: 'Quản lý tài chính câu lạc bộ', level: 3, permissions: ['users.read'] },
-  { id: 'role_truong_ban', name: 'Trưởng ban', description: 'Trưởng ban chuyên môn', level: 3, permissions: ['events.create', 'quizzes.create'] },
-  { id: 'role_thanh_vien', name: 'Thành viên', description: 'Thành viên câu lạc bộ', level: 10, permissions: ['quizzes.take'] }
+  { id: 'role_chu_nhiem', name: 'Chủ nhiệm', description: 'Chủ nhiệm câu lạc bộ', level: 1, permissions: ['users.read', 'users.create', 'users.update', 'users.delete', 'roles.manage', 'events.read', 'events.create', 'attendance.manage', 'articles.read', 'articles.create', 'articles.publish', 'quizzes.take', 'quizzes.create', 'certificates.view', 'certificates.issue', 'notifications.create'] },
+  { id: 'role_pcn_thuong_truc', name: 'Phó Chủ nhiệm Thường trực', description: 'Phó Chủ nhiệm Thường trực câu lạc bộ', level: 1, permissions: ['users.read', 'users.create', 'users.update', 'events.read', 'events.create', 'attendance.manage', 'articles.read', 'articles.create', 'articles.publish', 'quizzes.take', 'quizzes.create', 'certificates.view', 'certificates.issue'] },
+  { id: 'role_pho_chu_nhiem', name: 'Phó Chủ nhiệm', description: 'Phó Chủ nhiệm câu lạc bộ', level: 2, permissions: ['users.read', 'events.read', 'events.create', 'attendance.manage', 'articles.read', 'articles.create', 'articles.publish', 'quizzes.take', 'certificates.view'] },
+  { id: 'role_uy_vien_bcn', name: 'Ủy viên Ban Chủ nhiệm', description: 'Ủy viên Ban Chủ nhiệm câu lạc bộ', level: 3, permissions: ['users.read', 'events.read', 'events.create', 'quizzes.take', 'certificates.view'] },
+  { id: 'role_thu_ky', name: 'Thư ký', description: 'Thư ký câu lạc bộ', level: 3, permissions: ['users.read', 'articles.read', 'articles.create', 'notifications.create', 'certificates.view'] },
+  { id: 'role_thu_quy', name: 'Thủ quỹ', description: 'Thủ quỹ quản lý tài chính', level: 3, permissions: ['users.read', 'certificates.view'] },
+  { id: 'role_thanh_vien', name: 'Thành viên', description: 'Thành viên chính thức câu lạc bộ', level: 10, permissions: ['quizzes.take', 'events.read', 'articles.read', 'certificates.view'] },
+  { id: 'role_cong_tac_vien', name: 'Cộng tác viên', description: 'Cộng tác viên câu lạc bộ', level: 10, permissions: ['events.read', 'articles.read'] }
 ];
 
 const demoEvents = [
@@ -60,7 +63,7 @@ const demoEvents = [
 
 const demoArticles = [
   { id: 'article_001', title: 'Sen Trắng — Hành trình 12 năm vì cộng đồng', excerpt: 'Nhìn lại chặng đường 12 năm hình thành và phát triển của CLB.', content: 'CLB Tình nguyện Sen Trắng chính thức thành lập năm 2014 với sứ mệnh kết nối và lan tỏa giá trị tình nguyện đến giới trẻ. Qua 12 năm hoạt động, CLB đã tổ chức hơn 200 chương trình tình nguyện, tiếp cận hơn 50.000 lượt thanh niên trên khắp các tỉnh thành phía Nam.', category: 'tin-tuc', status: 'published', image_url: '', author_name: 'Ban Truyền thông', view_count: 1250, created_at: new Date(Date.now() - 86400000).toISOString() },
-  { id: 'article_002', title: 'Thông báo: Tuyển thành viên Gen 15', excerpt: 'CLB chính thức mở đợt tuyển thành viên Gen 15.', content: 'CLB Thanh niên Tình nguyện Sen Trắng thông báo tuyển thành viên Gen 15 cho nhiệm kỳ 2026–2027. Các bạn sinh viên có đam mê hoạt động tình nguyện, sẵn sàng cống hiến vì cộng đồng, hãy đăng ký tham gia!', category: 'thong-bao', status: 'published', image_url: '', author_name: 'Ban Chủ nhiệm', view_count: 420, created_at: new Date(Date.now() - 3600000).toISOString() }
+  { id: 'article_002', title: 'Thông báo: Tuyển thành viên nhiệm kỳ mới', excerpt: 'CLB chính thức mở đợt tuyển thành viên.', content: 'CLB Thanh niên Tình nguyện Sen Trắng thông báo tuyển thành viên cho nhiệm kỳ 2026–2027.', category: 'thong-bao', status: 'published', image_url: '', author_name: 'Ban Chủ nhiệm', view_count: 420, created_at: new Date(Date.now() - 3600000).toISOString() }
 ];
 
 const demoQuizzes = [
@@ -76,11 +79,11 @@ const demoNotifications = [
 ];
 
 const demoLeaderboard = [
-  { id: 'mem_001', rank: 1, full_name: 'Nguyễn Văn An', generation: 'Gen 12', department: 'Ban Phong trào', total_points: 285 },
-  { id: 'mem_002', rank: 2, full_name: 'Trần Thị Bình', generation: 'Gen 12', department: 'Ban Truyền thông', total_points: 240 },
-  { id: 'mem_003', rank: 3, full_name: 'Lê Hoàng Cường', generation: 'Gen 11', department: 'Ban Chuyên môn', total_points: 195 },
-  { id: 'mem_004', rank: 4, full_name: 'Phạm Minh Đức', generation: 'Gen 12', department: 'Ban Phong trào', total_points: 150 },
-  { id: 'mem_005', rank: 5, full_name: 'Võ Thị Mai Hương', generation: 'Gen 11', department: 'Ban Chủ nhiệm', total_points: 120 }
+  { id: 'mem_001', rank: 1, full_name: 'Nguyễn Văn An', department: 'Ban Chủ nhiệm', total_points: 285 },
+  { id: 'mem_002', rank: 2, full_name: 'Trần Thị Bình', department: 'Ban Chủ nhiệm', total_points: 240 },
+  { id: 'mem_003', rank: 3, full_name: 'Lê Hoàng Cường', department: 'Ban Điều hành', total_points: 195 },
+  { id: 'mem_004', rank: 4, full_name: 'Phạm Minh Đức', department: 'Ban Thư ký', total_points: 150 },
+  { id: 'mem_005', rank: 5, full_name: 'Võ Thị Mai Hương', department: 'Ban Công tác Hoạt động', total_points: 120 }
 ];
 
 const demoCertificates = [];

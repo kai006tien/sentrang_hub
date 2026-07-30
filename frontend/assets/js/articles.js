@@ -41,6 +41,10 @@ async function loadArticlesList() {
 }
 
 function openCreateArticleModal() {
+  if (!hasPermission('articles.create') && !isSuperAdmin()) {
+    showToast('🔒 Bạn không có quyền soạn/xuất bản bài viết mới! Vui lòng liên hệ Admin.', 'warning');
+    return;
+  }
   showModal('Soạn Bài Viết Mới', `
     <form onsubmit="handleCreateArticleSubmit(event)">
       <div style="margin-bottom:0.85rem;"><label>Tiêu đề bài viết *</label><input type="text" id="art-title" required placeholder="Tiêu đề bài viết"></div>
@@ -68,6 +72,10 @@ function previewArticleImage(input) {
 
 async function handleCreateArticleSubmit(e) {
   e.preventDefault();
+  if (!hasPermission('articles.create') && !isSuperAdmin()) {
+    showToast('🔒 Bạn không có quyền soạn/xuất bản bài viết mới!', 'error');
+    return;
+  }
   const imgPreview = document.getElementById('art-image-preview-img');
   const payload = {
     title: document.getElementById('art-title').value,

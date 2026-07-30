@@ -36,19 +36,22 @@ const MOCK_DB = {
     { id: 'user_005', email: 'huong.vo@sentranghub.vn', display_name: 'Võ Thị Mai Hương', role_id: 'role_thanh_vien', role_name: 'Thành viên', role_level: 10, is_active: false, created_at: '2025-06-01T00:00:00Z' }
   ],
   members: [
-    { id: 'mem_001', full_name: 'Nguyễn Văn An', email: 'an.nguyen@sentranghub.vn', student_id: '2026001', generation: 'Gen 12', department: 'Ban Phong trào', current_position: 'Chủ nhiệm', status: 'active', user_id: 'user_001' },
-    { id: 'mem_002', full_name: 'Trần Thị Bình', email: 'binh.tran@sentranghub.vn', student_id: '2026002', generation: 'Gen 12', department: 'Ban Truyền thông', current_position: 'Phó Chủ nhiệm', status: 'active', user_id: 'user_002' },
-    { id: 'mem_003', full_name: 'Lê Hoàng Cường', email: 'cuong.le@sentranghub.vn', student_id: '2026003', generation: 'Gen 11', department: 'Ban Chuyên môn', current_position: 'Trưởng ban', status: 'active', user_id: 'user_003' },
-    { id: 'mem_004', full_name: 'Phạm Minh Đức', email: 'duc.pham@sentranghub.vn', student_id: '2026004', generation: 'Gen 12', department: 'Ban Phong trào', current_position: 'Thành viên', status: 'active', user_id: 'user_004' },
-    { id: 'mem_005', full_name: 'Võ Thị Mai Hương', email: 'huong.vo@sentranghub.vn', student_id: '2026005', generation: 'Gen 11', department: 'Ban Chủ nhiệm', current_position: 'Thư ký', status: 'inactive', user_id: 'user_005' }
+    { id: 'mem_001', full_name: 'Nguyễn Văn An', email: 'an.nguyen@sentranghub.vn', student_id: 'MSTN2026001', department: 'Ban Chủ nhiệm', current_position: 'Chủ nhiệm', status: 'active', user_id: 'user_001' },
+    { id: 'mem_002', full_name: 'Trần Thị Bình', email: 'binh.tran@sentranghub.vn', student_id: 'MSTN2026002', department: 'Ban Chủ nhiệm', current_position: 'Phó Chủ nhiệm Thường trực', status: 'active', user_id: 'user_002' },
+    { id: 'mem_003', full_name: 'Lê Hoàng Cường', email: 'cuong.le@sentranghub.vn', student_id: 'MSTN2026003', department: 'Ban Điều hành', current_position: 'Phó Chủ nhiệm', status: 'active', user_id: 'user_003' },
+    { id: 'mem_004', full_name: 'Phạm Minh Đức', email: 'duc.pham@sentranghub.vn', student_id: 'MSTN2026004', department: 'Ban Thư ký', current_position: 'Thư ký', status: 'active', user_id: 'user_004' },
+    { id: 'mem_005', full_name: 'Võ Thị Mai Hương', email: 'huong.vo@sentranghub.vn', student_id: 'MSTN2026005', department: 'Ban Công tác Hoạt động', current_position: 'Thành viên', status: 'inactive', user_id: 'user_005' }
   ],
   roles: [
     { id: 'role_super_admin', name: 'Super Admin', description: 'Quản trị viên cao nhất, toàn quyền hệ thống', level: 0, permissions: ['*'] },
-    { id: 'role_chu_nhiem', name: 'Chủ nhiệm', description: 'Chủ nhiệm câu lạc bộ', level: 1, permissions: ['users.read', 'users.create', 'events.create', 'articles.create', 'articles.publish', 'quizzes.create', 'certificates.issue'] },
-    { id: 'role_pho_chu_nhiem', name: 'Phó Chủ nhiệm', description: 'Phó Chủ nhiệm câu lạc bộ', level: 2, permissions: ['users.read', 'events.create', 'articles.create', 'articles.publish'] },
-    { id: 'role_thu_quy', name: 'Thủ quỹ', description: 'Quản lý tài chính câu lạc bộ', level: 3, permissions: ['users.read'] },
-    { id: 'role_truong_ban', name: 'Trưởng ban', description: 'Trưởng ban chuyên môn', level: 3, permissions: ['events.create', 'quizzes.create'] },
-    { id: 'role_thanh_vien', name: 'Thành viên', description: 'Thành viên câu lạc bộ', level: 10, permissions: ['quizzes.take'] }
+    { id: 'role_chu_nhiem', name: 'Chủ nhiệm', description: 'Chủ nhiệm câu lạc bộ', level: 1, permissions: ['users.read', 'users.create', 'users.update', 'users.delete', 'roles.manage', 'events.read', 'events.create', 'attendance.manage', 'articles.read', 'articles.create', 'articles.publish', 'quizzes.take', 'quizzes.create', 'certificates.view', 'certificates.issue', 'notifications.create'] },
+    { id: 'role_pcn_thuong_truc', name: 'Phó Chủ nhiệm Thường trực', description: 'Phó Chủ nhiệm Thường trực câu lạc bộ', level: 1, permissions: ['users.read', 'users.create', 'users.update', 'events.read', 'events.create', 'attendance.manage', 'articles.read', 'articles.create', 'articles.publish', 'quizzes.take', 'quizzes.create', 'certificates.view', 'certificates.issue'] },
+    { id: 'role_pho_chu_nhiem', name: 'Phó Chủ nhiệm', description: 'Phó Chủ nhiệm câu lạc bộ', level: 2, permissions: ['users.read', 'events.read', 'events.create', 'attendance.manage', 'articles.read', 'articles.create', 'articles.publish', 'quizzes.take', 'certificates.view'] },
+    { id: 'role_uy_vien_bcn', name: 'Ủy viên Ban Chủ nhiệm', description: 'Ủy viên Ban Chủ nhiệm câu lạc bộ', level: 3, permissions: ['users.read', 'events.read', 'events.create', 'quizzes.take', 'certificates.view'] },
+    { id: 'role_thu_ky', name: 'Thư ký', description: 'Thư ký câu lạc bộ', level: 3, permissions: ['users.read', 'articles.read', 'articles.create', 'notifications.create', 'certificates.view'] },
+    { id: 'role_thu_quy', name: 'Thủ quỹ', description: 'Thủ quỹ quản lý tài chính', level: 3, permissions: ['users.read', 'certificates.view'] },
+    { id: 'role_thanh_vien', name: 'Thành viên', description: 'Thành viên chính thức câu lạc bộ', level: 10, permissions: ['quizzes.take', 'events.read', 'articles.read', 'certificates.view'] },
+    { id: 'role_cong_tac_vien', name: 'Cộng tác viên', description: 'Cộng tác viên câu lạc bộ', level: 10, permissions: ['events.read', 'articles.read'] }
   ],
   events: [
     { id: 'event_001', title: 'Chiến dịch Mùa hè xanh 2026', description: 'Chiến dịch tình nguyện hè tại huyện Cần Giờ.', category: 'volunteer', location: 'Huyện Cần Giờ, TP.HCM', start_date: new Date().toISOString(), max_participants: 50, current_count: 42, base_points: 10, status: 'active' },

@@ -244,6 +244,27 @@ function canManagePermissions() {
   return (typeof isSuperAdmin === 'function' && isSuperAdmin()) || (typeof hasPermission === 'function' && hasPermission('roles.manage'));
 }
 
+const PERMISSION_LABEL_MAP = {
+  '*': 'Toàn quyền hệ thống (*)',
+  'users.read': 'Xem danh sách & hồ sơ thành viên',
+  'users.create': 'Thêm mới thành viên & cấp tài khoản',
+  'users.update': 'Chỉnh sửa thông tin thành viên',
+  'users.delete': 'Xóa thành viên khỏi hệ thống',
+  'roles.manage': 'Quản lý vai trò & phân quyền trực tiếp',
+  'logs.view': 'Xem nhật ký hoạt động hệ thống',
+  'events.read': 'Xem danh sách sự kiện',
+  'events.create': 'Tạo mới & quản lý sự kiện',
+  'attendance.manage': 'Thực hiện điểm danh QR Code',
+  'articles.read': 'Xem tin bài truyền thông',
+  'articles.create': 'Soạn thảo bài viết mới',
+  'articles.publish': 'Duyệt & xuất bản bài viết',
+  'quizzes.take': 'Tham gia thi trắc nghiệm',
+  'quizzes.create': 'Tạo mới & quản lý đề thi',
+  'certificates.view': 'Xem bảng xếp hạng & chứng nhận',
+  'certificates.issue': 'Cấp & cấp lại giấy chứng nhận',
+  'notifications.create': 'Tạo & gửi thông báo hệ thống'
+};
+
 // 1. Roles Grid
 async function loadRolesGrid() {
   const container = document.getElementById('roles-cards-container');
@@ -257,10 +278,18 @@ async function loadRolesGrid() {
     const levelColors = { 0:{bg:'#FFEBEE',border:'#EF5350',text:'#C62828'}, 1:{bg:'#FFF3E0',border:'#FF9800',text:'#E65100'}, 2:{bg:'#E3F2FD',border:'#42A5F5',text:'#0D47A1'}, 3:{bg:'#F3E5F5',border:'#AB47BC',text:'#6A1B9A'}, 10:{bg:'#E8F5E9',border:'#66BB6A',text:'#1B5E20'} };
     container.innerHTML = cachedRoles.map(r => {
       const c = levelColors[r.level] || levelColors[10];
-      const permList = r.permissions.includes('*') ? 'Toàn quyền hệ thống (*)' : r.permissions.join(', ');
+      
+      let permListHTML = '';
+      if (r.permissions.includes('*')) {
+        permListHTML = `<span style="color:#C62828;font-weight:700;">🔑 Toàn quyền hệ thống (*)</span>`;
+      } else {
+        const labels = r.permissions.map(p => PERMISSION_LABEL_MAP[p] || p);
+        permListHTML = labels.map(l => `<div style="font-size:0.775rem;color:var(--text-secondary);margin-top:0.2rem;">• ${escapeHTML(l)}</div>`).join('');
+      }
+
       const actionButton = canEdit
-        ? `<button class="btn btn-secondary btn-sm" style="margin-top:0.5rem;align-self:flex-start;" onclick="openEditRolePermissionsModal('${r.id}')">✏️ Cấu hình quyền vai trò</button>`
-        : `<span style="font-size:0.75rem;color:var(--text-muted);margin-top:0.5rem;display:inline-block;">🔒 Chỉ Admin mới được chỉnh sửa</span>`;
+        ? `<button class="btn btn-secondary btn-sm" style="margin-top:0.75rem;align-self:flex-start;" onclick="openEditRolePermissionsModal('${r.id}')">✏️ Cấu hình quyền vai trò</button>`
+        : `<span style="font-size:0.75rem;color:var(--text-muted);margin-top:0.75rem;display:inline-block;">🔒 Chỉ Admin mới được chỉnh sửa</span>`;
 
       return `<div style="background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:1.25rem;box-shadow:var(--shadow-sm);border-left:4px solid ${c.border};display:flex;flex-direction:column;justify-content:space-between;">
         <div>
@@ -269,7 +298,10 @@ async function loadRolesGrid() {
             <span style="font-size:0.7rem;color:var(--text-muted);font-weight:600;">Level ${r.level}</span>
           </div>
           <p style="font-size:0.825rem;color:var(--text-secondary);margin-bottom:0.75rem;">${escapeHTML(r.description)}</p>
-          <div style="font-size:0.75rem;color:var(--primary-600);font-weight:600;margin-bottom:0.75rem;word-break:break-word;">🔑 Quyền mặc định: ${escapeHTML(permList)}</div>
+          <div style="font-size:0.8rem;font-weight:700;color:var(--primary-700);margin-bottom:0.35rem;">📋 Danh sách chức năng được phép:</div>
+          <div style="background:var(--bg-main);padding:0.6rem;border-radius:var(--radius-md);border:1px solid var(--border-light);max-height:140px;overflow-y:auto;">
+            ${permListHTML}
+          </div>
         </div>
         ${actionButton}
       </div>`;
@@ -456,10 +488,13 @@ function openUserPermissionsModal(userId) {
           <select id="user-perm-role-select" onchange="applyRoleDefaultPermissions(this.value)">
             <option value="role_super_admin" ${u.role_id==='role_super_admin'?'selected':''}>Super Admin (Toàn quyền)</option>
             <option value="role_chu_nhiem" ${u.role_id==='role_chu_nhiem'?'selected':''}>Chủ nhiệm</option>
+            <option value="role_pcn_thuong_truc" ${u.role_id==='role_pcn_thuong_truc'?'selected':''}>Phó Chủ nhiệm Thường trực</option>
             <option value="role_pho_chu_nhiem" ${u.role_id==='role_pho_chu_nhiem'?'selected':''}>Phó Chủ nhiệm</option>
-            <option value="role_truong_ban" ${u.role_id==='role_truong_ban'?'selected':''}>Trưởng ban</option>
+            <option value="role_uy_vien_bcn" ${u.role_id==='role_uy_vien_bcn'?'selected':''}>Ủy viên Ban Chủ nhiệm</option>
+            <option value="role_thu_ky" ${u.role_id==='role_thu_ky'?'selected':''}>Thư ký</option>
             <option value="role_thu_quy" ${u.role_id==='role_thu_quy'?'selected':''}>Thủ quỹ</option>
             <option value="role_thanh_vien" ${u.role_id==='role_thanh_vien'?'selected':''}>Thành viên</option>
+            <option value="role_cong_tac_vien" ${u.role_id==='role_cong_tac_vien'?'selected':''}>Cộng tác viên</option>
           </select>
         </div>
         <div style="display:flex;gap:0.5rem;margin-top:1.4rem;">
@@ -491,11 +526,14 @@ function toggleGroupPerms(btn, status) {
 function applyRoleDefaultPermissions(roleId) {
   const roleMap = {
     'role_super_admin': ['*'],
-    'role_chu_nhiem': ['users.read', 'users.create', 'users.update', 'events.read', 'events.create', 'attendance.manage', 'articles.read', 'articles.create', 'articles.publish', 'quizzes.take', 'quizzes.create', 'certificates.view', 'certificates.issue', 'notifications.create'],
+    'role_chu_nhiem': ['users.read', 'users.create', 'users.update', 'users.delete', 'roles.manage', 'events.read', 'events.create', 'attendance.manage', 'articles.read', 'articles.create', 'articles.publish', 'quizzes.take', 'quizzes.create', 'certificates.view', 'certificates.issue', 'notifications.create'],
+    'role_pcn_thuong_truc': ['users.read', 'users.create', 'users.update', 'events.read', 'events.create', 'attendance.manage', 'articles.read', 'articles.create', 'articles.publish', 'quizzes.take', 'quizzes.create', 'certificates.view', 'certificates.issue'],
     'role_pho_chu_nhiem': ['users.read', 'events.read', 'events.create', 'attendance.manage', 'articles.read', 'articles.create', 'articles.publish', 'quizzes.take', 'certificates.view'],
-    'role_truong_ban': ['events.read', 'events.create', 'quizzes.take', 'quizzes.create', 'certificates.view'],
+    'role_uy_vien_bcn': ['users.read', 'events.read', 'events.create', 'quizzes.take', 'certificates.view'],
+    'role_thu_ky': ['users.read', 'articles.read', 'articles.create', 'notifications.create', 'certificates.view'],
     'role_thu_quy': ['users.read', 'certificates.view'],
-    'role_thanh_vien': ['quizzes.take', 'events.read', 'articles.read', 'certificates.view']
+    'role_thanh_vien': ['quizzes.take', 'events.read', 'articles.read', 'certificates.view'],
+    'role_cong_tac_vien': ['events.read', 'articles.read']
   };
 
   const defaultPerms = roleMap[roleId] || ['quizzes.take'];
