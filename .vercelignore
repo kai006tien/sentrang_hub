@@ -1,7 +1,2 @@
-api
-backend
-requirements.txt
-pyproject.toml
-server.js
 supabase
 .env*
