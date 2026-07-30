@@ -8,9 +8,11 @@ document.addEventListener('DOMContentLoaded', () => {
   initUserInfo(currentUser);
   initNavigation();
   initMobileMenu();
-  loadOverviewStats();
-  loadRolesGrid();
-  loadLatestNews();
+
+  const hashView = (window.location.hash || '').replace('#', '').trim();
+  const initialView = (hashView && document.getElementById(`view-${hashView}`)) ? hashView : 'overview';
+  showView(initialView);
+
   updateNotiBadge();
   startRealTimeSyncManager();
 
