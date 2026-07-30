@@ -78,24 +78,37 @@ function getMockApiResponse(endpoint, options = {}) {
 
   // Auth Login
   if (endpoint.includes('/auth/login') && method === 'POST') {
-    const email = body.email || 'admin@sentranghub.vn';
-    const isSuper = (email === 'admin@sentranghub.vn');
-    const user = {
-      id: isSuper ? 'admin_uid' : 'user_' + Date.now(),
-      email: email,
-      display_name: isSuper ? 'Admin Hệ Thống' : (email.split('@')[0] || 'Thành viên'),
-      role_id: isSuper ? 'role_super_admin' : 'role_thanh_vien',
-      role_name: isSuper ? 'Super Admin' : 'Thành viên',
-      role_level: isSuper ? 0 : 10,
-      is_active: true,
-      permissions: isSuper ? ['*'] : ['quizzes.take', 'events.create', 'articles.create'],
-      created_at: new Date().toISOString()
-    };
+    const email = body.email;
+    const password = body.password;
+    const user = MOCK_DB.users.find(u => u.email === email);
+
+    if (!user) {
+      return Promise.reject(new Error('Tài khoản không tồn tại trong hệ thống!'));
+    }
+
+    if (user.is_active === false) {
+      return Promise.reject(new Error('Tài khoản này đã bị khóa hoặc ngưng hoạt động!'));
+    }
+
+    if (user.password && password && user.password !== password) {
+      return Promise.reject(new Error('Mật khẩu không chính xác!'));
+    }
+
     return Promise.resolve({
-      access_token: 'demo_token_' + Date.now(),
+      access_token: 'demo_token_' + user.id + '_' + Date.now(),
       refresh_token: 'demo_refresh_' + Date.now(),
       expires_in: 86400,
-      user: user
+      user: {
+        id: user.id,
+        email: user.email,
+        display_name: user.display_name,
+        role_id: user.role_id,
+        role_name: user.role_name,
+        role_level: user.role_level,
+        is_active: user.is_active,
+        permissions: user.permissions || [],
+        created_at: user.created_at
+      }
     });
   }
 
