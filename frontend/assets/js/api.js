@@ -28,7 +28,7 @@ function showToast(message, type = 'success', duration = 3500) {
 // =====================================================================
 const MOCK_DB = {
   users: [
-    { id: 'admin_uid', email: 'admin@sentranghub.vn', display_name: 'Admin Hệ Thống', role_id: 'role_super_admin', role_name: 'Super Admin', role_level: 0, is_active: true, created_at: '2026-01-01T00:00:00Z' }
+    { id: 'admin_uid', email: 'admin@sentranghub.vn', password: 'SenTrang@2026!', display_name: 'Admin Hệ Thống', role_id: 'role_super_admin', role_name: 'Super Admin', role_level: 0, is_active: true, permissions: ['*'], created_at: '2026-01-01T00:00:00Z' }
   ],
   members: [],
   roles: [
@@ -50,6 +50,49 @@ const MOCK_DB = {
   certificates: [],
   logs: []
 };
+
+function loadMockDbFromStorage() {
+  try {
+    const savedUsers = localStorage.getItem('sentrang_db_users');
+    if (savedUsers) {
+      const parsed = JSON.parse(savedUsers);
+      if (Array.isArray(parsed) && parsed.length > 0) MOCK_DB.users = parsed;
+    }
+    const savedMembers = localStorage.getItem('sentrang_db_members');
+    if (savedMembers) {
+      const parsed = JSON.parse(savedMembers);
+      if (Array.isArray(parsed)) MOCK_DB.members = parsed;
+    }
+    const savedEvents = localStorage.getItem('sentrang_db_events');
+    if (savedEvents) {
+      const parsed = JSON.parse(savedEvents);
+      if (Array.isArray(parsed)) MOCK_DB.events = parsed;
+    }
+    const savedArticles = localStorage.getItem('sentrang_db_articles');
+    if (savedArticles) {
+      const parsed = JSON.parse(savedArticles);
+      if (Array.isArray(parsed)) MOCK_DB.articles = parsed;
+    }
+    const savedCerts = localStorage.getItem('sentrang_db_certificates');
+    if (savedCerts) {
+      const parsed = JSON.parse(savedCerts);
+      if (Array.isArray(parsed)) MOCK_DB.certificates = parsed;
+    }
+  } catch (e) {}
+}
+
+function saveMockDbToStorage() {
+  try {
+    localStorage.setItem('sentrang_db_users', JSON.stringify(MOCK_DB.users));
+    localStorage.setItem('sentrang_db_members', JSON.stringify(MOCK_DB.members));
+    localStorage.setItem('sentrang_db_events', JSON.stringify(MOCK_DB.events));
+    localStorage.setItem('sentrang_db_articles', JSON.stringify(MOCK_DB.articles));
+    localStorage.setItem('sentrang_db_certificates', JSON.stringify(MOCK_DB.certificates));
+  } catch (e) {}
+}
+
+// Initial load from storage
+loadMockDbFromStorage();
 
 function getMockApiResponse(endpoint, options = {}) {
   const method = (options.method || 'GET').toUpperCase();
@@ -129,9 +172,24 @@ function getMockApiResponse(endpoint, options = {}) {
 
   // Users
   if (endpoint.includes('/users/create-account') && method === 'POST') {
-    const newUser = { id: 'user_' + Date.now(), ...body, permissions: ['quizzes.take'], is_active: true, created_at: new Date().toISOString() };
+    const roleId = body.role_id || 'role_thanh_vien';
+    const role = MOCK_DB.roles.find(r => r.id === roleId) || MOCK_DB.roles[7];
+    const newUser = {
+      id: 'user_' + Date.now(),
+      email: body.email,
+      password: body.password || 'User@2026!',
+      display_name: body.display_name || body.email.split('@')[0],
+      role_id: role.id,
+      role_name: role.name,
+      role_level: role.level,
+      is_active: true,
+      permissions: [...role.permissions],
+      created_at: new Date().toISOString()
+    };
+    MOCK_DB.users = MOCK_DB.users.filter(u => u.email !== body.email);
     MOCK_DB.users.push(newUser);
-    return Promise.resolve({ message: `Tạo tài khoản "${body.display_name}" thành công!`, data: newUser });
+    saveMockDbToStorage();
+    return Promise.resolve({ message: `Tạo tài khoản "${newUser.display_name}" thành công!`, data: newUser });
   }
   if (endpoint.includes('/users/') && endpoint.includes('/permissions') && method === 'PUT') {
     if (typeof isSuperAdmin === 'function' && !isSuperAdmin() && typeof hasPermission === 'function' && !hasPermission('roles.manage')) {
@@ -145,6 +203,7 @@ function getMockApiResponse(endpoint, options = {}) {
         if (role) { user.role_id = role.id; user.role_name = role.name; user.role_level = role.level; }
       }
       if (Array.isArray(body.permissions)) user.permissions = body.permissions;
+      saveMockDbToStorage();
       MOCK_DB.logs.unshift({ timestamp: new Date().toLocaleString('vi-VN'), admin: 'Super Admin', action: 'USER.PERM_UPDATE', module: 'Phân quyền', detail: `Phân quyền trực tiếp cho ${user.display_name} (${user.permissions.length} quyền)` });
     }
     return Promise.resolve({ message: `Đã lưu phân quyền trực tiếp cho ${user ? user.display_name : 'User'}!`, data: user });
@@ -155,7 +214,7 @@ function getMockApiResponse(endpoint, options = {}) {
     }
     const userId = endpoint.split('/')[3];
     const user = MOCK_DB.users.find(u => u.id === userId);
-    if (user) { user.role_id = body.role_id; }
+    if (user) { user.role_id = body.role_id; saveMockDbToStorage(); }
     return Promise.resolve({ message: 'Cập nhật vai trò thành công!' });
   }
   if (endpoint.startsWith('/api/users')) return Promise.resolve(MOCK_DB.users);
@@ -191,23 +250,35 @@ function getMockApiResponse(endpoint, options = {}) {
   if (endpoint.match(/\/members\/[^/]+$/) && method === 'PUT') {
     const memId = endpoint.split('/').pop();
     const mem = MOCK_DB.members.find(m => m.id === memId);
-    if (mem) Object.assign(mem, body);
+    if (mem) {
+      Object.assign(mem, body);
+      if (body.password) {
+        const userAcc = MOCK_DB.users.find(u => u.email === mem.email);
+        if (userAcc) userAcc.password = body.password;
+      }
+      saveMockDbToStorage();
+    }
     return Promise.resolve({ message: 'Cập nhật thông tin thành công!', data: mem });
   }
   if (endpoint.match(/\/members\/[^/]+$/) && method === 'DELETE') {
     const memId = endpoint.split('/').pop();
-    const idx = MOCK_DB.members.findIndex(m => m.id === memId);
-    if (idx !== -1) MOCK_DB.members.splice(idx, 1);
+    const mem = MOCK_DB.members.find(m => m.id === memId);
+    if (mem) {
+      MOCK_DB.users = MOCK_DB.users.filter(u => u.email !== mem.email);
+      MOCK_DB.members = MOCK_DB.members.filter(m => m.id !== memId);
+      saveMockDbToStorage();
+    }
     return Promise.resolve({ message: 'Xóa thành viên thành công!' });
   }
   if (endpoint.match(/\/members\/[^/]+$/) && method === 'GET') {
     const memId = endpoint.split('/').pop();
     const mem = MOCK_DB.members.find(m => m.id === memId) || MOCK_DB.members[0];
-    return Promise.resolve({ data: { profile: mem, external_positions: [{ position: 'Phó Bí thư Chi Đoàn', organization: 'Chi Đoàn Khoa CNTT - ĐH Bách Khoa' }], position_history: [{ role_id: mem.current_position, start_date: '2025-01-01', end_date: null }] } });
+    return Promise.resolve({ data: { profile: mem, external_positions: [{ position: 'Phó Bí thư Chi Đoàn', organization: 'Chi Đoàn Khoa CNTT - ĐH Bách Khoa' }], position_history: [{ role_id: mem?.current_position || 'Thành viên', start_date: '2025-01-01', end_date: null }] } });
   }
   if (endpoint === '/api/members' && method === 'POST') {
     const newMem = { id: 'mem_' + Date.now(), ...body, status: 'active' };
     MOCK_DB.members.push(newMem);
+    saveMockDbToStorage();
     return Promise.resolve({ message: 'Tạo thành viên mới thành công!', data: newMem });
   }
   if (endpoint.startsWith('/api/members')) return Promise.resolve({ data: MOCK_DB.members });
