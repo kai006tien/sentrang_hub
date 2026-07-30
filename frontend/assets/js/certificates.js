@@ -1,6 +1,25 @@
-/**
- * Sen Trắng Hub v2 — Certificates & Leaderboard Module (Permission-gated)
- */
+let selectedLeaderboardYear = '2026';
+let selectedLeaderboardCampaign = 'all'; // 'all', 'xuan_tinh_nguyen', 'thang_thanh_nien', 'he_tinh_nguyen', 'dong_tinh_nguyen'
+
+function getCampaignFromDate(dateStr) {
+  const d = dateStr ? new Date(dateStr) : new Date();
+  const m = d.getMonth() + 1; // 1 to 12
+  if (m >= 1 && m <= 2) return 'xuan_tinh_nguyen';
+  if (m >= 3 && m <= 4) return 'thang_thanh_nien';
+  if (m >= 5 && m <= 9) return 'he_tinh_nguyen';
+  if (m >= 10 && m <= 12) return 'dong_tinh_nguyen';
+  return 'all';
+}
+
+function changeLeaderboardYear(year) {
+  selectedLeaderboardYear = year.toString();
+  loadLeaderboard();
+}
+
+function changeLeaderboardCampaign(campaign) {
+  selectedLeaderboardCampaign = campaign;
+  loadLeaderboard();
+}
 
 async function loadLeaderboard() {
   const container = document.getElementById('leaderboard-container');
@@ -18,23 +37,80 @@ async function loadLeaderboard() {
   container.innerHTML = '<div class="text-center">Đang tải...</div>';
   try {
     const res = await apiFetch('/api/certificates/leaderboard');
-    const list = res.data || (Array.isArray(res) ? res : []);
-    if (list.length === 0) { container.innerHTML = '<div class="text-center">Chưa có dữ liệu.</div>'; return; }
+    const rawList = res.data || (Array.isArray(res) ? res : []);
+    const years = res.years || ['2026', '2025', '2027'];
+    if (!years.includes(selectedLeaderboardYear)) selectedLeaderboardYear = years[0] || '2026';
+
+    // Auto-calculate points per member based on activity dates & selected Campaign/Year
+    const processedList = rawList.map(m => {
+      let filteredAtt = 0;
+      let filteredBonus = 0;
+      let filteredPenalty = 0;
+      let filteredTotal = 0;
+
+      const history = m.points_history || [];
+      const matchingEntries = history.filter(entry => {
+        const eDate = entry.date ? new Date(entry.date) : new Date();
+        const entryYear = eDate.getFullYear().toString();
+        if (entryYear !== selectedLeaderboardYear) return false;
+        if (selectedLeaderboardCampaign === 'all') return true;
+        const entryCamp = getCampaignFromDate(entry.date);
+        return entryCamp === selectedLeaderboardCampaign;
+      });
+
+      if (history.length > 0) {
+        matchingEntries.forEach(e => {
+          const pts = e.points || 0;
+          if (e.type === 'penalty' || pts < 0) {
+            filteredPenalty += Math.abs(pts);
+          } else if (e.type === 'bonus') {
+            filteredBonus += Math.abs(pts);
+          } else {
+            filteredAtt += Math.abs(pts);
+          }
+        });
+        filteredTotal = Math.max(0, filteredAtt + filteredBonus - filteredPenalty);
+      } else {
+        // Fallback baseline for initial data
+        if (selectedLeaderboardYear === '2026' && selectedLeaderboardCampaign === 'all') {
+          filteredAtt = m.attendance_points || 0;
+          filteredBonus = m.bonus_points || 0;
+          filteredPenalty = m.penalty_points || 0;
+          filteredTotal = m.total_points || (filteredAtt + filteredBonus - filteredPenalty);
+        }
+      }
+
+      return {
+        ...m,
+        calc_total: filteredTotal,
+        calc_att: filteredAtt,
+        calc_bonus: filteredBonus,
+        calc_penalty: filteredPenalty
+      };
+    });
+
+    processedList.sort((a, b) => b.calc_total - a.calc_total);
+    processedList.forEach((m, idx) => { m.rank = idx + 1; });
+
+    if (processedList.length === 0) {
+      container.innerHTML = '<div class="text-center" style="padding:2.5rem;color:var(--text-muted);">Chưa có dữ liệu điểm cho năm này.</div>';
+      return;
+    }
 
     // 1. Calculate Achievement Point Statistics
-    const totalClubPoints = list.reduce((acc, m) => acc + (m.total_points || 0), 0);
-    const avgPoints = Math.round(totalClubPoints / (list.length || 1));
+    const totalClubPoints = processedList.reduce((acc, m) => acc + (m.calc_total || 0), 0);
+    const avgPoints = Math.round(totalClubPoints / (processedList.length || 1));
 
     const officialDepts = ['Ban Chủ nhiệm', 'Ban Thư ký', 'Ban Điều hành', 'Ban Công tác Hoạt động'];
     const deptMap = {};
     officialDepts.forEach(d => { deptMap[d] = 0; });
 
-    list.forEach(m => {
+    processedList.forEach(m => {
       const d = m.department || 'Ban Điều hành';
       if (deptMap[d] !== undefined) {
-        deptMap[d] += (m.total_points || 0);
+        deptMap[d] += (m.calc_total || 0);
       } else {
-        deptMap['Ban Điều hành'] += (m.total_points || 0);
+        deptMap['Ban Điều hành'] += (m.calc_total || 0);
       }
     });
 
@@ -71,10 +147,33 @@ async function loadLeaderboard() {
       `;
     }).join('');
 
+    const controlsHTML = `
+      <div style="background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-xl);padding:1rem 1.25rem;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+          <label style="font-weight:700;font-size:0.9rem;color:var(--primary-700);">🗓️ Chọn Năm Hoạt Động:</label>
+          <select id="leaderboard-year-select" onchange="changeLeaderboardYear(this.value)" style="padding:0.45rem 0.85rem;border-radius:var(--radius-md);border:1.5px solid var(--primary-600);font-weight:700;color:var(--primary-700);background:var(--bg-card);">
+            ${years.map(y => `<option value="${y}" ${y === selectedLeaderboardYear ? 'selected' : ''}>Năm Hoạt Động ${y}</option>`).join('')}
+          </select>
+          ${canManage ? `<button class="btn btn-secondary btn-sm" onclick="openCreateYearModal()">+ Tạo năm mới</button>` : ''}
+        </div>
+        <div style="font-size:0.8rem;color:var(--text-muted);">
+          ⚡ Tự động thống kê dựa theo ngày điểm danh diễn ra hoạt động
+        </div>
+      </div>
+
+      <div style="display:flex;gap:0.5rem;overflow-x:auto;padding-bottom:0.5rem;margin-bottom:1.25rem;">
+        <button class="btn ${selectedLeaderboardCampaign === 'all' ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="changeLeaderboardCampaign('all')">🏆 Tổng kết năm (12 Tháng)</button>
+        <button class="btn ${selectedLeaderboardCampaign === 'xuan_tinh_nguyen' ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="changeLeaderboardCampaign('xuan_tinh_nguyen')">🌸 Xuân Tình Nguyện (Tháng 1-2)</button>
+        <button class="btn ${selectedLeaderboardCampaign === 'thang_thanh_nien' ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="changeLeaderboardCampaign('thang_thanh_nien')">⚡ Tháng Thanh Niên (Tháng 3-4)</button>
+        <button class="btn ${selectedLeaderboardCampaign === 'he_tinh_nguyen' ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="changeLeaderboardCampaign('he_tinh_nguyen')">☀️ Hè Tình Nguyện (Tháng 5-9)</button>
+        <button class="btn ${selectedLeaderboardCampaign === 'dong_tinh_nguyen' ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="changeLeaderboardCampaign('dong_tinh_nguyen')">❄️ Đông Tình Nguyện (Tháng 10-12)</button>
+      </div>
+    `;
+
     const statsHTML = `
       <div style="background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-xl);padding:1.25rem;margin-bottom:1.5rem;box-shadow:var(--shadow-sm);">
         <h3 style="font-size:1rem;font-weight:700;color:var(--primary-700);margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;">
-          📊 Thống kê Điểm Thành tích Theo Ban
+          📊 Thống kê Điểm Thành tích Theo Ban (${selectedLeaderboardYear})
         </h3>
         <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:1rem;margin-bottom:1.25rem;">
           <div style="background:var(--bg-main);padding:0.85rem;border-radius:var(--radius-lg);border:1px solid var(--border-light);">
@@ -100,8 +199,8 @@ async function loadLeaderboard() {
     const medals = ['🥇','🥈','🥉'];
     const tableHTML = `
       <div class="table-responsive"><table class="data-table">
-        <thead><tr><th>Hạng</th><th>Thành viên</th><th>Ban hoạt động</th><th>Điểm thành tích</th><th>Hành động</th></tr></thead>
-        <tbody>${list.map(m => `
+        <thead><tr><th>Hạng</th><th>Thành viên</th><th>Ban hoạt động</th><th>Điểm thành tích (${selectedLeaderboardYear})</th><th>Hành động</th></tr></thead>
+        <tbody>${processedList.map(m => `
           <tr>
             <td><span style="font-size:1.5rem;">${medals[m.rank-1]||m.rank}</span></td>
             <td>
@@ -110,8 +209,8 @@ async function loadLeaderboard() {
             </td>
             <td><span style="font-size:0.825rem;color:var(--text-muted);">${escapeHTML(m.department || 'Ban Điều hành')}</span></td>
             <td>
-              <span style="font-weight:800;color:var(--primary-700);font-size:1.1rem;">${m.total_points||0}</span> ĐTT
-              <div style="font-size:0.72rem;color:var(--text-muted);">Điểm danh: ${m.attendance_points||0} | Thưởng: +${m.bonus_points||0} | Phạt: -${m.penalty_points||0}</div>
+              <span style="font-weight:800;color:var(--primary-700);font-size:1.1rem;">${m.calc_total||0}</span> ĐTT
+              <div style="font-size:0.72rem;color:var(--text-muted);">Điểm danh: ${m.calc_att||0} | Thưởng: +${m.calc_bonus||0} | Phạt: -${m.calc_penalty||0}</div>
             </td>
             <td>
               <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
@@ -125,7 +224,7 @@ async function loadLeaderboard() {
         `).join('')}</tbody>
       </table></div>`;
 
-    container.innerHTML = statsHTML + tableHTML;
+    container.innerHTML = controlsHTML + statsHTML + tableHTML;
   } catch (err) { container.innerHTML = `<div class="text-center text-danger">Lỗi: ${escapeHTML(err.message)}</div>`; }
 }
 
@@ -380,6 +479,30 @@ async function loadCertificatesList() {
   }
 }
 
+function openCreateYearModal() {
+  showModal('🗓️ Tạo Năm Hoạt Động Mới', `
+    <form onsubmit="handleCreateYearSubmit(event)">
+      <div style="margin-bottom:1.25rem;">
+        <label style="display:block;font-size:0.85rem;font-weight:700;margin-bottom:0.35rem;">Nhập Năm Hoạt Động *</label>
+        <input type="number" id="new-year-input" required min="2020" max="2035" value="${new Date().getFullYear() + 1}" style="width:100%;padding:0.65rem;border-radius:var(--radius-md);border:1px solid var(--border-light);">
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">🗓️ Tạo Năm Hoạt Động</button>
+    </form>
+  `);
+}
+
+async function handleCreateYearSubmit(e) {
+  e.preventDefault();
+  const yearVal = document.getElementById('new-year-input')?.value;
+  try {
+    const res = await API.post('/years', { year: yearVal });
+    showToast(res.message || `Đã thêm năm hoạt động ${yearVal}!`, 'success');
+    selectedLeaderboardYear = yearVal.toString();
+    closeModal();
+    loadLeaderboard();
+  } catch (err) { showToast('Lỗi: ' + err.message, 'error'); }
+}
+
 window.loadLeaderboard = loadLeaderboard;
 window.loadCertificatesList = loadCertificatesList;
 window.issueCertificate = issueCertificate;
@@ -390,3 +513,7 @@ window.handleCertUserSelectChange = handleCertUserSelectChange;
 window.handleCreateCertSubmit = handleCreateCertSubmit;
 window.openPointsAdjustmentModal = openPointsAdjustmentModal;
 window.handlePointsAdjustmentSubmit = handlePointsAdjustmentSubmit;
+window.changeLeaderboardYear = changeLeaderboardYear;
+window.changeLeaderboardCampaign = changeLeaderboardCampaign;
+window.openCreateYearModal = openCreateYearModal;
+window.handleCreateYearSubmit = handleCreateYearSubmit;

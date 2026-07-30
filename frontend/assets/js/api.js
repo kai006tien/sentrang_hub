@@ -383,9 +383,21 @@ async function getMockApiResponse(endpoint, options = {}) {
 
   // Leaderboard & Certificates
   if (endpoint.includes('/certificates/leaderboard')) {
+    if (!MOCK_DB.years) MOCK_DB.years = ['2026', '2025', '2027'];
     const list = [...(MOCK_DB.members || [])].sort((a, b) => (b.total_points || 0) - (a.total_points || 0));
     list.forEach((m, idx) => { m.rank = idx + 1; });
-    return Promise.resolve({ data: list });
+    return Promise.resolve({ data: list, years: MOCK_DB.years });
+  }
+  if (endpoint === '/api/years' && method === 'POST') {
+    const year = (body.year || '').toString().trim();
+    if (!year || isNaN(year)) return Promise.reject(new Error('Vui lòng nhập năm hợp lệ! (Ví dụ: 2027)'));
+    if (!MOCK_DB.years) MOCK_DB.years = ['2026', '2025', '2027'];
+    if (!MOCK_DB.years.includes(year)) {
+      MOCK_DB.years.unshift(year);
+      MOCK_DB.years.sort((a, b) => b - a);
+      pushToGlobalCloud();
+    }
+    return Promise.resolve({ message: `Đã tạo năm hoạt động ${year} thành công!`, years: MOCK_DB.years });
   }
   if (endpoint === '/api/certificates/points-adjustment' && method === 'POST') {
     const { member_id, type, points, reason } = body;
@@ -402,6 +414,15 @@ async function getMockApiResponse(endpoint, options = {}) {
     } else {
       mem.bonus_points = (mem.bonus_points || 0) + pVal;
     }
+
+    if (!mem.points_history) mem.points_history = [];
+    mem.points_history.unshift({
+      id: 'ph_' + Date.now(),
+      title: (isPenalty ? 'Trừ điểm vi phạm' : 'Cộng điểm thưởng') + ': ' + (reason || 'N/A'),
+      points: pointDelta,
+      type: isPenalty ? 'penalty' : 'bonus',
+      date: new Date().toISOString()
+    });
     
     const actionLabel = isPenalty ? 'TRỪ ĐIỂM VI PHẠM' : 'CỘNG ĐIỂM THÀNH TÍCH';
     MOCK_DB.logs.unshift({
@@ -416,6 +437,8 @@ async function getMockApiResponse(endpoint, options = {}) {
       id: 'noti_' + Date.now(),
       title: `${actionLabel}: ${pointDelta > 0 ? '+' : ''}${pointDelta} ĐTT`,
       content: `Bạn đã được ${isPenalty ? 'trừ' : 'cộng'} ${pVal} điểm thành tích. Lý do: ${reason || 'N/A'}`,
+      type: 'important',
+      target: mem.user_id || mem.id || 'all',
       created_at: new Date().toISOString(),
       read_by: []
     });
@@ -490,10 +513,37 @@ async function getMockApiResponse(endpoint, options = {}) {
 
   // Events
   if (endpoint.includes('/events/') && (endpoint.includes('/attendance') || endpoint.includes('/check-in'))) {
-    return Promise.resolve({ success: true, message: 'Điểm danh QR thành công! +10 Điểm thành tích.' });
+    const eventId = endpoint.split('/')[3];
+    const evt = (MOCK_DB.events || []).find(e => e.id === eventId);
+    if (evt) evt.current_count = (evt.current_count || 0) + 1;
+
+    const memId = body.member_id;
+    let memName = 'Thành viên';
+    if (memId) {
+      const mem = (MOCK_DB.members || []).find(m => m.id === memId || m.student_id === memId || m.email === memId);
+      if (mem) {
+        memName = mem.full_name;
+        const reward = evt ? (evt.points_reward || 10) : 10;
+        mem.attendance_points = (mem.attendance_points || 0) + reward;
+        mem.total_points = (mem.total_points || 0) + reward;
+
+        if (!mem.points_history) mem.points_history = [];
+        mem.points_history.unshift({
+          id: 'ph_' + Date.now(),
+          event_id: evt ? evt.id : null,
+          title: 'Điểm danh: ' + (evt ? evt.title : 'Sự kiện CLB'),
+          points: reward,
+          type: 'attendance',
+          date: evt ? (evt.start_date || new Date().toISOString()) : new Date().toISOString()
+        });
+      }
+    }
+
+    pushToGlobalCloud();
+    return Promise.resolve({ success: true, message: `Điểm danh thành công cho ${memName}! +10 Điểm thành tích.` });
   }
   if (endpoint === '/api/events' && method === 'POST') {
-    const newEvt = { id: 'event_' + Date.now(), ...body, current_count: 0, status: 'active', start_date: new Date().toISOString() };
+    const newEvt = { id: 'event_' + Date.now(), ...body, current_count: 0, status: 'active', start_date: body.start_date || new Date().toISOString() };
     MOCK_DB.events.push(newEvt);
     pushToGlobalCloud();
     return Promise.resolve({ message: 'Tạo sự kiện mới thành công!', data: newEvt });
