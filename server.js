@@ -423,6 +423,13 @@ const server = http.createServer(async (req, res) => {
             return;
           }
           if (req.method === 'POST' && urlPath === '/api/events') {
+            const user = getUserFromToken(req);
+            const canCreate = user && (user.role_id === 'role_super_admin' || user.role_level === 0 || (user.permissions || []).includes('*') || (user.permissions || []).includes('events.create'));
+            if (!canCreate) {
+              res.writeHead(403, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ detail: 'Chỉ Admin và các User được phân quyền "Tạo sự kiện" mới được thực hiện!' }));
+              return;
+            }
             const newEvent = { id: 'event_' + Date.now(), ...parsedBody, current_count: 0, status: 'active', start_date: new Date().toISOString() };
             demoEvents.push(newEvent);
             res.writeHead(201, { 'Content-Type': 'application/json' });
@@ -437,6 +444,13 @@ const server = http.createServer(async (req, res) => {
         // ========== ARTICLES CMS ==========
         if (urlPath.startsWith('/api/articles')) {
           if (req.method === 'POST' && urlPath === '/api/articles') {
+            const user = getUserFromToken(req);
+            const canCreate = user && (user.role_id === 'role_super_admin' || user.role_level === 0 || (user.permissions || []).includes('*') || (user.permissions || []).includes('articles.create'));
+            if (!canCreate) {
+              res.writeHead(403, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ detail: 'Chỉ Admin và các User được phân quyền "Bài viết" mới được thực hiện!' }));
+              return;
+            }
             const newArticle = { id: 'article_' + Date.now(), ...parsedBody, status: 'published', view_count: 0, author_name: parsedBody.author_name || 'Ban Truyền thông', created_at: new Date().toISOString() };
             demoArticles.push(newArticle);
             res.writeHead(201, { 'Content-Type': 'application/json' });

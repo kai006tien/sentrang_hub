@@ -20,15 +20,22 @@ async function loadLeaderboard() {
     const totalClubPoints = list.reduce((acc, m) => acc + (m.total_points || 0), 0);
     const avgPoints = Math.round(totalClubPoints / (list.length || 1));
 
+    const officialDepts = ['Ban Chủ nhiệm', 'Ban Thư ký', 'Ban Điều hành', 'Ban Công tác Hoạt động'];
     const deptMap = {};
+    officialDepts.forEach(d => { deptMap[d] = 0; });
+
     list.forEach(m => {
       const d = m.department || 'Ban Điều hành';
-      deptMap[d] = (deptMap[d] || 0) + (m.total_points || 0);
+      if (deptMap[d] !== undefined) {
+        deptMap[d] += (m.total_points || 0);
+      } else {
+        deptMap['Ban Điều hành'] += (m.total_points || 0);
+      }
     });
 
     let topDeptName = 'Ban Chủ nhiệm';
-    let maxDeptPts = 0;
-    Object.keys(deptMap).forEach(d => {
+    let maxDeptPts = -1;
+    officialDepts.forEach(d => {
       if (deptMap[d] > maxDeptPts) {
         maxDeptPts = deptMap[d];
         topDeptName = d;
@@ -42,14 +49,14 @@ async function loadLeaderboard() {
       'Ban Công tác Hoạt động': '#66BB6A'
     };
 
-    const deptStatBars = Object.keys(deptMap).map(dept => {
+    const deptStatBars = officialDepts.map(dept => {
       const pts = deptMap[dept];
       const pct = Math.min(100, Math.round((pts / (totalClubPoints || 1)) * 100));
       const color = deptColors[dept] || '#42A5F5';
       return `
         <div>
           <div style="display:flex;justify-content:space-between;font-size:0.825rem;font-weight:600;margin-bottom:0.25rem;">
-            <span>${escapeHTML(dept)}</span>
+            <span>🏢 ${escapeHTML(dept)}</span>
             <span style="color:var(--primary-700);">${pts} ĐTT (${pct}%)</span>
           </div>
           <div style="background:var(--bg-main);height:8px;border-radius:var(--radius-full);overflow:hidden;">
