@@ -270,9 +270,103 @@
           <div class="card-panel">
             <div class="panel-header">
               <h3 class="panel-title">📅 Quản lý Sự kiện & Điểm danh QR</h3>
-              <div id="events-action-buttons"></div>
+              <div id="events-action-buttons">
+                <button class="btn btn-primary btn-sm" onclick="openCreateEventModal()">+ Tạo sự kiện</button>
+                <button class="btn btn-danger btn-sm" onclick="openResetModuleModal('events')">🔄 Reset Sự kiện</button>
+              </div>
             </div>
-            <div id="events-container"></div>
+            <div id="events-container">
+              <div class="events-list" style="margin-bottom:1.5rem;">
+                <div style="background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-xl);padding:1.25rem;box-shadow:var(--shadow-sm);">
+                  <div style="display:flex;justify-content:space-between;margin-bottom:0.6rem;">
+                    <span style="font-size:0.72rem;padding:0.2rem 0.6rem;background:#FFEBEE;color:#C62828;font-weight:700;border-radius:var(--radius-full);">Tình nguyện</span>
+                    <span style="font-size:0.72rem;color:var(--text-muted);">Mới đây</span>
+                  </div>
+                  <h4 style="font-size:1rem;font-weight:700;margin-bottom:0.35rem;">Chiến dịch Mùa Hè Tình Nguyện 2026</h4>
+                  <p style="font-size:0.825rem;color:var(--text-muted);margin-bottom:0.75rem;">📍 Huyện Hóc Môn, TP.HCM</p>
+                  <div style="background:var(--bg-main);border-radius:var(--radius-full);height:6px;margin-bottom:0.75rem;overflow:hidden;"><div style="background:var(--primary-gradient-light);height:100%;width:24%;border-radius:var(--radius-full);"></div></div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:0.8rem;color:var(--accent-green);font-weight:700;">👥 12/50</span>
+                    <button class="btn btn-secondary btn-sm" onclick="openQrCheckInModal('event_01','Chiến dịch Mùa Hè Tình Nguyện 2026')">📷 Điểm danh</button>
+                  </div>
+                </div>
+                <div style="background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-xl);padding:1.25rem;box-shadow:var(--shadow-sm);">
+                  <div style="display:flex;justify-content:space-between;margin-bottom:0.6rem;">
+                    <span style="font-size:0.72rem;padding:0.2rem 0.6rem;background:#E3F2FD;color:#0D47A1;font-weight:700;border-radius:var(--radius-full);">Đào tạo</span>
+                    <span style="font-size:0.72rem;color:var(--text-muted);">Mới đây</span>
+                  </div>
+                  <h4 style="font-size:1rem;font-weight:700;margin-bottom:0.35rem;">Tập huấn Kỹ năng Đội Nhóm & Sơ cứu</h4>
+                  <p style="font-size:0.825rem;color:var(--text-muted);margin-bottom:0.75rem;">📍 Hội trường B - Bách Khoa</p>
+                  <div style="background:var(--bg-main);border-radius:var(--radius-full);height:6px;margin-bottom:0.75rem;overflow:hidden;"><div style="background:var(--primary-gradient-light);height:100%;width:20%;border-radius:var(--radius-full);"></div></div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:0.8rem;color:var(--accent-green);font-weight:700;">👥 8/40</span>
+                    <button class="btn btn-secondary btn-sm" onclick="openQrCheckInModal('event_02','Tập huấn Kỹ năng Đội Nhóm & Sơ cứu')">📷 Điểm danh</button>
+                  </div>
+                </div>
+                <div style="background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-xl);padding:1.25rem;box-shadow:var(--shadow-sm);">
+                  <div style="display:flex;justify-content:space-between;margin-bottom:0.6rem;">
+                    <span style="font-size:0.72rem;padding:0.2rem 0.6rem;background:#E8F5E9;color:#1B5E20;font-weight:700;border-radius:var(--radius-full);">Sinh hoạt</span>
+                    <span style="font-size:0.72rem;color:var(--text-muted);">Mới đây</span>
+                  </div>
+                  <h4 style="font-size:1rem;font-weight:700;margin-bottom:0.35rem;">Sinh hoạt Định kỳ CLB Tháng 7</h4>
+                  <p style="font-size:0.825rem;color:var(--text-muted);margin-bottom:0.75rem;">📍 Phòng Sinh hoạt Sen Trắng</p>
+                  <div style="background:var(--bg-main);border-radius:var(--radius-full);height:6px;margin-bottom:0.75rem;overflow:hidden;"><div style="background:var(--primary-gradient-light);height:100%;width:25%;border-radius:var(--radius-full);"></div></div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:0.8rem;color:var(--accent-green);font-weight:700;">👥 15/60</span>
+                    <button class="btn btn-secondary btn-sm" onclick="openQrCheckInModal('event_03','Sinh hoạt Định kỳ CLB Tháng 7')">📷 Điểm danh</button>
+                  </div>
+                </div>
+              </div>
+              <div style="margin-top:1.5rem;background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-xl);padding:1.25rem;box-shadow:var(--shadow-sm);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+                  <div>
+                    <h3 style="font-size:1.05rem;font-weight:800;color:var(--primary-700);margin:0;">📊 Bảng Thống Kê Điểm Danh Hoạt Động</h3>
+                    <div style="font-size:0.8rem;color:var(--text-muted);">Theo dõi chi tiết số lượt tham gia và danh sách thành viên đã điểm danh</div>
+                  </div>
+                  <span style="font-size:0.75rem;padding:0.25rem 0.65rem;background:var(--bg-main);border:1px solid var(--border-light);border-radius:var(--radius-full);font-weight:700;color:var(--primary-600);">👤 Admin Hệ Thống</span>
+                </div>
+                <div class="table-responsive">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Tên Sự kiện / Hoạt động</th>
+                        <th>Phân loại</th>
+                        <th>Ngày tổ chức</th>
+                        <th>Địa điểm</th>
+                        <th>Số lượt đã tham gia</th>
+                        <th>Danh sách điểm danh (Admin & Quyền quản lý)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>Chiến dịch Mùa Hè Tình Nguyện 2026</strong></td>
+                        <td><span style="font-size:0.72rem;padding:0.2rem 0.6rem;background:#FFEBEE;color:#C62828;font-weight:700;border-radius:var(--radius-full);">Tình nguyện</span></td>
+                        <td><span style="font-size:0.825rem;color:var(--text-muted);">20/07/2026</span></td>
+                        <td><span style="font-size:0.825rem;color:var(--text-muted);">📍 Huyện Hóc Môn, TP.HCM</span></td>
+                        <td><span style="font-weight:700;color:var(--accent-green);">👥 12 / 50</span></td>
+                        <td><button class="btn btn-secondary btn-sm" onclick="openEventAttendeesModal('event_01','Chiến dịch Mùa Hè Tình Nguyện 2026')">📋 Xem danh sách đã điểm danh (12)</button></td>
+                      </tr>
+                      <tr>
+                        <td><strong>Tập huấn Kỹ năng Đội Nhóm & Sơ cứu</strong></td>
+                        <td><span style="font-size:0.72rem;padding:0.2rem 0.6rem;background:#E3F2FD;color:#0D47A1;font-weight:700;border-radius:var(--radius-full);">Đào tạo</span></td>
+                        <td><span style="font-size:0.825rem;color:var(--text-muted);">25/07/2026</span></td>
+                        <td><span style="font-size:0.825rem;color:var(--text-muted);">📍 Hội trường B - Bách Khoa</span></td>
+                        <td><span style="font-weight:700;color:var(--accent-green);">👥 8 / 40</span></td>
+                        <td><button class="btn btn-secondary btn-sm" onclick="openEventAttendeesModal('event_02','Tập huấn Kỹ năng Đội Nhóm & Sơ cứu')">📋 Xem danh sách đã điểm danh (8)</button></td>
+                      </tr>
+                      <tr>
+                        <td><strong>Sinh hoạt Định kỳ CLB Tháng 7</strong></td>
+                        <td><span style="font-size:0.72rem;padding:0.2rem 0.6rem;background:#E8F5E9;color:#1B5E20;font-weight:700;border-radius:var(--radius-full);">Sinh hoạt</span></td>
+                        <td><span style="font-size:0.825rem;color:var(--text-muted);">30/07/2026</span></td>
+                        <td><span style="font-size:0.825rem;color:var(--text-muted);">📍 Phòng Sinh hoạt Sen Trắng</span></td>
+                        <td><span style="font-weight:700;color:var(--accent-green);">👥 15 / 60</span></td>
+                        <td><button class="btn btn-secondary btn-sm" onclick="openEventAttendeesModal('event_03','Sinh hoạt Định kỳ CLB Tháng 7')">📋 Xem danh sách đã điểm danh (15)</button></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -372,16 +466,16 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 
   <!-- JavaScript Modules -->
-  <script src="assets/js/config.js?v=13.0"></script>
-  <script src="assets/js/api.js?v=13.0"></script>
-  <script src="assets/js/auth.js?v=13.0"></script>
-  <script src="assets/js/members.js?v=13.0"></script>
-  <script src="assets/js/events.js?v=13.0"></script>
-  <script src="assets/js/articles.js?v=13.0"></script>
-  <script src="assets/js/quizzes.js?v=13.0"></script>
-  <script src="assets/js/certificates.js?v=13.0"></script>
-  <script src="assets/js/notifications.js?v=13.0"></script>
-  <script src="assets/js/dashboard.js?v=13.0"></script>
+  <script src="assets/js/config.js?v=14.0"></script>
+  <script src="assets/js/api.js?v=14.0"></script>
+  <script src="assets/js/auth.js?v=14.0"></script>
+  <script src="assets/js/members.js?v=14.0"></script>
+  <script src="assets/js/events.js?v=14.0"></script>
+  <script src="assets/js/articles.js?v=14.0"></script>
+  <script src="assets/js/quizzes.js?v=14.0"></script>
+  <script src="assets/js/certificates.js?v=14.0"></script>
+  <script src="assets/js/notifications.js?v=14.0"></script>
+  <script src="assets/js/dashboard.js?v=14.0"></script>
 
 
 </body>
