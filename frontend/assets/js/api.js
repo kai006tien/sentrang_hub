@@ -51,6 +51,62 @@ const MOCK_DB = {
   logs: []
 };
 
+const GLOBAL_CLOUD_DB_URL = 'https://jsonblob.com/api/jsonBlob/019fb1f2-890d-72b3-ae1d-621f05acd070';
+let isCloudSyncing = false;
+
+async function syncWithGlobalCloud() {
+  if (isCloudSyncing) return;
+  isCloudSyncing = true;
+  try {
+    const res = await fetch(GLOBAL_CLOUD_DB_URL, {
+      headers: { 'Accept': 'application/json' }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && Array.isArray(data.users) && data.users.length > 0) {
+        MOCK_DB.users = data.users;
+        if (Array.isArray(data.members)) MOCK_DB.members = data.members;
+        if (Array.isArray(data.events)) MOCK_DB.events = data.events;
+        if (Array.isArray(data.articles)) MOCK_DB.articles = data.articles;
+        if (Array.isArray(data.notifications)) MOCK_DB.notifications = data.notifications;
+        if (Array.isArray(data.certificates)) MOCK_DB.certificates = data.certificates;
+        saveMockDbToStorage();
+      }
+    }
+  } catch (e) {
+    console.warn('[Global Cloud Sync] Offline fallback to localStorage cache:', e);
+  } finally {
+    isCloudSyncing = false;
+  }
+}
+
+async function pushToGlobalCloud() {
+  saveMockDbToStorage();
+  try {
+    await fetch(GLOBAL_CLOUD_DB_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        users: MOCK_DB.users,
+        members: MOCK_DB.members,
+        events: MOCK_DB.events,
+        articles: MOCK_DB.articles,
+        quizzes: MOCK_DB.quizzes,
+        notifications: MOCK_DB.notifications,
+        leaderboard: MOCK_DB.leaderboard,
+        certificates: MOCK_DB.certificates,
+        logs: MOCK_DB.logs
+      })
+    });
+    console.log('[Global Cloud Sync] Database state pushed to cloud successfully.');
+  } catch (e) {
+    console.warn('[Global Cloud Sync] Push error, cached locally:', e);
+  }
+}
+
 function loadMockDbFromStorage() {
   try {
     const savedUsers = localStorage.getItem('sentrang_db_users');
@@ -91,10 +147,11 @@ function saveMockDbToStorage() {
   } catch (e) {}
 }
 
-// Initial load from storage
+// Initial load from storage and background cloud sync
 loadMockDbFromStorage();
+syncWithGlobalCloud();
 
-function getMockApiResponse(endpoint, options = {}) {
+async function getMockApiResponse(endpoint, options = {}) {
   const method = (options.method || 'GET').toUpperCase();
   let body = {};
   if (options.body) {
@@ -103,6 +160,7 @@ function getMockApiResponse(endpoint, options = {}) {
 
   // Real-Time Sync Endpoint Mock
   if (endpoint.includes('/sync') && method === 'GET') {
+    await syncWithGlobalCloud();
     const user = typeof Auth !== 'undefined' ? Auth.getUser() : null;
     const notis = MOCK_DB.notifications || [];
     const unread = notis.filter(n => !user || !n.read_by || !n.read_by.includes(user.id)).length;
@@ -188,7 +246,7 @@ function getMockApiResponse(endpoint, options = {}) {
     };
     MOCK_DB.users = MOCK_DB.users.filter(u => u.email !== body.email);
     MOCK_DB.users.push(newUser);
-    saveMockDbToStorage();
+    pushToGlobalCloud();
     return Promise.resolve({ message: `Tạo tài khoản "${newUser.display_name}" thành công!`, data: newUser });
   }
   if (endpoint.includes('/users/') && endpoint.includes('/permissions') && method === 'PUT') {
@@ -203,7 +261,7 @@ function getMockApiResponse(endpoint, options = {}) {
         if (role) { user.role_id = role.id; user.role_name = role.name; user.role_level = role.level; }
       }
       if (Array.isArray(body.permissions)) user.permissions = body.permissions;
-      saveMockDbToStorage();
+      pushToGlobalCloud();
       MOCK_DB.logs.unshift({ timestamp: new Date().toLocaleString('vi-VN'), admin: 'Super Admin', action: 'USER.PERM_UPDATE', module: 'Phân quyền', detail: `Phân quyền trực tiếp cho ${user.display_name} (${user.permissions.length} quyền)` });
     }
     return Promise.resolve({ message: `Đã lưu phân quyền trực tiếp cho ${user ? user.display_name : 'User'}!`, data: user });
@@ -214,7 +272,7 @@ function getMockApiResponse(endpoint, options = {}) {
     }
     const userId = endpoint.split('/')[3];
     const user = MOCK_DB.users.find(u => u.id === userId);
-    if (user) { user.role_id = body.role_id; saveMockDbToStorage(); }
+    if (user) { user.role_id = body.role_id; pushToGlobalCloud(); }
     return Promise.resolve({ message: 'Cập nhật vai trò thành công!' });
   }
   if (endpoint.startsWith('/api/users')) return Promise.resolve(MOCK_DB.users);
@@ -227,6 +285,7 @@ function getMockApiResponse(endpoint, options = {}) {
     const roleId = endpoint.split('/').pop();
     const role = MOCK_DB.roles.find(r => r.id === roleId);
     if (role && Array.isArray(body.permissions)) role.permissions = body.permissions;
+    pushToGlobalCloud();
     return Promise.resolve({ message: 'Cập nhật cấu hình vai trò thành công!', data: role });
   }
   if (endpoint === '/api/logs' && method === 'GET') {
@@ -256,7 +315,7 @@ function getMockApiResponse(endpoint, options = {}) {
         const userAcc = MOCK_DB.users.find(u => u.email === mem.email);
         if (userAcc) userAcc.password = body.password;
       }
-      saveMockDbToStorage();
+      pushToGlobalCloud();
     }
     return Promise.resolve({ message: 'Cập nhật thông tin thành công!', data: mem });
   }
@@ -266,7 +325,7 @@ function getMockApiResponse(endpoint, options = {}) {
     if (mem) {
       MOCK_DB.users = MOCK_DB.users.filter(u => u.email !== mem.email);
       MOCK_DB.members = MOCK_DB.members.filter(m => m.id !== memId);
-      saveMockDbToStorage();
+      pushToGlobalCloud();
     }
     return Promise.resolve({ message: 'Xóa thành viên thành công!' });
   }
@@ -278,7 +337,7 @@ function getMockApiResponse(endpoint, options = {}) {
   if (endpoint === '/api/members' && method === 'POST') {
     const newMem = { id: 'mem_' + Date.now(), ...body, status: 'active' };
     MOCK_DB.members.push(newMem);
-    saveMockDbToStorage();
+    pushToGlobalCloud();
     return Promise.resolve({ message: 'Tạo thành viên mới thành công!', data: newMem });
   }
   if (endpoint.startsWith('/api/members')) return Promise.resolve({ data: MOCK_DB.members });
@@ -291,7 +350,10 @@ function getMockApiResponse(endpoint, options = {}) {
     return Promise.resolve({ certificate: { certificate_id: 'CERT-STH-2026-' + Math.floor(1000 + Math.random()*9000), title: 'GIẤY CHỨNG NHẬN THÀNH TÍCH XUẤT SẮC', recipient_name: mem.full_name, generation: mem.generation, department: mem.department, reason: 'Ghi nhận thành tích xuất sắc trong hoạt động tình nguyện vì cộng đồng năm 2026.', total_points: 285, issued_date: new Date().toLocaleDateString('vi-VN'), issued_by: 'Ban Chủ nhiệm CLB Sen Trắng' } });
   }
   if (endpoint === '/api/certificates' && method === 'POST') {
-    return Promise.resolve({ message: 'Cấp chứng nhận thành công!' });
+    const cert = { id: 'cert_' + Date.now(), ...body, issued_date: new Date().toLocaleDateString('vi-VN') };
+    MOCK_DB.certificates.push(cert);
+    pushToGlobalCloud();
+    return Promise.resolve({ message: 'Cấp chứng nhận thành công!', certificate: cert });
   }
 
   // Events
@@ -301,6 +363,7 @@ function getMockApiResponse(endpoint, options = {}) {
   if (endpoint === '/api/events' && method === 'POST') {
     const newEvt = { id: 'event_' + Date.now(), ...body, current_count: 0, status: 'active', start_date: new Date().toISOString() };
     MOCK_DB.events.push(newEvt);
+    pushToGlobalCloud();
     return Promise.resolve({ message: 'Tạo sự kiện mới thành công!', data: newEvt });
   }
   if (endpoint.startsWith('/api/events')) return Promise.resolve(MOCK_DB.events);
