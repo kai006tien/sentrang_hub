@@ -167,14 +167,11 @@ async function handleCreateEventSubmit(e) {
 }
 
 async function openQrCheckInModal(eventId, eventTitle) {
-  const user = typeof Auth !== 'undefined' ? Auth.getUser() : null;
   let members = [];
   try {
     const res = await apiFetch('/api/members');
     members = Array.isArray(res) ? res : (res.data || []);
   } catch {}
-
-  const canManage = hasPermission('events.create') || isSuperAdmin();
 
   const memberOptions = members.map(m => `
     <option value="${m.id}">
@@ -182,104 +179,42 @@ async function openQrCheckInModal(eventId, eventTitle) {
     </option>
   `).join('');
 
-  showModal(`📷 Điểm Danh Sự Kiện: ${escapeHTML(eventTitle)}`, `
-    <div>
-      ${canManage ? `
-        <div style="display:flex;gap:0.5rem;margin-bottom:1rem;border-bottom:1px solid var(--border-light);padding-bottom:0.5rem;">
-          <button id="tab-btn-self" class="btn btn-primary btn-sm" onclick="switchCheckInTab('self')">⚡ Điểm danh cho tôi</button>
-          <button id="tab-btn-manual" class="btn btn-secondary btn-sm" onclick="switchCheckInTab('manual')">📋 Điểm danh cho người khác</button>
-        </div>
-      ` : ''}
-
-      <!-- Tab 1: Self Auto-Account Check-in (Default for all users) -->
-      <div id="checkin-tab-self">
-        <div style="text-align:center;padding:0.5rem;">
-          <div style="background:var(--bg-main);border:1.5px solid var(--primary-300);border-radius:var(--radius-xl);padding:1.25rem;margin-bottom:1.25rem;">
-            <div style="width:58px;height:58px;background:var(--primary-gradient-light);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.75rem;margin:0 auto 0.75rem;">👤</div>
-            <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">Tài khoản điểm danh tự động:</div>
-            <div style="font-size:1.15rem;font-weight:800;color:var(--primary-700);">${escapeHTML(user?.display_name || 'Thành viên')}</div>
-            <div style="font-size:0.825rem;color:var(--text-secondary);">${escapeHTML(user?.email || '')}</div>
-          </div>
-          <button class="btn btn-primary btn-block" style="padding:0.85rem;font-size:1rem;font-weight:700;" onclick="executeSelfCheckIn('${eventId}')">
-            ⚡ BẤM ĐIỂM DANH NGAY (+10 ĐTT)
-          </button>
-        </div>
+  showModal(`📋 Điểm Danh Thành Viên: ${escapeHTML(eventTitle)}`, `
+    <div style="padding:0.25rem 0;">
+      <div style="background:var(--bg-main);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;">
+        <label style="font-size:0.85rem;font-weight:800;color:var(--primary-700);display:block;margin-bottom:0.45rem;">
+          📋 1. Chọn thành viên từ Danh sách CLB:
+        </label>
+        <select id="checkin-manual-member-select" style="width:100%;padding:0.7rem;border-radius:var(--radius-md);border:1.5px solid var(--primary-400);font-weight:600;background:var(--bg-card);">
+          <option value="">-- Chọn thành viên từ danh sách CLB --</option>
+          ${memberOptions}
+        </select>
       </div>
 
-      <!-- Tab 2: Manual Select (For Admin / Authorized User) -->
-      <div id="checkin-tab-manual" style="display:none;">
-        <div style="padding:0.5rem 0;">
-          <div style="margin-bottom:1rem;">
-            <label style="font-size:0.8rem;font-weight:700;display:block;margin-bottom:0.35rem;">Chọn thành viên điểm danh thủ công *</label>
-            <select id="checkin-manual-member-select" style="width:100%;padding:0.65rem;border-radius:var(--radius-md);border:1px solid var(--border-light);">
-              <option value="">-- Chọn thành viên từ danh sách CLB --</option>
-              ${memberOptions}
-            </select>
-          </div>
-          <button class="btn btn-primary btn-block" onclick="executeManualCheckIn('${eventId}')">✅ Xác Nhận Điểm Danh Cho Thành Viên (+10 ĐTT)</button>
-        </div>
+      <div style="text-align:center;font-weight:700;color:var(--text-muted);margin-bottom:1rem;font-size:0.75rem;">— HOẶC —</div>
+
+      <div style="background:var(--bg-main);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1.25rem;">
+        <label style="font-size:0.85rem;font-weight:800;color:var(--primary-700);display:block;margin-bottom:0.45rem;">
+          🔍 2. Nhập Mã MSTN / Email / Tên thành viên:
+        </label>
+        <input type="text" id="checkin-member-id" placeholder="VD: MSTN12345 hoặc email..." style="width:100%;padding:0.65rem;border-radius:var(--radius-md);border:1px solid var(--border-light);">
       </div>
+
+      <button class="btn btn-primary btn-block" style="padding:0.85rem;font-size:0.95rem;font-weight:700;" onclick="executeManualCheckIn('${eventId}')">
+        ✅ XÁC NHẬN ĐIỂM DANH (+10 ĐTT)
+      </button>
     </div>
   `);
 }
 
-function switchCheckInTab(tab) {
-  const selfTab = document.getElementById('checkin-tab-self');
-  const manualTab = document.getElementById('checkin-tab-manual');
-  const selfBtn = document.getElementById('tab-btn-self');
-  const manualBtn = document.getElementById('tab-btn-manual');
-
-  if (tab === 'manual') {
-    if (selfTab) selfTab.style.display = 'none';
-    if (manualTab) manualTab.style.display = 'block';
-    if (selfBtn) selfBtn.className = 'btn btn-secondary btn-sm';
-    if (manualBtn) manualBtn.className = 'btn btn-primary btn-sm';
-  } else {
-    if (selfTab) selfTab.style.display = 'block';
-    if (manualTab) manualTab.style.display = 'none';
-    if (selfBtn) selfBtn.className = 'btn btn-primary btn-sm';
-    if (manualBtn) manualBtn.className = 'btn btn-secondary btn-sm';
-  }
-}
-
-async function executeSelfCheckIn(eventId) {
-  const user = typeof Auth !== 'undefined' ? Auth.getUser() : null;
-  if (!user) { showToast('Vui lòng đăng nhập lại!', 'error'); return; }
-  try {
-    const res = await API.post(`/events/${eventId}/attendance`, {
-      member_id: user.id || user.email,
-      check_in_method: 'one_click_self'
-    });
-    showToast(res.message || 'Điểm danh thành công! +10 Điểm thành tích.', 'success');
-    closeModal();
-    loadEventsList();
-    if (typeof loadOverviewStats === 'function') loadOverviewStats();
-    if (typeof performSyncCheck === 'function') performSyncCheck();
-  } catch (err) {
-    showToast('Lỗi: ' + err.message, 'error');
-  }
-}
-
-async function executeCheckIn(eventId) {
-  const memberId = document.getElementById('checkin-member-id')?.value.trim();
-  if (!memberId) { showToast('Nhập MSTN hoặc ID!', 'warning'); return; }
-  try {
-    const res = await API.post(`/events/${eventId}/attendance`, { member_id: memberId, check_in_method: 'qr_code' });
-    showToast(res.message || 'Check-in thành công!', 'success');
-    closeModal();
-    loadEventsList();
-    if (typeof loadOverviewStats === 'function') loadOverviewStats();
-    if (typeof performSyncCheck === 'function') performSyncCheck();
-  } catch (err) { showToast('Lỗi: ' + err.message, 'error'); }
-}
-
 async function executeManualCheckIn(eventId) {
   const select = document.getElementById('checkin-manual-member-select');
-  const memberId = select?.value;
-  if (!memberId) { showToast('Vui lòng chọn thành viên cần điểm danh!', 'warning'); return; }
+  const input = document.getElementById('checkin-member-id');
+  const memberId = (select?.value || input?.value || '').trim();
+  if (!memberId) { showToast('Vui lòng chọn hoặc nhập tên/MSTN thành viên cần điểm danh!', 'warning'); return; }
   try {
-    const res = await API.post(`/events/${eventId}/attendance`, { member_id: memberId, check_in_method: 'manual' });
-    showToast(res.message || 'Điểm danh thủ công thành công!', 'success');
+    const res = await API.post(`/events/${eventId}/attendance`, { member_id: memberId, check_in_method: 'admin_manual' });
+    showToast(res.message || 'Điểm danh thành công!', 'success');
     closeModal();
     loadEventsList();
     if (typeof loadOverviewStats === 'function') loadOverviewStats();
@@ -291,8 +226,4 @@ window.loadEventsList = loadEventsList;
 window.openCreateEventModal = openCreateEventModal;
 window.handleCreateEventSubmit = handleCreateEventSubmit;
 window.openQrCheckInModal = openQrCheckInModal;
-window.switchCheckInTab = switchCheckInTab;
-window.executeSelfCheckIn = executeSelfCheckIn;
-window.executeCheckIn = executeCheckIn;
-window.executeManualCheckIn = executeManualCheckIn;
 window.executeManualCheckIn = executeManualCheckIn;
