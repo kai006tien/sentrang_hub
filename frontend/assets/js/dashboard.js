@@ -215,10 +215,17 @@ async function openUserProfileModal() {
   } catch {}
 
   const initial = (user.display_name || 'U').charAt(0).toUpperCase();
-  const studentId = memberInfo?.student_id || 'MSTN2026001';
+  const studentId = memberInfo?.student_id || 'Chưa cập nhật';
   const dept = memberInfo?.department || 'Ban Chủ nhiệm';
   const position = memberInfo?.current_position || user.role_name || 'Thành viên';
-  const points = memberInfo?.total_points || 285;
+  const points = memberInfo?.total_points || 0;
+
+  const extList = memberInfo?.external_positions || [
+    { position: 'Phó Bí thư Chi Đoàn', organization: 'Chi Đoàn Khoa CNTT - ĐH Bách Khoa' }
+  ];
+  const histList = memberInfo?.position_history || [
+    { role_id: position, start_date: '2025-01-01', end_date: 'Hiện tại' }
+  ];
 
   const certsHTML = userCerts.length > 0
     ? userCerts.map(c => `
@@ -233,16 +240,17 @@ async function openUserProfileModal() {
     : '<div style="font-size:0.825rem;color:var(--text-muted);">Chưa có giấy chứng nhận nào được ghi nhận.</div>';
 
   showModal('👤 Hồ Sơ Thông Tin Cá Nhân', `
-    <div style="display:flex;align-items:center;gap:1.25rem;margin-bottom:1.5rem;background:var(--bg-main);padding:1.25rem;border-radius:var(--radius-lg);border:1px solid var(--border-light);">
+    <div style="display:flex;align-items:center;gap:1.25rem;margin-bottom:1.25rem;background:var(--bg-main);padding:1.25rem;border-radius:var(--radius-lg);border:1px solid var(--border-light);">
       <div style="width:64px;height:64px;border-radius:50%;background:var(--primary-gradient);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.6rem;flex-shrink:0;">${initial}</div>
-      <div>
+      <div style="flex:1;">
         <h3 style="font-size:1.2rem;font-weight:800;margin:0 0 0.2rem 0;color:var(--text-primary);">${escapeHTML(user.display_name)}</h3>
         <div style="font-size:0.825rem;color:var(--text-muted);margin-bottom:0.4rem;">${escapeHTML(user.email)}</div>
         <span class="badge-role" style="font-size:0.75rem;font-weight:700;">${escapeHTML(user.role_name || 'Thành viên')}</span>
       </div>
+      ${memberInfo ? `<button class="btn btn-secondary btn-sm" onclick="closeModal(); viewMemberDetail('${memberInfo.id}')">✏️ Sửa Hồ Sơ Chi Tiết</button>` : ''}
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;margin-bottom:1rem;">
       <div style="background:var(--bg-card);padding:0.85rem;border-radius:var(--radius-md);border:1px solid var(--border-light);">
         <div style="font-size:0.75rem;color:var(--text-muted);">🆔 MSTN - MÃ SỐ THANH NIÊN</div>
         <div style="font-size:0.95rem;font-weight:700;color:var(--text-primary);margin-top:0.25rem;">${escapeHTML(studentId)}</div>
@@ -253,7 +261,7 @@ async function openUserProfileModal() {
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;margin-bottom:1rem;">
       <div style="background:var(--bg-card);padding:0.85rem;border-radius:var(--radius-md);border:1px solid var(--border-light);">
         <div style="font-size:0.75rem;color:var(--text-muted);">🏛️ Ban hoạt động</div>
         <div style="font-size:0.9rem;font-weight:700;color:var(--text-primary);margin-top:0.25rem;">${escapeHTML(dept)}</div>
@@ -264,9 +272,25 @@ async function openUserProfileModal() {
       </div>
     </div>
 
+    <!-- Chức vụ kiêm nhiệm bên ngoài -->
+    <div style="background:var(--bg-main);padding:0.85rem 1rem;border-radius:var(--radius-md);margin-bottom:1rem;border:1px solid var(--border-light);">
+      <div style="font-size:0.75rem;font-weight:700;color:var(--primary-700);margin-bottom:0.3rem;">🏢 Chức vụ kiêm nhiệm bên ngoài</div>
+      <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);">
+        • <strong>${escapeHTML(extList[0]?.position || 'Chưa ghi nhận')}</strong> ${extList[0]?.organization ? `tại <em>${escapeHTML(extList[0].organization)}</em>` : ''}
+      </div>
+    </div>
+
+    <!-- Lịch sử thăng tiến -->
+    <div style="background:var(--success-bg);padding:0.85rem 1rem;border-radius:var(--radius-md);margin-bottom:1rem;border:1px solid rgba(0,200,83,0.2);">
+      <div style="font-size:0.75rem;font-weight:700;color:#1B5E20;margin-bottom:0.3rem;">⏳ Lịch sử thăng tiến quá trình</div>
+      <div style="font-size:0.85rem;font-weight:600;color:#1B5E20;">
+        • <strong>${escapeHTML(histList[0]?.role_id || position)}</strong> (${escapeHTML(histList[0]?.start_date || '2025-01-01')} → ${escapeHTML(histList[0]?.end_date || 'Hiện tại')})
+      </div>
+    </div>
+
     <div style="margin-bottom:1.25rem;">
       <h4 style="font-size:0.875rem;font-weight:700;color:var(--primary-700);margin-bottom:0.6rem;">🎖️ Giấy chứng nhận đã nhận (${userCerts.length})</h4>
-      <div style="max-height:180px;overflow-y:auto;">
+      <div style="max-height:160px;overflow-y:auto;">
         ${certsHTML}
       </div>
     </div>
