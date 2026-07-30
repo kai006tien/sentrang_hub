@@ -43,14 +43,43 @@ function renderEventsUI(events, allMembers) {
 
     // Helper for safe inline JS parameter
     const attrEscape = (str) => safeEscape(str).replace(/'/g, "\\'");
+
+    // Archive Filter Bar HTML
+    const filterBarHTML = `
+      <div class="archive-filter-bar" style="background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-xl);padding:0.85rem 1.15rem;margin-bottom:1.25rem;box-shadow:var(--shadow-sm);display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;justify-content:space-between;">
+        <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;flex:1;">
+          <div style="display:flex;align-items:center;gap:0.4rem;">
+            <span style="font-size:0.825rem;font-weight:700;color:var(--primary-700);white-space:nowrap;">📁 Lưu trữ Tháng/Năm:</span>
+            <select id="event-filter-month" onchange="filterEventsByArchive()" style="padding:0.4rem 0.65rem;border-radius:var(--radius-md);border:1px solid var(--border-light);font-size:0.825rem;font-weight:600;background:var(--bg-main);">
+              <option value="all">🌐 Tất cả thời gian</option>
+              <option value="2026-07">📅 Tháng 07 / 2026</option>
+              <option value="2026-08">📅 Tháng 08 / 2026</option>
+              <option value="2026-09">📅 Tháng 09 / 2026</option>
+              <option value="archive">📦 Kho Lưu trữ Sự kiện Cũ</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.4rem;">
+            <span style="font-size:0.825rem;font-weight:700;color:var(--primary-700);white-space:nowrap;">📌 Trạng thái:</span>
+            <select id="event-filter-status" onchange="filterEventsByArchive()" style="padding:0.4rem 0.65rem;border-radius:var(--radius-md);border:1px solid var(--border-light);font-size:0.825rem;font-weight:600;background:var(--bg-main);">
+              <option value="all">Tất cả trạng thái</option>
+              <option value="active">🟢 Đang diễn ra</option>
+              <option value="archived">📦 Đã lưu trữ / Đóng</option>
+            </select>
+          </div>
+        </div>
+        <div style="min-width:200px;">
+          <input type="text" id="event-search-input" placeholder="🔍 Tìm kiếm sự kiện..." oninput="filterEventsByArchive()" style="width:100%;padding:0.4rem 0.75rem;border-radius:var(--radius-md);border:1px solid var(--border-light);font-size:0.825rem;">
+        </div>
+      </div>
+    `;
     
     // 1. Render Event Cards
     const cardsHTML = (safeEvents.length === 0)
       ? `
         <div style="grid-column:1/-1;text-align:center;padding:3rem 1rem;background:var(--bg-card);border:2px dashed var(--border-light);border-radius:var(--radius-xl);">
           <div style="font-size:3.5rem;margin-bottom:0.5rem;">📅</div>
-          <h4 style="font-size:1.1rem;font-weight:800;color:var(--text-primary);margin-bottom:0.35rem;">Danh sách Sự kiện đang trống</h4>
-          <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1.25rem;">Hệ thống chưa có sự kiện nào. Bấm nút bên dưới để tạo mới hoặc khôi phục dữ liệu mẫu.</p>
+          <h4 style="font-size:1.1rem;font-weight:800;color:var(--text-primary);margin-bottom:0.35rem;">Không tìm thấy sự kiện phù hợp</h4>
+          <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1.25rem;">Thử thay đổi bộ lọc Tháng/Năm hoặc tạo sự kiện mới bên dưới.</p>
           <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
             ${(checkPerm('events.create') || checkSuperAdmin()) ? `<button class="btn btn-primary btn-sm" onclick="openCreateEventModal()">+ Tạo sự kiện mới</button>` : ''}
             <button class="btn btn-secondary btn-sm" onclick="if(typeof ensureSeedData==='function'){ensureSeedData();}loadEventsList();showToast('Đã nạp dữ liệu sự kiện mẫu!','success');">🔄 Nạp dữ liệu sự kiện mẫu</button>
@@ -68,8 +97,8 @@ function renderEventsUI(events, allMembers) {
 
           return `<div style="background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-xl);padding:1.25rem;box-shadow:var(--shadow-sm);transition:all 0.25s ease;" onmouseenter="this.style.transform='translateY(-2px)'" onmouseleave="this.style.transform='none'">
             <div style="display:flex;justify-content:space-between;margin-bottom:0.6rem;">
-              <span style="font-size:0.72rem;padding:0.2rem 0.6rem;background:${cat.bg};color:${cat.text};font-weight:700;border-radius:var(--radius-full);">${cat.label}</span>
-              <span style="font-size:0.72rem;color:var(--text-muted);">${formatDate(e.start_date, 'Mới đây')}</span>
+              <span style="font-size:0.72rem;padding:0.2rem 0.65rem;background:${cat.bg};color:${cat.text};font-weight:700;border-radius:var(--radius-full);white-space:nowrap;display:inline-block;">${cat.label}</span>
+              <span style="font-size:0.72rem;color:var(--text-muted);white-space:nowrap;">${formatDate(e.start_date, 'Mới đây')}</span>
             </div>
             <h4 style="font-size:1rem;font-weight:700;margin-bottom:0.35rem;">${title}</h4>
             <p style="font-size:0.825rem;color:var(--text-muted);margin-bottom:0.75rem;">📍 ${safeEscape(e.location || 'CLB')}</p>
@@ -120,11 +149,11 @@ function renderEventsUI(events, allMembers) {
             return `
               <tr>
                 <td><strong>${title}</strong></td>
-                <td><span style="font-size:0.72rem;padding:0.2rem 0.6rem;background:${cat.bg};color:${cat.text};font-weight:700;border-radius:var(--radius-full);">${cat.label}</span></td>
-                <td><span style="font-size:0.825rem;color:var(--text-muted);">${dateStr}</span></td>
+                <td><span style="font-size:0.72rem;padding:0.2rem 0.65rem;background:${cat.bg};color:${cat.text};font-weight:700;border-radius:var(--radius-full);white-space:nowrap;display:inline-block;">${cat.label}</span></td>
+                <td><span style="font-size:0.825rem;color:var(--text-muted);white-space:nowrap;">${dateStr}</span></td>
                 <td><span style="font-size:0.825rem;color:var(--text-muted);">📍 ${safeEscape(e.location || 'CLB')}</span></td>
-                <td><span style="font-weight:700;color:var(--accent-green);">👥 ${totalCount} / ${maxCap}</span></td>
-                <td>
+                <td><span style="font-weight:700;color:var(--accent-green);white-space:nowrap;">👥 ${totalCount} / ${maxCap}</span></td>
+                <td style="white-space:nowrap;">
                   <button class="btn btn-secondary btn-sm" onclick="openEventAttendeesModal('${eventId}','${titleAttr}')">
                     📋 Xem danh sách đã điểm danh (${totalCount})
                   </button>
@@ -135,15 +164,15 @@ function renderEventsUI(events, allMembers) {
             return `
               <tr>
                 <td><strong>${title}</strong></td>
-                <td><span style="font-size:0.72rem;padding:0.2rem 0.6rem;background:${cat.bg};color:${cat.text};font-weight:700;border-radius:var(--radius-full);">${cat.label}</span></td>
-                <td><span style="font-size:0.825rem;color:var(--text-muted);">${dateStr}</span></td>
+                <td><span style="font-size:0.72rem;padding:0.2rem 0.65rem;background:${cat.bg};color:${cat.text};font-weight:700;border-radius:var(--radius-full);white-space:nowrap;display:inline-block;">${cat.label}</span></td>
+                <td><span style="font-size:0.825rem;color:var(--text-muted);white-space:nowrap;">${dateStr}</span></td>
                 <td><span style="font-size:0.825rem;color:var(--text-muted);">📍 ${safeEscape(e.location || 'CLB')}</span></td>
-                <td><span style="font-weight:700;color:var(--accent-green);">👥 ${totalCount} / ${maxCap}</span></td>
-                <td>
+                <td><span style="font-weight:700;color:var(--accent-green);white-space:nowrap;">👥 ${totalCount} / ${maxCap}</span></td>
+                <td style="white-space:nowrap;">
                   <div style="display:flex;align-items:center;gap:0.5rem;">
                     ${isAttended 
-                      ? '<span style="color:#2E7D32;font-weight:700;background:#E8F5E9;padding:0.25rem 0.65rem;border-radius:var(--radius-full);font-size:0.775rem;">✅ Đã tham gia (+10 ĐTT)</span>'
-                      : '<span style="color:#C62828;font-weight:600;background:#FFEBEE;padding:0.25rem 0.65rem;border-radius:var(--radius-full);font-size:0.775rem;">⏳ Chưa điểm danh</span>'
+                      ? '<span style="color:#2E7D32;font-weight:700;background:#E8F5E9;padding:0.25rem 0.65rem;border-radius:var(--radius-full);font-size:0.775rem;white-space:nowrap;display:inline-block;">✅ Đã tham gia (+10 ĐTT)</span>'
+                      : '<span style="color:#C62828;font-weight:600;background:#FFEBEE;padding:0.25rem 0.65rem;border-radius:var(--radius-full);font-size:0.775rem;white-space:nowrap;display:inline-block;">⏳ Chưa điểm danh</span>'
                     }
                     <button class="btn btn-secondary btn-sm" style="font-size:0.72rem;padding:0.2rem 0.5rem;" onclick="openEventAttendeesModal('${eventId}','${titleAttr}')">📋 Xem sĩ số</button>
                   </div>
@@ -189,7 +218,7 @@ function renderEventsUI(events, allMembers) {
       ? cardsHTML
       : `<div class="events-list" style="margin-bottom:1.5rem;">${cardsHTML}</div>`;
 
-    container.innerHTML = cardsContainerWrapper + statsTableHTML;
+    container.innerHTML = filterBarHTML + cardsContainerWrapper + statsTableHTML;
   } catch (err) {
     console.error('[renderEventsUI Error]', err);
     container.innerHTML = `
@@ -485,7 +514,48 @@ async function removeEventAttendance(eventId, memberId, memberName) {
   }
 }
 
+function filterEventsByArchive() {
+  const monthVal = document.getElementById('event-filter-month')?.value || 'all';
+  const statusVal = document.getElementById('event-filter-status')?.value || 'all';
+  const searchVal = (document.getElementById('event-search-input')?.value || '').toLowerCase().trim();
+
+  let events = (typeof MOCK_DB !== 'undefined' && Array.isArray(MOCK_DB.events)) ? MOCK_DB.events : [];
+  let members = (typeof MOCK_DB !== 'undefined' && Array.isArray(MOCK_DB.members)) ? MOCK_DB.members : [];
+
+  let filtered = events.filter(e => {
+    if (!e || typeof e !== 'object') return false;
+    
+    // Filter by Month / Year
+    if (monthVal !== 'all') {
+      if (monthVal === 'archive') {
+        if (e.status !== 'archived' && e.status !== 'finished') return false;
+      } else {
+        const dateStr = e.start_date ? new Date(e.start_date).toISOString().slice(0, 7) : '';
+        if (dateStr !== monthVal) return false;
+      }
+    }
+
+    // Filter by Status
+    if (statusVal !== 'all') {
+      if (statusVal === 'active' && e.status === 'archived') return false;
+      if (statusVal === 'archived' && e.status !== 'archived' && e.status !== 'finished') return false;
+    }
+
+    // Search query
+    if (searchVal) {
+      const title = (e.title || '').toLowerCase();
+      const loc = (e.location || '').toLowerCase();
+      if (!title.includes(searchVal) && !loc.includes(searchVal)) return false;
+    }
+
+    return true;
+  });
+
+  renderEventsUI(filtered, members);
+}
+
 window.loadEventsList = loadEventsList;
+window.filterEventsByArchive = filterEventsByArchive;
 window.openCreateEventModal = openCreateEventModal;
 window.handleCreateEventSubmit = handleCreateEventSubmit;
 window.openQrCheckInModal = openQrCheckInModal;

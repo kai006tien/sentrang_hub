@@ -933,12 +933,16 @@ function showModal(title, contentHTML) {
   if (titleEl) titleEl.textContent = title;
   if (bodyEl) bodyEl.innerHTML = contentHTML;
   modal.style.display = 'flex';
+  modal.classList.add('active');
   modal.onclick = (e) => { if (e.target === modal) closeModal(); };
   document.addEventListener('keydown', handleEscapeClose);
 }
 function closeModal() {
   const modal = document.getElementById('global-modal');
-  if (modal) modal.style.display = 'none';
+  if (modal) {
+    modal.style.display = 'none';
+    modal.classList.remove('active');
+  }
   document.removeEventListener('keydown', handleEscapeClose);
 }
 function handleEscapeClose(e) { if (e.key === 'Escape') closeModal(); }
