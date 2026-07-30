@@ -92,6 +92,24 @@ function getMockApiResponse(endpoint, options = {}) {
     try { body = typeof options.body === 'string' ? JSON.parse(options.body) : options.body; } catch {}
   }
 
+  // Real-Time Sync Endpoint Mock
+  if (endpoint.includes('/sync') && method === 'GET') {
+    const user = typeof Auth !== 'undefined' ? Auth.getUser() : null;
+    const notis = MOCK_DB.notifications || [];
+    const unread = notis.filter(n => !user || !n.read_by || !n.read_by.includes(user.id)).length;
+    const latestNoti = notis[0] || null;
+    const currentUserInDb = MOCK_DB.users.find(u => u.id === user?.id || u.email === user?.email);
+    return Promise.resolve({
+      timestamp: Date.now(),
+      unread_notifications: unread,
+      latest_notification: latestNoti,
+      user_profile: currentUserInDb || user,
+      total_members: (MOCK_DB.members || []).length,
+      total_events: (MOCK_DB.events || []).length,
+      total_logs: (MOCK_DB.logs || []).length
+    });
+  }
+
   // Auth Login
   if (endpoint.includes('/auth/login') && method === 'POST') {
     const email = body.email || 'admin@sentranghub.vn';

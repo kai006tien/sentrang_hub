@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadRolesGrid();
   loadLatestNews();
   updateNotiBadge();
+  startRealTimeSyncManager();
 
   document.getElementById('btn-logout')?.addEventListener('click', () => Auth.logout());
   updateClock();
@@ -302,7 +303,7 @@ async function loadLatestNews() {
 }
 
 // ========================================
-// Notification Badge
+// Notification Badge & Real-Time Sync Manager
 // ========================================
 async function updateNotiBadge() {
   try {
@@ -316,6 +317,81 @@ async function updateNotiBadge() {
       badge.style.display = unread > 0 ? 'flex' : 'none';
     }
   } catch (err) { /* silent */ }
+}
+
+let lastKnownNotiId = null;
+let lastKnownUserPermsJson = '';
+
+function startRealTimeSyncManager() {
+  performSyncCheck();
+  setInterval(performSyncCheck, 4000); // Check for real-time updates every 4 seconds
+
+  // Listen for cross-tab storage changes on the same device
+  window.addEventListener('storage', (e) => {
+    if (e.key === CONFIG.STORAGE_KEYS.USER_DATA || e.key === 'sentrang_sync_trigger') {
+      console.log('[Real-Time Sync] Cross-tab event detected, updating active session...');
+      const updatedUser = Auth.getUser();
+      if (updatedUser) initUserInfo(updatedUser);
+      updateNotiBadge();
+    }
+  });
+
+  if ('BroadcastChannel' in window) {
+    try {
+      const channel = new BroadcastChannel('sentrang_hub_realtime');
+      channel.onmessage = (event) => {
+        if (event.data && event.data.type === 'STATE_CHANGED') {
+          performSyncCheck();
+        }
+      };
+    } catch {}
+  }
+}
+
+async function performSyncCheck() {
+  try {
+    const syncData = await apiFetch('/api/sync');
+    if (!syncData) return;
+
+    // 1. Live Notification Alert & Badge Pulse
+    if (syncData.latest_notification) {
+      const notiId = syncData.latest_notification.id || syncData.latest_notification.title;
+      if (lastKnownNotiId !== null && lastKnownNotiId !== notiId) {
+        showToast(`🔔 Thông báo mới: ${syncData.latest_notification.title}`, 'info');
+        const badge = document.getElementById('noti-badge');
+        if (badge) {
+          badge.classList.add('badge-bounce');
+          setTimeout(() => badge.classList.remove('badge-bounce'), 800);
+        }
+      }
+      lastKnownNotiId = notiId;
+    }
+
+    const badge = document.getElementById('noti-badge');
+    if (badge) {
+      const count = syncData.unread_notifications || 0;
+      badge.textContent = count;
+      badge.style.display = count > 0 ? 'flex' : 'none';
+    }
+
+    // 2. Cross-Device Account & Permission Sync
+    if (syncData.user_profile) {
+      const currentLocalUser = Auth.getUser();
+      const newPermsJson = JSON.stringify(syncData.user_profile.permissions || []);
+      
+      if (currentLocalUser && (currentLocalUser.role_id !== syncData.user_profile.role_id || (lastKnownUserPermsJson && lastKnownUserPermsJson !== newPermsJson))) {
+        showToast('🛡️ Phân quyền tài khoản của bạn đã được quản trị viên cập nhật đồng bộ!', 'success');
+        currentLocalUser.role_id = syncData.user_profile.role_id;
+        currentLocalUser.role_name = syncData.user_profile.role_name;
+        currentLocalUser.permissions = syncData.user_profile.permissions;
+        localStorage.setItem(CONFIG.STORAGE_KEYS.USER_DATA, JSON.stringify(currentLocalUser));
+        initUserInfo(currentLocalUser);
+      }
+      lastKnownUserPermsJson = newPermsJson;
+    }
+  } catch (err) {
+    /* Silent catch for network sync issues */
+  }
 }
 
 // ========================================
