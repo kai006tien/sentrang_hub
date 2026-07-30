@@ -28,20 +28,9 @@ function showToast(message, type = 'success', duration = 3500) {
 // =====================================================================
 const MOCK_DB = {
   users: [
-    { id: 'admin_uid', email: 'admin@sentranghub.vn', display_name: 'Admin Hệ Thống', role_id: 'role_super_admin', role_name: 'Super Admin', role_level: 0, is_active: true, created_at: '2026-01-01T00:00:00Z' },
-    { id: 'user_001', email: 'an.nguyen@sentranghub.vn', display_name: 'Nguyễn Văn An', role_id: 'role_chu_nhiem', role_name: 'Chủ nhiệm', role_level: 1, is_active: true, created_at: '2025-09-01T00:00:00Z' },
-    { id: 'user_002', email: 'binh.tran@sentranghub.vn', display_name: 'Trần Thị Bình', role_id: 'role_pho_chu_nhiem', role_name: 'Phó Chủ nhiệm', role_level: 2, is_active: true, created_at: '2025-09-01T00:00:00Z' },
-    { id: 'user_003', email: 'cuong.le@sentranghub.vn', display_name: 'Lê Hoàng Cường', role_id: 'role_truong_ban', role_name: 'Trưởng ban', role_level: 3, is_active: true, created_at: '2025-09-01T00:00:00Z' },
-    { id: 'user_004', email: 'duc.pham@sentranghub.vn', display_name: 'Phạm Minh Đức', role_id: 'role_thanh_vien', role_name: 'Thành viên', role_level: 10, is_active: true, created_at: '2026-03-01T00:00:00Z' },
-    { id: 'user_005', email: 'huong.vo@sentranghub.vn', display_name: 'Võ Thị Mai Hương', role_id: 'role_thanh_vien', role_name: 'Thành viên', role_level: 10, is_active: false, created_at: '2025-06-01T00:00:00Z' }
+    { id: 'admin_uid', email: 'admin@sentranghub.vn', display_name: 'Admin Hệ Thống', role_id: 'role_super_admin', role_name: 'Super Admin', role_level: 0, is_active: true, created_at: '2026-01-01T00:00:00Z' }
   ],
-  members: [
-    { id: 'mem_001', full_name: 'Nguyễn Văn An', email: 'an.nguyen@sentranghub.vn', student_id: 'MSTN2026001', department: 'Ban Chủ nhiệm', current_position: 'Chủ nhiệm', status: 'active', user_id: 'user_001' },
-    { id: 'mem_002', full_name: 'Trần Thị Bình', email: 'binh.tran@sentranghub.vn', student_id: 'MSTN2026002', department: 'Ban Chủ nhiệm', current_position: 'Phó Chủ nhiệm Thường trực', status: 'active', user_id: 'user_002' },
-    { id: 'mem_003', full_name: 'Lê Hoàng Cường', email: 'cuong.le@sentranghub.vn', student_id: 'MSTN2026003', department: 'Ban Điều hành', current_position: 'Phó Chủ nhiệm', status: 'active', user_id: 'user_003' },
-    { id: 'mem_004', full_name: 'Phạm Minh Đức', email: 'duc.pham@sentranghub.vn', student_id: 'MSTN2026004', department: 'Ban Thư ký', current_position: 'Thư ký', status: 'active', user_id: 'user_004' },
-    { id: 'mem_005', full_name: 'Võ Thị Mai Hương', email: 'huong.vo@sentranghub.vn', student_id: 'MSTN2026005', department: 'Ban Công tác Hoạt động', current_position: 'Thành viên', status: 'inactive', user_id: 'user_005' }
-  ],
+  members: [],
   roles: [
     { id: 'role_super_admin', name: 'Super Admin', description: 'Quản trị viên cao nhất, toàn quyền hệ thống', level: 0, permissions: ['*'] },
     { id: 'role_chu_nhiem', name: 'Chủ nhiệm', description: 'Chủ nhiệm câu lạc bộ', level: 1, permissions: ['users.read', 'users.create', 'users.update', 'users.delete', 'roles.manage', 'events.read', 'events.create', 'attendance.manage', 'articles.read', 'articles.create', 'articles.publish', 'quizzes.take', 'quizzes.create', 'certificates.view', 'certificates.issue', 'notifications.create'] },
@@ -53,36 +42,13 @@ const MOCK_DB = {
     { id: 'role_thanh_vien', name: 'Thành viên', description: 'Thành viên chính thức câu lạc bộ', level: 10, permissions: ['quizzes.take', 'events.read', 'articles.read', 'certificates.view'] },
     { id: 'role_cong_tac_vien', name: 'Cộng tác viên', description: 'Cộng tác viên câu lạc bộ', level: 10, permissions: ['events.read', 'articles.read'] }
   ],
-  events: [
-    { id: 'event_001', title: 'Chiến dịch Mùa hè xanh 2026', description: 'Chiến dịch tình nguyện hè tại huyện Cần Giờ.', category: 'volunteer', location: 'Huyện Cần Giờ, TP.HCM', start_date: new Date().toISOString(), max_participants: 50, current_count: 42, base_points: 10, status: 'active' },
-    { id: 'event_002', title: 'Workshop Kỹ năng Thuyết trình', description: 'Workshop rèn luyện kỹ năng giao tiếp.', category: 'training', location: 'Trường ĐH Bách Khoa TP.HCM', start_date: new Date().toISOString(), max_participants: 30, current_count: 18, base_points: 5, status: 'active' }
-  ],
-  articles: [
-    { id: 'article_001', title: 'Sen Trắng — Hành trình 12 năm vì cộng đồng', excerpt: 'Nhìn lại chặng đường 12 năm hình thành và phát triển của CLB.', content: 'CLB Tình nguyện Sen Trắng chính thức thành lập năm 2014 với sứ mệnh kết nối và lan tỏa giá trị tình nguyện đến giới trẻ. Qua 12 năm hoạt động, CLB đã tổ chức hơn 200 chương trình tình nguyện, tiếp cận hơn 50.000 lượt thanh niên trên khắp các tỉnh thành phía Nam.', category: 'tin-tuc', status: 'published', image_url: '', author_name: 'Ban Truyền thông', view_count: 1250, created_at: new Date(Date.now() - 86400000).toISOString() },
-    { id: 'article_002', title: 'Thông báo: Tuyển thành viên Gen 15', excerpt: 'CLB chính thức mở đợt tuyển thành viên Gen 15.', content: 'CLB Thanh niên Tình nguyện Sen Trắng thông báo tuyển thành viên Gen 15 cho nhiệm kỳ 2026–2027. Các bạn sinh viên có đam mê hoạt động tình nguyện, sẵn sàng cống hiến vì cộng đồng, hãy đăng ký tham gia!', category: 'thong-bao', status: 'published', image_url: '', author_name: 'Ban Chủ nhiệm', view_count: 420, created_at: new Date(Date.now() - 3600000).toISOString() }
-  ],
-  quizzes: [
-    { id: 'quiz_001', title: 'Kiểm tra kiến thức tình nguyện viên 2026', description: 'Bài kiểm tra đánh giá kiến thức cơ bản.', category: 'orientation', duration: 1800, passing_score: 70, issue_certificate: false, question_count: 2, questions: [
-      { id: 'q1', question_text: 'CLB Sen Trắng được thành lập vào năm nào?', options: [{id:'a',text:'2012'},{id:'b',text:'2014',correct:true},{id:'c',text:'2016'},{id:'d',text:'2018'}] },
-      { id: 'q2', question_text: 'Giá trị cốt lõi nào sau đây thuộc về CLB?', options: [{id:'a',text:'Tận tâm, Sáng tạo, Đoàn kết',correct:true},{id:'b',text:'Cạnh tranh, Tiên phong'},{id:'c',text:'Kỷ luật, Nghiêm túc'}] }
-    ]}
-  ],
-  notifications: [
-    { id: 'noti_001', title: 'Chào mừng đến với Sen Trắng Hub v2!', content: 'Hệ thống đã được nâng cấp với nhiều tính năng mới: Thi trực tuyến, Thông báo, Truyền thông CMS nâng cao.', type: 'info', target: 'all', created_by: 'Admin Hệ Thống', created_at: new Date().toISOString(), read_by: [] },
-    { id: 'noti_002', title: 'Chiến dịch Mùa hè xanh 2026 sắp diễn ra!', content: 'Tất cả thành viên vui lòng đăng ký tham gia trước ngày 05/08/2026.', type: 'important', target: 'all', created_by: 'Admin Hệ Thống', created_at: new Date(Date.now() - 3600000).toISOString(), read_by: [] }
-  ],
-  leaderboard: [
-    { id: 'mem_001', rank: 1, full_name: 'Nguyễn Văn An', generation: 'Gen 12', department: 'Ban Phong trào', total_points: 285 },
-    { id: 'mem_002', rank: 2, full_name: 'Trần Thị Bình', generation: 'Gen 12', department: 'Ban Truyền thông', total_points: 240 },
-    { id: 'mem_003', rank: 3, full_name: 'Lê Hoàng Cường', generation: 'Gen 11', department: 'Ban Chuyên môn', total_points: 195 },
-    { id: 'mem_004', rank: 4, full_name: 'Phạm Minh Đức', generation: 'Gen 12', department: 'Ban Phong trào', total_points: 150 },
-    { id: 'mem_005', rank: 5, full_name: 'Võ Thị Mai Hương', generation: 'Gen 11', department: 'Ban Chủ nhiệm', total_points: 120 }
-  ],
-  logs: [
-    { timestamp: new Date().toLocaleString('vi-VN'), admin: 'Super Admin', action: 'SYS.LOGIN', module: 'Hệ thống', detail: 'Đăng nhập thành công vào hệ thống' },
-    { timestamp: new Date(Date.now() - 1800000).toLocaleString('vi-VN'), admin: 'Super Admin', action: 'USER.PERM_UPDATE', module: 'Phân quyền', detail: 'Cập nhật phân quyền trực tiếp cho tài khoản an.nguyen@sentranghub.vn' },
-    { timestamp: new Date(Date.now() - 3600000).toLocaleString('vi-VN'), admin: 'Chủ nhiệm', action: 'EVENT.CREATE', module: 'Sự kiện', detail: 'Tạo mới sự kiện Chiến dịch Mùa hè xanh 2026' }
-  ]
+  events: [],
+  articles: [],
+  quizzes: [],
+  notifications: [],
+  leaderboard: [],
+  certificates: [],
+  logs: []
 };
 
 function getMockApiResponse(endpoint, options = {}) {
