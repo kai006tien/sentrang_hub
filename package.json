@@ -1,0 +1,9 @@
+{
+  "name": "sen-trang-hub",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Sen Trắng Hub — Portal Quản Trị Nội Bộ CLB Thanh Niên Tình Nguyện Sen Trắng",
+  "scripts": {
+    "build": "echo Static build complete"
+  }
+}
