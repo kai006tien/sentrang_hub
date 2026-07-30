@@ -626,8 +626,9 @@ async function getMockApiResponse(endpoint, options = {}) {
       detail: `Đã Xóa sạch (Reset) toàn bộ dữ liệu phân hệ ${label} về trạng thái trống (Empty)`
     });
 
+    saveMockDbToStorage();
     pushToGlobalCloud();
-    return Promise.resolve({ message: `Đã Reset dữ liệu phân hệ "${label}" thành công!`, module: moduleKey });
+    return Promise.resolve({ message: `Đã Xóa sạch (Reset) toàn bộ dữ liệu phân hệ "${label}" về trạng thái trống (0 dữ liệu)!`, module: moduleKey });
   }
 
   return Promise.resolve({ status: 'ok' });

@@ -18,7 +18,16 @@ async function loadEventsList() {
   try {
     const res = await apiFetch('/api/events');
     const events = Array.isArray(res) ? res : (res.data || []);
-    if (events.length === 0) { container.innerHTML = '<div class="text-center">Chưa có sự kiện.</div>'; return; }
+    if (events.length === 0) {
+      container.innerHTML = `
+        <div style="grid-column:1/-1;text-align:center;padding:3.5rem 1rem;background:var(--bg-card);border:2px dashed var(--border-light);border-radius:var(--radius-xl);">
+          <div style="font-size:3.5rem;margin-bottom:0.5rem;">📅</div>
+          <h4 style="font-size:1.1rem;font-weight:800;color:var(--text-primary);margin-bottom:0.35rem;">Danh sách Sự kiện đang trống</h4>
+          <p style="font-size:0.85rem;color:var(--text-muted);">Hệ thống chưa có sự kiện nào. Hãy bấm nút "+ Tạo sự kiện" bên trên để bắt đầu tạo mới.</p>
+        </div>
+      `;
+      return;
+    }
 
     const catColors = { volunteer:{bg:'#FFEBEE',text:'#C62828',label:'Tình nguyện'}, training:{bg:'#E3F2FD',text:'#0D47A1',label:'Đào tạo'}, social:{bg:'#E8F5E9',text:'#1B5E20',label:'Sinh hoạt'}, meeting:{bg:'#FFF3E0',text:'#E65100',label:'Họp BCN'} };
     container.innerHTML = events.map(e => {
