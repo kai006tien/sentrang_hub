@@ -1,19 +1,8 @@
 {
-  "version": 2,
-  "framework": null,
   "outputDirectory": "frontend",
   "cleanUrls": true,
-  "builds": [
-    {
-      "src": "frontend/**",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    { "src": "/assets/(.*)", "dest": "/frontend/assets/$1" },
-    { "src": "/dashboard", "dest": "/frontend/dashboard.html" },
-    { "src": "/index", "dest": "/frontend/index.html" },
-    { "src": "/", "dest": "/frontend/index.html" },
-    { "src": "/(.*)", "dest": "/frontend/$1" }
+  "rewrites": [
+    { "source": "/dashboard", "destination": "/dashboard.html" },
+    { "source": "/", "destination": "/index.html" }
   ]
 }
