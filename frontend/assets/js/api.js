@@ -515,32 +515,66 @@ async function getMockApiResponse(endpoint, options = {}) {
   if (endpoint.includes('/events/') && (endpoint.includes('/attendance') || endpoint.includes('/check-in'))) {
     const eventId = endpoint.split('/')[3];
     const evt = (MOCK_DB.events || []).find(e => e.id === eventId);
-    if (evt) evt.current_count = (evt.current_count || 0) + 1;
+    if (evt) {
+      evt.current_count = (evt.current_count || 0) + 1;
+    }
 
     const memId = body.member_id;
     let memName = 'Thành viên';
-    if (memId) {
-      const mem = (MOCK_DB.members || []).find(m => m.id === memId || m.student_id === memId || m.email === memId);
-      if (mem) {
-        memName = mem.full_name;
-        const reward = evt ? (evt.points_reward || 10) : 10;
-        mem.attendance_points = (mem.attendance_points || 0) + reward;
-        mem.total_points = (mem.total_points || 0) + reward;
+    let mem = null;
 
-        if (!mem.points_history) mem.points_history = [];
-        mem.points_history.unshift({
-          id: 'ph_' + Date.now(),
-          event_id: evt ? evt.id : null,
-          title: 'Điểm danh: ' + (evt ? evt.title : 'Sự kiện CLB'),
-          points: reward,
-          type: 'attendance',
-          date: evt ? (evt.start_date || new Date().toISOString()) : new Date().toISOString()
-        });
+    if (memId) {
+      mem = (MOCK_DB.members || []).find(m =>
+        m.id === memId ||
+        m.student_id === memId ||
+        m.email === memId ||
+        m.user_id === memId ||
+        (m.full_name || '').toLowerCase() === (memId || '').toLowerCase()
+      );
+    }
+
+    const currentUser = typeof Auth !== 'undefined' ? Auth.getUser() : null;
+    if (!mem && currentUser) {
+      mem = (MOCK_DB.members || []).find(m => m.email === currentUser.email || m.user_id === currentUser.id);
+      if (!mem) {
+        // Auto-create baseline member record for current logged in user if not present
+        mem = {
+          id: 'mem_' + Date.now(),
+          user_id: currentUser.id,
+          full_name: currentUser.display_name || 'Thành viên',
+          email: currentUser.email,
+          student_id: 'MSTN' + Math.floor(10000 + Math.random() * 90000),
+          department: 'Ban Công tác Hoạt động',
+          current_position: currentUser.role_name || 'Thành viên',
+          status: 'active',
+          total_points: 0,
+          attendance_points: 0,
+          bonus_points: 0,
+          penalty_points: 0
+        };
+        MOCK_DB.members.push(mem);
       }
     }
 
+    if (mem) {
+      memName = mem.full_name;
+      const reward = evt ? (evt.points_reward || 10) : 10;
+      mem.attendance_points = (mem.attendance_points || 0) + reward;
+      mem.total_points = (mem.total_points || 0) + reward;
+
+      if (!mem.points_history) mem.points_history = [];
+      mem.points_history.unshift({
+        id: 'ph_' + Date.now(),
+        event_id: evt ? evt.id : null,
+        title: 'Điểm danh: ' + (evt ? evt.title : 'Sự kiện CLB'),
+        points: reward,
+        type: 'attendance',
+        date: evt ? (evt.start_date || new Date().toISOString()) : new Date().toISOString()
+      });
+    }
+
     pushToGlobalCloud();
-    return Promise.resolve({ success: true, message: `Điểm danh thành công cho ${memName}! +10 Điểm thành tích.` });
+    return Promise.resolve({ success: true, message: `Điểm danh thành công cho ${memName}! +10 Điểm thành tích.`, current_count: evt ? evt.current_count : 1 });
   }
   if (endpoint === '/api/events' && method === 'POST') {
     const newEvt = { id: 'event_' + Date.now(), ...body, current_count: 0, status: 'active', start_date: body.start_date || new Date().toISOString() };

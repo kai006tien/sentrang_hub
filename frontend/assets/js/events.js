@@ -94,11 +94,14 @@ async function handleCreateEventSubmit(e) {
 }
 
 async function openQrCheckInModal(eventId, eventTitle) {
+  const user = typeof Auth !== 'undefined' ? Auth.getUser() : null;
   let members = [];
   try {
     const res = await apiFetch('/api/members');
     members = Array.isArray(res) ? res : (res.data || []);
   } catch {}
+
+  const canManage = hasPermission('events.create') || isSuperAdmin();
 
   const memberOptions = members.map(m => `
     <option value="${m.id}">
@@ -107,28 +110,30 @@ async function openQrCheckInModal(eventId, eventTitle) {
   `).join('');
 
   showModal(`📷 Điểm Danh Sự Kiện: ${escapeHTML(eventTitle)}`, `
-    <div style="margin-bottom:1rem;">
-      <div style="display:flex;gap:0.5rem;margin-bottom:1rem;border-bottom:1px solid var(--border-light);padding-bottom:0.5rem;">
-        <button id="tab-btn-qr" class="btn btn-primary btn-sm" onclick="switchCheckInTab('qr')">📷 QR / Mã MSTN</button>
-        <button id="tab-btn-manual" class="btn btn-secondary btn-sm" onclick="switchCheckInTab('manual')">📋 Chọn Danh Sách Thủ Công</button>
-      </div>
+    <div>
+      ${canManage ? `
+        <div style="display:flex;gap:0.5rem;margin-bottom:1rem;border-bottom:1px solid var(--border-light);padding-bottom:0.5rem;">
+          <button id="tab-btn-self" class="btn btn-primary btn-sm" onclick="switchCheckInTab('self')">⚡ Điểm danh cho tôi</button>
+          <button id="tab-btn-manual" class="btn btn-secondary btn-sm" onclick="switchCheckInTab('manual')">📋 Điểm danh cho người khác</button>
+        </div>
+      ` : ''}
 
-      <!-- Tab 1: QR / MSTN -->
-      <div id="checkin-tab-qr">
+      <!-- Tab 1: Self Auto-Account Check-in (Default for all users) -->
+      <div id="checkin-tab-self">
         <div style="text-align:center;padding:0.5rem;">
-          <div style="width:140px;height:140px;margin:0 auto 1rem;background:var(--bg-main);border:2px dashed var(--primary-300);border-radius:var(--radius-xl);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0.35rem;">
-            <span style="font-size:2.5rem;">📱</span>
-            <span style="font-size:0.725rem;color:var(--text-muted);">Quét Camera QR</span>
+          <div style="background:var(--bg-main);border:1.5px solid var(--primary-300);border-radius:var(--radius-xl);padding:1.25rem;margin-bottom:1.25rem;">
+            <div style="width:58px;height:58px;background:var(--primary-gradient-light);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.75rem;margin:0 auto 0.75rem;">👤</div>
+            <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem;">Tài khoản điểm danh tự động:</div>
+            <div style="font-size:1.15rem;font-weight:800;color:var(--primary-700);">${escapeHTML(user?.display_name || 'Thành viên')}</div>
+            <div style="font-size:0.825rem;color:var(--text-secondary);">${escapeHTML(user?.email || '')}</div>
           </div>
-          <div style="margin-bottom:1rem;text-align:left;">
-            <label style="font-size:0.8rem;font-weight:700;">Nhập MSTN - MÃ SỐ THANH NIÊN / Email:</label>
-            <input type="text" id="checkin-member-id" placeholder="VD: MSTN12345 hoặc email..." style="margin-top:0.35rem;">
-          </div>
-          <button class="btn btn-primary btn-block" onclick="executeCheckIn('${eventId}')">✅ Xác Nhận Check-in (+10 ĐTT)</button>
+          <button class="btn btn-primary btn-block" style="padding:0.85rem;font-size:1rem;font-weight:700;" onclick="executeSelfCheckIn('${eventId}')">
+            ⚡ BẤM ĐIỂM DANH NGAY (+10 ĐTT)
+          </button>
         </div>
       </div>
 
-      <!-- Tab 2: Manual Select -->
+      <!-- Tab 2: Manual Select (For Admin / Authorized User) -->
       <div id="checkin-tab-manual" style="display:none;">
         <div style="padding:0.5rem 0;">
           <div style="margin-bottom:1rem;">
@@ -138,7 +143,7 @@ async function openQrCheckInModal(eventId, eventTitle) {
               ${memberOptions}
             </select>
           </div>
-          <button class="btn btn-primary btn-block" onclick="executeManualCheckIn('${eventId}')">✅ Xác Nhận Điểm Danh Thủ Công (+10 ĐTT)</button>
+          <button class="btn btn-primary btn-block" onclick="executeManualCheckIn('${eventId}')">✅ Xác Nhận Điểm Danh Cho Thành Viên (+10 ĐTT)</button>
         </div>
       </div>
     </div>
@@ -146,21 +151,39 @@ async function openQrCheckInModal(eventId, eventTitle) {
 }
 
 function switchCheckInTab(tab) {
-  const qrTab = document.getElementById('checkin-tab-qr');
+  const selfTab = document.getElementById('checkin-tab-self');
   const manualTab = document.getElementById('checkin-tab-manual');
-  const qrBtn = document.getElementById('tab-btn-qr');
+  const selfBtn = document.getElementById('tab-btn-self');
   const manualBtn = document.getElementById('tab-btn-manual');
 
   if (tab === 'manual') {
-    qrTab.style.display = 'none';
-    manualTab.style.display = 'block';
-    qrBtn.className = 'btn btn-secondary btn-sm';
-    manualBtn.className = 'btn btn-primary btn-sm';
+    if (selfTab) selfTab.style.display = 'none';
+    if (manualTab) manualTab.style.display = 'block';
+    if (selfBtn) selfBtn.className = 'btn btn-secondary btn-sm';
+    if (manualBtn) manualBtn.className = 'btn btn-primary btn-sm';
   } else {
-    qrTab.style.display = 'block';
-    manualTab.style.display = 'none';
-    qrBtn.className = 'btn btn-primary btn-sm';
-    manualBtn.className = 'btn btn-secondary btn-sm';
+    if (selfTab) selfTab.style.display = 'block';
+    if (manualTab) manualTab.style.display = 'none';
+    if (selfBtn) selfBtn.className = 'btn btn-primary btn-sm';
+    if (manualBtn) manualBtn.className = 'btn btn-secondary btn-sm';
+  }
+}
+
+async function executeSelfCheckIn(eventId) {
+  const user = typeof Auth !== 'undefined' ? Auth.getUser() : null;
+  if (!user) { showToast('Vui lòng đăng nhập lại!', 'error'); return; }
+  try {
+    const res = await API.post(`/events/${eventId}/attendance`, {
+      member_id: user.id || user.email,
+      check_in_method: 'one_click_self'
+    });
+    showToast(res.message || 'Điểm danh thành công! +10 Điểm thành tích.', 'success');
+    closeModal();
+    loadEventsList();
+    if (typeof loadOverviewStats === 'function') loadOverviewStats();
+    if (typeof performSyncCheck === 'function') performSyncCheck();
+  } catch (err) {
+    showToast('Lỗi: ' + err.message, 'error');
   }
 }
 
@@ -170,7 +193,10 @@ async function executeCheckIn(eventId) {
   try {
     const res = await API.post(`/events/${eventId}/attendance`, { member_id: memberId, check_in_method: 'qr_code' });
     showToast(res.message || 'Check-in thành công!', 'success');
-    closeModal(); loadEventsList();
+    closeModal();
+    loadEventsList();
+    if (typeof loadOverviewStats === 'function') loadOverviewStats();
+    if (typeof performSyncCheck === 'function') performSyncCheck();
   } catch (err) { showToast('Lỗi: ' + err.message, 'error'); }
 }
 
@@ -184,6 +210,7 @@ async function executeManualCheckIn(eventId) {
     closeModal();
     loadEventsList();
     if (typeof loadOverviewStats === 'function') loadOverviewStats();
+    if (typeof performSyncCheck === 'function') performSyncCheck();
   } catch (err) { showToast('Lỗi: ' + err.message, 'error'); }
 }
 
@@ -192,5 +219,7 @@ window.openCreateEventModal = openCreateEventModal;
 window.handleCreateEventSubmit = handleCreateEventSubmit;
 window.openQrCheckInModal = openQrCheckInModal;
 window.switchCheckInTab = switchCheckInTab;
+window.executeSelfCheckIn = executeSelfCheckIn;
 window.executeCheckIn = executeCheckIn;
+window.executeManualCheckIn = executeManualCheckIn;
 window.executeManualCheckIn = executeManualCheckIn;
