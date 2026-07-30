@@ -227,7 +227,10 @@ async function getMockApiResponse(endpoint, options = {}) {
     }
     if (currentUser && newPass) {
       currentUser.password = newPass;
+      const userInDb = MOCK_DB.users.find(u => u.id === currentUser.id || u.email === currentUser.email);
+      if (userInDb) userInDb.password = newPass;
       localStorage.setItem(CONFIG.STORAGE_KEYS.USER_DATA, JSON.stringify(currentUser));
+      pushToGlobalCloud();
     }
     return Promise.resolve({ success: true, message: 'Đổi mật khẩu thành công!' });
   }
@@ -376,16 +379,18 @@ async function getMockApiResponse(endpoint, options = {}) {
   if (endpoint === '/api/articles' && method === 'POST') {
     const newArt = { id: 'article_' + Date.now(), ...body, status: 'published', view_count: 0, author_name: 'Ban Truyền thông', created_at: new Date().toISOString() };
     MOCK_DB.articles.unshift(newArt);
+    pushToGlobalCloud();
     return Promise.resolve({ message: 'Tạo bài viết mới thành công!', data: newArt });
   }
   if (endpoint.startsWith('/api/articles')) return Promise.resolve(MOCK_DB.articles);
 
   // Quizzes
-  if (endpoint.match(/\/quizzes\/[^/]+\/questions/)) return Promise.resolve(MOCK_DB.quizzes[0].questions);
+  if (endpoint.match(/\/quizzes\/[^/]+\/questions/)) return Promise.resolve(MOCK_DB.quizzes[0]?.questions || []);
   if (endpoint.includes('/quizzes/') && endpoint.includes('/submit')) return Promise.resolve({ total_points: 2, max_points: 2, score_percent: 100, correct_count: 2, passed: true, grade: 'A' });
   if (endpoint === '/api/quizzes' && method === 'POST') {
     const newQz = { id: 'quiz_' + Date.now(), ...body, question_count: (body.questions||[]).length };
     MOCK_DB.quizzes.push(newQz);
+    pushToGlobalCloud();
     return Promise.resolve({ message: 'Tạo đề thi mới thành công!', data: newQz });
   }
   if (endpoint.startsWith('/api/quizzes')) return Promise.resolve(MOCK_DB.quizzes);
@@ -397,6 +402,7 @@ async function getMockApiResponse(endpoint, options = {}) {
   if (endpoint === '/api/notifications' && method === 'POST') {
     const noti = { id: 'noti_' + Date.now(), ...body, created_at: new Date().toISOString(), read_by: [] };
     MOCK_DB.notifications.unshift(noti);
+    pushToGlobalCloud();
     return Promise.resolve({ message: 'Gửi thông báo thành công!', data: noti });
   }
   if (endpoint.startsWith('/api/notifications')) return Promise.resolve({ data: MOCK_DB.notifications });
