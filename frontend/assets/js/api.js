@@ -167,8 +167,16 @@ async function getMockApiResponse(endpoint, options = {}) {
     await syncWithGlobalCloud();
     const user = typeof Auth !== 'undefined' ? Auth.getUser() : null;
     const notis = MOCK_DB.notifications || [];
-    const unread = notis.filter(n => !user || !n.read_by || !n.read_by.includes(user.id)).length;
-    const latestNoti = notis[0] || null;
+    const userNotis = notis.filter(n => {
+      if (!user) return true;
+      if (user.role_id === 'role_super_admin') return true;
+      if (!n.target || n.target === 'all') return true;
+      if (n.target === user.id || n.target === user.email || n.target === user.role_id) return true;
+      if (n.user_id === user.id) return true;
+      return false;
+    });
+    const unread = userNotis.filter(n => !user || !n.read_by || !n.read_by.includes(user.id)).length;
+    const latestNoti = userNotis[0] || null;
     const currentUserInDb = MOCK_DB.users.find(u => u.id === user?.id || u.email === user?.email);
     return Promise.resolve({
       timestamp: mockDbVersion,
@@ -443,7 +451,15 @@ async function getMockApiResponse(endpoint, options = {}) {
     }
     if (!matchedUser && body.member_id) {
       const mem = MOCK_DB.members.find(m => m.id === body.member_id);
-      if (mem) matchedUser = MOCK_DB.users.find(u => u.email === mem.email);
+      if (mem) {
+        matchedUser = MOCK_DB.users.find(u => u.email === mem.email || u.display_name.toLowerCase() === mem.full_name.toLowerCase());
+      }
+    }
+    if (!matchedUser && body.recipient_name) {
+      const mem = MOCK_DB.members.find(m => (m.full_name || '').toLowerCase() === body.recipient_name.toLowerCase());
+      if (mem) {
+        matchedUser = MOCK_DB.users.find(u => u.email === mem.email);
+      }
     }
 
     if (matchedUser) {
@@ -454,11 +470,13 @@ async function getMockApiResponse(endpoint, options = {}) {
 
     MOCK_DB.certificates.unshift(cert);
 
-    // Auto-create live notification for the target user
+    // Auto-create live targeted notification for recipient user
     MOCK_DB.notifications.unshift({
       id: 'noti_' + Date.now(),
       title: '🎖️ Giấy chứng nhận mới: ' + cert.title,
       content: `Chúc mừng ${cert.recipient_name}! Bạn vừa được ${cert.issued_by || 'Ban Chủ nhiệm'} trao tặng "${cert.title}". Lý do: ${cert.reason}`,
+      type: 'important',
+      target: matchedUser ? matchedUser.id : (body.user_id || 'all'),
       created_at: new Date().toISOString(),
       read_by: []
     });
@@ -532,7 +550,20 @@ async function getMockApiResponse(endpoint, options = {}) {
     pushToGlobalCloud();
     return Promise.resolve({ message: 'Gửi thông báo thành công!', data: noti });
   }
-  if (endpoint.startsWith('/api/notifications')) return Promise.resolve({ data: MOCK_DB.notifications });
+  if (endpoint.startsWith('/api/notifications') && method === 'GET') {
+    const user = typeof Auth !== 'undefined' ? Auth.getUser() : null;
+    const allNotis = MOCK_DB.notifications || [];
+    if (!user || user.role_id === 'role_super_admin') {
+      return Promise.resolve({ data: allNotis });
+    }
+    const userNotis = allNotis.filter(n => {
+      if (!n.target || n.target === 'all') return true;
+      if (n.target === user.id || n.target === user.email || n.target === user.role_id) return true;
+      if (n.user_id === user.id) return true;
+      return false;
+    });
+    return Promise.resolve({ data: userNotis });
+  }
 
   return Promise.resolve({ status: 'ok' });
 }

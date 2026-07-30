@@ -149,11 +149,31 @@ async function loadOverviewCertificates() {
     const certsRes = await apiFetch('/api/certificates');
     const allCerts = Array.isArray(certsRes) ? certsRes : (certsRes.data || []);
     
+    let memberInfo = null;
+    try {
+      const memRes = await apiFetch('/api/members');
+      const members = Array.isArray(memRes) ? memRes : (memRes.data || []);
+      memberInfo = members.find(m => m.user_id === user?.id || m.email === user?.email);
+    } catch {}
+
     let myCerts = [];
     if (user) {
-      myCerts = allCerts.filter(c => c.user_id === user.id || c.recipient_name === user.display_name);
+      myCerts = allCerts.filter(c => {
+        if (c.user_id && c.user_id === user.id) return true;
+        if (c.user_email && user.email && c.user_email.toLowerCase() === user.email.toLowerCase()) return true;
+        if (c.target === user.id || c.target === user.email) return true;
+        if (memberInfo && c.member_id && c.member_id === memberInfo.id) return true;
+        if (c.recipient_name) {
+          const rName = c.recipient_name.toLowerCase();
+          if (rName === (user.display_name || '').toLowerCase() || rName === (user.email || '').toLowerCase()) return true;
+          if (memberInfo && rName === (memberInfo.full_name || '').toLowerCase()) return true;
+        }
+        return false;
+      });
     }
-    if (myCerts.length === 0) myCerts = allCerts.slice(0, 3); // Fallback to show recent certificates
+    if (myCerts.length === 0 && user?.role_id === 'role_super_admin') {
+      myCerts = allCerts.slice(0, 3); // Fallback for Super Admin
+    }
 
     if (myCerts.length === 0) {
       container.innerHTML = `
@@ -212,7 +232,18 @@ async function openUserProfileModal() {
 
     const certRes = await apiFetch('/api/certificates');
     const certs = Array.isArray(certRes) ? certRes : (certRes.data || []);
-    userCerts = certs.filter(c => c.user_id === user.id || c.recipient_name === user.display_name);
+    userCerts = certs.filter(c => {
+      if (c.user_id && c.user_id === user.id) return true;
+      if (c.user_email && user.email && c.user_email.toLowerCase() === user.email.toLowerCase()) return true;
+      if (c.target === user.id || c.target === user.email) return true;
+      if (memberInfo && c.member_id && c.member_id === memberInfo.id) return true;
+      if (c.recipient_name) {
+        const rName = c.recipient_name.toLowerCase();
+        if (rName === (user.display_name || '').toLowerCase() || rName === (user.email || '').toLowerCase()) return true;
+        if (memberInfo && rName === (memberInfo.full_name || '').toLowerCase()) return true;
+      }
+      return false;
+    });
   } catch {}
 
   const initial = (user.display_name || 'U').charAt(0).toUpperCase();
