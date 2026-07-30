@@ -30,7 +30,9 @@ const MOCK_DB = {
   users: [
     { id: 'admin_uid', email: 'admin@sentranghub.vn', password: 'SenTrang@2026!', display_name: 'Admin Hệ Thống', role_id: 'role_super_admin', role_name: 'Super Admin', role_level: 0, is_active: true, permissions: ['*'], created_at: '2026-01-01T00:00:00Z' }
   ],
-  members: [],
+  members: [
+    { id: 'mem_01', user_id: 'admin_uid', full_name: 'Admin Hệ Thống', email: 'admin@sentranghub.vn', student_id: 'MSTN2026001', department: 'Ban Chủ nhiệm', current_position: 'Chủ nhiệm', status: 'active', total_points: 120, bonus_points: 40, attendance_points: 80, penalty_points: 0, points_history: [{ id: 'ph_init', event_id: 'event_01', title: 'Điểm danh: Chiến dịch Mùa Hè Tình Nguyện 2026', points: 10, type: 'attendance', date: new Date().toISOString() }] }
+  ],
   roles: [
     { id: 'role_super_admin', name: 'Super Admin', description: 'Quản trị viên cao nhất, toàn quyền hệ thống', level: 0, permissions: ['*'] },
     { id: 'role_chu_nhiem', name: 'Chủ nhiệm', description: 'Chủ nhiệm câu lạc bộ', level: 1, permissions: ['users.read', 'users.create', 'users.update', 'users.delete', 'roles.manage', 'events.read', 'events.create', 'attendance.manage', 'articles.read', 'articles.create', 'articles.publish', 'quizzes.take', 'quizzes.create', 'certificates.view', 'certificates.issue', 'notifications.create'] },
@@ -42,7 +44,11 @@ const MOCK_DB = {
     { id: 'role_thanh_vien', name: 'Thành viên', description: 'Thành viên chính thức câu lạc bộ', level: 10, permissions: ['quizzes.take', 'events.read', 'articles.read', 'certificates.view'] },
     { id: 'role_cong_tac_vien', name: 'Cộng tác viên', description: 'Cộng tác viên câu lạc bộ', level: 10, permissions: ['events.read', 'articles.read'] }
   ],
-  events: [],
+  events: [
+    { id: 'event_01', title: 'Chiến dịch Mùa Hè Tình Nguyện 2026', category: 'volunteer', location: 'Huyện Hóc Môn, TP.HCM', start_date: '2026-07-20T08:00:00Z', max_participants: 50, current_count: 12, points_reward: 10, status: 'active' },
+    { id: 'event_02', title: 'Tập huấn Kỹ năng Đội Nhóm & Sơ cứu', category: 'training', location: 'Hội trường B - Bách Khoa', start_date: '2026-07-25T14:00:00Z', max_participants: 40, current_count: 8, points_reward: 10, status: 'active' },
+    { id: 'event_03', title: 'Sinh hoạt Định kỳ CLB Tháng 7', category: 'social', location: 'Phòng Sinh hoạt Sen Trắng', start_date: '2026-07-30T18:00:00Z', max_participants: 60, current_count: 15, points_reward: 10, status: 'active' }
+  ],
   articles: [],
   quizzes: [],
   notifications: [],
