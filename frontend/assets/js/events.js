@@ -8,7 +8,11 @@ async function loadEventsList() {
   if (!container) return;
 
   if (actionsEl) {
-    actionsEl.innerHTML = (hasPermission('events.create') || isSuperAdmin()) ? `<button class="btn btn-primary btn-sm" onclick="openCreateEventModal()">+ Tạo sự kiện</button>` : '';
+    let btns = (hasPermission('events.create') || isSuperAdmin()) ? `<button class="btn btn-primary btn-sm" onclick="openCreateEventModal()">+ Tạo sự kiện</button>` : '';
+    if (isSuperAdmin()) {
+      btns += ` <button class="btn btn-danger btn-sm" onclick="openResetModuleModal('events')">🔄 Reset Sự kiện</button>`;
+    }
+    actionsEl.innerHTML = btns;
   }
   container.innerHTML = '<div class="text-center">Đang tải...</div>';
   try {

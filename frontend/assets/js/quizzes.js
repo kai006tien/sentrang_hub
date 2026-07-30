@@ -11,7 +11,11 @@ async function loadQuizzesList() {
   if (!container) return;
 
   if (actionsEl) {
-    actionsEl.innerHTML = (hasPermission('quizzes.create') || isSuperAdmin()) ? `<button class="btn btn-primary btn-sm" onclick="openCreateQuizModal()">+ Tạo đề thi</button>` : '';
+    let btns = (hasPermission('quizzes.create') || isSuperAdmin()) ? `<button class="btn btn-primary btn-sm" onclick="openCreateQuizModal()">+ Tạo đề thi</button>` : '';
+    if (isSuperAdmin()) {
+      btns += ` <button class="btn btn-danger btn-sm" onclick="openResetModuleModal('quizzes')">🔄 Reset Đề thi</button>`;
+    }
+    actionsEl.innerHTML = btns;
   }
   container.innerHTML = '<div class="text-center">Đang tải...</div>';
   try {

@@ -9,7 +9,11 @@ async function loadArticlesList() {
   if (!container) return;
 
   if (actionsEl) {
-    actionsEl.innerHTML = (hasPermission('articles.create') || isSuperAdmin()) ? `<button class="btn btn-primary btn-sm" onclick="openCreateArticleModal()">+ Bài viết mới</button>` : '';
+    let btns = (hasPermission('articles.create') || isSuperAdmin()) ? `<button class="btn btn-primary btn-sm" onclick="openCreateArticleModal()">+ Bài viết mới</button>` : '';
+    if (isSuperAdmin()) {
+      btns += ` <button class="btn btn-danger btn-sm" onclick="openResetModuleModal('articles')">🔄 Reset CMS</button>`;
+    }
+    actionsEl.innerHTML = btns;
   }
   container.innerHTML = '<div class="text-center">Đang tải...</div>';
   try {

@@ -14,6 +14,9 @@ async function loadMembersList() {
     if (hasPermission('users.create') || isSuperAdmin()) {
       btns += `<button class="btn btn-primary btn-sm" onclick="openCreateMemberAndAccountModal()">➕ Thêm thành viên & Cấp tài khoản</button>`;
     }
+    if (isSuperAdmin()) {
+      btns += ` <button class="btn btn-danger btn-sm" onclick="openResetModuleModal('members')">🔄 Reset Hồ sơ</button>`;
+    }
     actionsContainer.innerHTML = btns;
   }
 

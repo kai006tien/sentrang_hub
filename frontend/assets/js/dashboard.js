@@ -958,6 +958,53 @@ window.loadOverviewStats = loadOverviewStats;
 window.loadOverviewCertificates = loadOverviewCertificates;
 window.openUserProfileModal = openUserProfileModal;
 window.updateNotiBadge = updateNotiBadge;
+
+function openResetModuleModal(moduleKey) {
+  if (!isSuperAdmin()) {
+    showToast('Chỉ Super Admin mới có quyền thực hiện Reset dữ liệu!', 'error');
+    return;
+  }
+  const moduleNames = {
+    members: 'Hồ sơ Nhân sự & Thành viên',
+    events: 'Sự kiện & Lịch sử Điểm danh',
+    leaderboard: 'Điểm số Thành tích & Xếp hạng',
+    certificates: 'Danh sách Giấy chứng nhận',
+    articles: 'Tin bài Truyền thông CMS',
+    quizzes: 'Đề thi & Kết quả Trực tuyến',
+    notifications: 'Thông báo Hệ thống'
+  };
+  const name = moduleNames[moduleKey] || moduleKey;
+
+  showModal('🔄 Đặt Lại Dữ Liệu Phân Hệ', `
+    <div style="text-align:center;padding:1rem;">
+      <div style="font-size:3rem;margin-bottom:0.5rem;">⚠️</div>
+      <h3 style="font-size:1.15rem;font-weight:800;color:var(--accent-red);margin-bottom:0.75rem;">CẢNH BÁO ĐẶT LẠI DỮ LIỆU</h3>
+      <p style="font-size:0.9rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.25rem;">
+        Bạn có chắc chắn muốn <strong>Reset lại toàn bộ dữ liệu</strong> của phân hệ <strong style="color:var(--primary-700);">${escapeHTML(name)}</strong>?<br>
+        <span style="font-size:0.8rem;color:var(--text-muted);">(Hành động này sẽ khôi phục dữ liệu về trạng thái ban đầu và tự động đồng bộ liên kết tới tất cả thiết bị khác).</span>
+      </p>
+      <div style="display:flex;gap:0.75rem;justify-content:center;">
+        <button class="btn btn-secondary" onclick="closeModal()">Hủy bỏ</button>
+        <button class="btn btn-danger" onclick="executeResetModule('${moduleKey}')">🔥 Xác nhận Reset Dữ liệu</button>
+      </div>
+    </div>
+  `);
+}
+
+async function executeResetModule(moduleKey) {
+  try {
+    const res = await API.post('/system/reset-module', { module: moduleKey });
+    showToast(res.message || 'Đã đặt lại dữ liệu phân hệ thành công!', 'success');
+    closeModal();
+    if (typeof refreshCurrentView === 'function') refreshCurrentView();
+    if (typeof performSyncCheck === 'function') performSyncCheck();
+  } catch (err) {
+    showToast('Lỗi: ' + err.message, 'error');
+  }
+}
+
+window.openResetModuleModal = openResetModuleModal;
+window.executeResetModule = executeResetModule;
 window.loadUserPermissionsTable = loadUserPermissionsTable;
 window.openUserPermissionsModal = openUserPermissionsModal;
 window.handleSaveUserPermissions = handleSaveUserPermissions;

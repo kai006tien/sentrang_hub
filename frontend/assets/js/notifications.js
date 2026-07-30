@@ -14,6 +14,7 @@ async function loadNotificationsList() {
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
         <button class="btn btn-secondary btn-sm" onclick="markAllNotificationsRead()">✓ Đánh dấu tất cả đã đọc</button>
         ${canCreate ? `<button class="btn btn-primary btn-sm" onclick="openCreateNotificationModal()">+ Tạo thông báo</button>` : ''}
+        ${isSuperAdmin() ? `<button class="btn btn-danger btn-sm" onclick="openResetModuleModal('notifications')">🔄 Reset Thông báo</button>` : ''}
       </div>
     `;
   }

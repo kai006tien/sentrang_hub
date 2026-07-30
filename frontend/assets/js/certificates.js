@@ -9,9 +9,11 @@ async function loadLeaderboard() {
 
   const canManage = hasPermission('certificates.issue') || isSuperAdmin();
   if (actionsEl) {
-    actionsEl.innerHTML = canManage ? `
-      <button class="btn btn-primary btn-sm" onclick="openPointsAdjustmentModal()">⚖️ Cộng / Trừ điểm vi phạm</button>
-    ` : '';
+    let btns = canManage ? `<button class="btn btn-primary btn-sm" onclick="openPointsAdjustmentModal()">⚖️ Cộng / Trừ điểm vi phạm</button>` : '';
+    if (isSuperAdmin()) {
+      btns += ` <button class="btn btn-danger btn-sm" onclick="openResetModuleModal('leaderboard')">🔄 Reset Điểm</button>`;
+    }
+    actionsEl.innerHTML = btns;
   }
   container.innerHTML = '<div class="text-center">Đang tải...</div>';
   try {
@@ -328,7 +330,11 @@ async function loadCertificatesList() {
 
   const canManage = hasPermission('certificates.issue') || isSuperAdmin();
   if (actionsEl) {
-    actionsEl.innerHTML = canManage ? `<button class="btn btn-primary btn-sm" onclick="openCreateCertificateModal()">🎖️ Cấp chứng nhận mới</button>` : '';
+    let btns = canManage ? `<button class="btn btn-primary btn-sm" onclick="openCreateCertificateModal()">🎖️ Cấp chứng nhận mới</button>` : '';
+    if (isSuperAdmin()) {
+      btns += ` <button class="btn btn-danger btn-sm" onclick="openResetModuleModal('certificates')">🔄 Reset Giấy chứng nhận</button>`;
+    }
+    actionsEl.innerHTML = btns;
   }
   container.innerHTML = '<div class="text-center">Đang tải danh sách chứng nhận...</div>';
 
