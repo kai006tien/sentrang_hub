@@ -208,10 +208,15 @@ async function handleCreateQuizSubmit(e) {
 }
 
 // === TAKE QUIZ ===
+let activeQuizId = null;
+let activeQuizQuestionsCount = 0;
+
 function startQuizModal(quizId, quizTitle) {
+  activeQuizId = quizId;
   apiFetch(`/api/quizzes/${quizId}/questions`).then(questions => {
     const qList = Array.isArray(questions) ? questions : [];
     if (qList.length === 0) { showToast('Bài thi chưa có câu hỏi.', 'warning'); return; }
+    activeQuizQuestionsCount = qList.length;
 
     let timeLeft = 30 * 60;
     showModal('📝 ' + quizTitle, `
@@ -220,19 +225,21 @@ function startQuizModal(quizId, quizTitle) {
           <span style="font-size:0.85rem;font-weight:600;">${qList.length} câu hỏi</span>
           <span id="quiz-timer" style="font-size:0.825rem;font-weight:700;color:#1B5E20;background:var(--success-bg);padding:0.3rem 0.7rem;border-radius:var(--radius-full);">⏱️ 30:00</span>
         </div>
-        ${qList.map((q,qi) => `
-          <div style="background:var(--bg-main);border:1px solid var(--border-light);border-radius:var(--radius-md);padding:1rem;margin-bottom:0.75rem;">
-            <p style="font-weight:700;margin-bottom:0.6rem;">Câu ${qi+1}: ${escapeHTML(q.question_text)}</p>
-            <div style="display:flex;flex-direction:column;gap:0.4rem;">
-              ${(q.options||[]).map((o,oi) => `
-                <label style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem;border-radius:var(--radius-sm);cursor:pointer;transition:background 0.15s;" onmouseenter="this.style.background='var(--primary-50)'" onmouseleave="this.style.background='transparent'">
-                  <input type="radio" name="quiz_q_${qi}" value="${oi}" style="width:auto;"> <span>${escapeHTML(o.text)}</span>
-                </label>
-              `).join('')}
+        <form id="quiz-taking-form" onsubmit="handleQuizSubmitForm(event)">
+          ${qList.map((q,qi) => `
+            <div style="background:var(--bg-main);border:1px solid var(--border-light);border-radius:var(--radius-md);padding:1rem;margin-bottom:0.75rem;">
+              <p style="font-weight:700;margin-bottom:0.6rem;">Câu ${qi+1}: ${escapeHTML(q.question_text)}</p>
+              <div style="display:flex;flex-direction:column;gap:0.4rem;">
+                ${(q.options||[]).map((o,oi) => `
+                  <label style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem;border-radius:var(--radius-sm);cursor:pointer;transition:background 0.15s;" onmouseenter="this.style.background='var(--primary-50)'" onmouseleave="this.style.background='transparent'">
+                    <input type="radio" name="quiz_q_${qi}" value="${oi}" style="width:auto;"> <span>${escapeHTML(o.text)}</span>
+                  </label>
+                `).join('')}
+              </div>
             </div>
-          </div>
-        `).join('')}
-        <button class="btn btn-primary btn-block" onclick="submitQuiz()">🚀 Nộp Bài & Chấm Điểm</button>
+          `).join('')}
+          <button type="submit" class="btn btn-primary btn-block">🚀 Nộp Bài & Chấm Điểm</button>
+        </form>
       </div>
     `);
 
@@ -248,19 +255,72 @@ function startQuizModal(quizId, quizTitle) {
   }).catch(err => showToast('Lỗi: ' + err.message, 'error'));
 }
 
-function submitQuiz() {
-  showModal('Kết quả Thi', `
-    <div style="text-align:center;padding:1rem;">
-      <div style="font-size:3.5rem;margin-bottom:0.5rem;">🎉</div>
-      <h2 style="font-size:1.4rem;font-weight:800;color:var(--accent-green);margin-bottom:0.3rem;">CHÚC MỪNG!</h2>
-      <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1.5rem;">Kết quả đã được lưu & cộng Điểm thành tích.</p>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.85rem;margin-bottom:1.5rem;">
-        <div style="background:var(--success-bg);padding:1rem;border-radius:var(--radius-md);"><div style="font-size:1.4rem;font-weight:800;color:#1B5E20;">100%</div><div style="font-size:0.72rem;color:var(--text-muted);">Chính xác</div></div>
-        <div style="background:var(--primary-50);padding:1rem;border-radius:var(--radius-md);"><div style="font-size:1.4rem;font-weight:800;color:var(--primary-700);">Grade A</div><div style="font-size:0.72rem;color:var(--text-muted);">Xếp loại</div></div>
-        <div style="background:var(--warning-bg);padding:1rem;border-radius:var(--radius-md);"><div style="font-size:1.4rem;font-weight:800;color:#E65100;">+15 ĐTT</div><div style="font-size:0.72rem;color:var(--text-muted);">Thưởng</div></div>
-      </div>
-      <button class="btn btn-primary" onclick="closeModal()">Hoàn thành</button>
-    </div>`);
+function handleQuizSubmitForm(e) {
+  if (e) e.preventDefault();
+  submitQuiz();
+}
+
+async function submitQuiz() {
+  if (!activeQuizId) {
+    showToast('Không tìm thấy thông tin bài thi đang làm.', 'error');
+    return;
+  }
+
+  const answers = {};
+  for (let i = 0; i < activeQuizQuestionsCount; i++) {
+    const radio = document.querySelector(`input[name="quiz_q_${i}"]:checked`);
+    if (radio) answers[`quiz_q_${i}`] = radio.value;
+  }
+
+  try {
+    const res = await API.post(`/quizzes/${activeQuizId}/submit`, { answers, quiz_id: activeQuizId });
+    const passed = res.passed;
+    const scorePct = res.score_percent || 0;
+    const earnedPts = res.earned_points || 0;
+    const cert = res.certificate;
+
+    showModal('Kết quả Thi', `
+      <div style="text-align:center;padding:1rem;">
+        <div style="font-size:3.5rem;margin-bottom:0.5rem;">${passed ? '🎉' : '📚'}</div>
+        <h2 style="font-size:1.4rem;font-weight:800;color:${passed ? 'var(--accent-green)' : 'var(--accent-red)'};margin-bottom:0.3rem;">
+          ${passed ? 'CHÚC MỪNG BẠN ĐÃ ĐẠT!' : 'RẤT TIẾC, CHƯA ĐẠT!'}
+        </h2>
+        <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1.5rem;">
+          ${passed 
+            ? 'Kết quả đã được lưu, tự động cộng Điểm thành tích & cập nhật Bảng xếp hạng.' 
+            : 'Hãy ôn lại kiến thức và thử lại lần sau nhé.'}
+        </p>
+
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.85rem;margin-bottom:1.5rem;">
+          <div style="background:var(--success-bg);padding:1rem;border-radius:var(--radius-md);">
+            <div style="font-size:1.4rem;font-weight:800;color:#1B5E20;">${scorePct}%</div>
+            <div style="font-size:0.72rem;color:var(--text-muted);">Tỷ lệ đúng (${res.correct_count||0}/${res.total_questions||1})</div>
+          </div>
+          <div style="background:var(--primary-50);padding:1rem;border-radius:var(--radius-md);">
+            <div style="font-size:1.4rem;font-weight:800;color:var(--primary-700);">${res.grade || 'Đạt'}</div>
+            <div style="font-size:0.72rem;color:var(--text-muted);">Xếp loại</div>
+          </div>
+          <div style="background:var(--warning-bg);padding:1rem;border-radius:var(--radius-md);">
+            <div style="font-size:1.4rem;font-weight:800;color:#E65100;">+${earnedPts} ĐTT</div>
+            <div style="font-size:0.72rem;color:var(--text-muted);">Điểm thưởng</div>
+          </div>
+        </div>
+
+        ${cert ? `
+          <div style="background:linear-gradient(135deg,#FFF8E1,#FFF3E0);border:1px solid #FFB74D;border-radius:var(--radius-lg);padding:1rem;margin-bottom:1.25rem;text-align:left;">
+            <div style="font-size:0.8rem;font-weight:800;color:#BF360C;margin-bottom:0.25rem;">🎖️ ĐÃ CẤP GIẤY CHỨNG NHẬN ĐIỆN TỬ</div>
+            <div style="font-size:0.85rem;font-weight:700;color:var(--text-primary);">${escapeHTML(cert.title)}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">Mã tra cứu: <strong>${cert.certificate_id}</strong></div>
+          </div>
+        ` : ''}
+
+        <button class="btn btn-primary" onclick="closeModal()">Hoàn thành</button>
+      </div>`);
+
+    if (typeof performSyncCheck === 'function') performSyncCheck();
+  } catch (err) {
+    showToast('Lỗi nộp bài: ' + err.message, 'error');
+  }
 }
 
 window.loadQuizzesList = loadQuizzesList;
@@ -272,4 +332,5 @@ window.triggerWordImport = triggerWordImport;
 window.handleWordImport = handleWordImport;
 window.handleCreateQuizSubmit = handleCreateQuizSubmit;
 window.startQuizModal = startQuizModal;
+window.handleQuizSubmitForm = handleQuizSubmitForm;
 window.submitQuiz = submitQuiz;

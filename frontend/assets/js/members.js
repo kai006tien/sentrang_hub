@@ -134,6 +134,7 @@ async function handleCreateMemberAndAccountSubmit(e) {
     showToast(`Đã thêm thành viên & cấp tài khoản thành công cho ${fullName}!`, 'success');
     closeModal();
     loadMembersList();
+    if (typeof performSyncCheck === 'function') performSyncCheck();
   } catch (err) {
     showToast('Lỗi: ' + err.message, 'error');
   }
@@ -202,6 +203,7 @@ async function handleEditMemberSubmit(e, memberId) {
     showToast(res.message || 'Cập nhật thông tin thành viên thành công!', 'success');
     closeModal();
     loadMembersList();
+    if (typeof performSyncCheck === 'function') performSyncCheck();
   } catch (err) { showToast('Lỗi: ' + err.message, 'error'); }
 }
 
@@ -212,6 +214,7 @@ async function deleteMember(memberId, memberName) {
     const res = await API.delete(`/members/${memberId}`);
     showToast(res.message || `Đã xóa thành viên ${memberName} thành công!`, 'success');
     loadMembersList();
+    if (typeof performSyncCheck === 'function') performSyncCheck();
   } catch (err) { showToast('Lỗi: ' + err.message, 'error'); }
 }
 

@@ -55,6 +55,63 @@ const GLOBAL_CLOUD_DB_URL = 'https://jsonblob.com/api/jsonBlob/019fb1f2-890d-72b
 let isCloudSyncing = false;
 let mockDbVersion = Date.now();
 
+// Cross-tab & multi-user Real-Time Synchronization Engine
+const SYNC_CHANNEL_NAME = 'sentrang_hub_realtime_sync';
+let syncChannel = null;
+try {
+  if (typeof BroadcastChannel !== 'undefined') {
+    syncChannel = new BroadcastChannel(SYNC_CHANNEL_NAME);
+    syncChannel.onmessage = (event) => {
+      if (event.data && event.data.version) {
+        if (event.data.version > mockDbVersion) {
+          mockDbVersion = event.data.version;
+          syncWithGlobalCloud().then(() => {
+            if (typeof window.onRealtimeDataUpdated === 'function') {
+              window.onRealtimeDataUpdated(event.data);
+            }
+          });
+        }
+      }
+    };
+  }
+} catch (e) {
+  console.warn('[Sync Channel] BroadcastChannel disabled:', e);
+}
+
+window.addEventListener('storage', (e) => {
+  if (e.key === 'sentrang_last_broadcast_sync' && e.newValue) {
+    try {
+      const data = JSON.parse(e.newValue);
+      if (data && data.version > mockDbVersion) {
+        mockDbVersion = data.version;
+        syncWithGlobalCloud().then(() => {
+          if (typeof window.onRealtimeDataUpdated === 'function') {
+            window.onRealtimeDataUpdated(data);
+          }
+        });
+      }
+    } catch {}
+  }
+});
+
+function notifyRealtimeSync(eventType = 'DATA_UPDATED', payload = {}) {
+  const syncEvent = {
+    version: mockDbVersion,
+    eventType: eventType,
+    timestamp: Date.now(),
+    payload: payload
+  };
+  if (syncChannel) {
+    try { syncChannel.postMessage(syncEvent); } catch (e) {}
+  }
+  try {
+    localStorage.setItem('sentrang_last_broadcast_sync', JSON.stringify(syncEvent));
+  } catch (e) {}
+  if (typeof window.onRealtimeDataUpdated === 'function') {
+    window.onRealtimeDataUpdated(syncEvent);
+  }
+}
+
 async function syncWithGlobalCloud() {
   if (isCloudSyncing) return;
   isCloudSyncing = true;
@@ -65,13 +122,16 @@ async function syncWithGlobalCloud() {
     if (res.ok) {
       const data = await res.json();
       if (data && Array.isArray(data.users) && data.users.length > 0) {
-        if (data.version) mockDbVersion = data.version;
+        if (data.version && data.version > mockDbVersion) mockDbVersion = data.version;
         MOCK_DB.users = data.users;
         if (Array.isArray(data.members)) MOCK_DB.members = data.members;
         if (Array.isArray(data.events)) MOCK_DB.events = data.events;
         if (Array.isArray(data.articles)) MOCK_DB.articles = data.articles;
+        if (Array.isArray(data.quizzes)) MOCK_DB.quizzes = data.quizzes;
         if (Array.isArray(data.notifications)) MOCK_DB.notifications = data.notifications;
         if (Array.isArray(data.certificates)) MOCK_DB.certificates = data.certificates;
+        if (Array.isArray(data.logs)) MOCK_DB.logs = data.logs;
+        if (Array.isArray(data.years)) MOCK_DB.years = data.years;
         saveMockDbToStorage();
       }
     }
@@ -85,6 +145,7 @@ async function syncWithGlobalCloud() {
 async function pushToGlobalCloud() {
   mockDbVersion = Date.now();
   saveMockDbToStorage();
+  notifyRealtimeSync('CLOUD_PUSH', { version: mockDbVersion });
   try {
     await fetch(GLOBAL_CLOUD_DB_URL, {
       method: 'PUT',
@@ -102,7 +163,8 @@ async function pushToGlobalCloud() {
         notifications: MOCK_DB.notifications,
         leaderboard: MOCK_DB.leaderboard,
         certificates: MOCK_DB.certificates,
-        logs: MOCK_DB.logs
+        logs: MOCK_DB.logs,
+        years: MOCK_DB.years
       })
     });
     console.log('[Global Cloud Sync] Database state pushed to cloud successfully.');
@@ -576,9 +638,49 @@ async function getMockApiResponse(endpoint, options = {}) {
     pushToGlobalCloud();
     return Promise.resolve({ success: true, message: `Điểm danh thành công cho ${memName}! +10 Điểm thành tích.`, current_count: evt ? evt.current_count : 1 });
   }
+  if (endpoint.includes('/events/') && endpoint.includes('/cancel-attendance') && method === 'POST') {
+    const eventId = endpoint.split('/')[3];
+    const evt = (MOCK_DB.events || []).find(e => e.id === eventId);
+    if (evt && evt.current_count > 0) {
+      evt.current_count = Math.max(0, evt.current_count - 1);
+    }
+    const memId = body.member_id;
+    const mem = (MOCK_DB.members || []).find(m => m.id === memId || m.student_id === memId || m.email === memId);
+    if (mem) {
+      const reward = evt ? (evt.points_reward || 10) : 10;
+      mem.attendance_points = Math.max(0, (mem.attendance_points || 0) - reward);
+      mem.total_points = Math.max(0, (mem.total_points || 0) - reward);
+      if (mem.points_history) {
+        mem.points_history = mem.points_history.filter(ph => ph.event_id !== eventId && !(ph.title || '').includes(evt ? evt.title : ''));
+      }
+    }
+    pushToGlobalCloud();
+    return Promise.resolve({ success: true, message: `Đã hủy điểm danh thành công cho ${mem ? mem.full_name : 'thành viên'}!` });
+  }
   if (endpoint === '/api/events' && method === 'POST') {
+    const currentUser = typeof Auth !== 'undefined' ? Auth.getUser() : null;
     const newEvt = { id: 'event_' + Date.now(), ...body, current_count: 0, status: 'active', start_date: body.start_date || new Date().toISOString() };
     MOCK_DB.events.push(newEvt);
+    
+    // Auto broadcast notification for new event
+    MOCK_DB.notifications.unshift({
+      id: 'noti_' + Date.now(),
+      title: `📅 Sự kiện mới: ${newEvt.title}`,
+      content: `CLB vừa mở đăng ký tham gia "${newEvt.title}" tại ${newEvt.location || 'CLB'}. Đăng ký ngay để tích lũy điểm thành tích!`,
+      type: 'info',
+      target: 'all',
+      created_at: new Date().toISOString(),
+      read_by: []
+    });
+
+    MOCK_DB.logs.unshift({
+      timestamp: new Date().toLocaleString('vi-VN'),
+      admin: currentUser ? currentUser.display_name : 'Ban Hoạt động',
+      action: 'EVENT.CREATE',
+      module: 'Hoạt động',
+      detail: `Tạo sự kiện mới "${newEvt.title}" (Tối đa ${newEvt.max_participants || 50} người)`
+    });
+
     pushToGlobalCloud();
     return Promise.resolve({ message: 'Tạo sự kiện mới thành công!', data: newEvt });
   }
@@ -586,19 +688,191 @@ async function getMockApiResponse(endpoint, options = {}) {
 
   // Articles
   if (endpoint === '/api/articles' && method === 'POST') {
-    const newArt = { id: 'article_' + Date.now(), ...body, status: 'published', view_count: 0, author_name: 'Ban Truyền thông', created_at: new Date().toISOString() };
+    const currentUser = typeof Auth !== 'undefined' ? Auth.getUser() : null;
+    const newArt = { id: 'article_' + Date.now(), ...body, status: 'published', view_count: 0, author_name: currentUser?.display_name || 'Ban Truyền thông', created_at: new Date().toISOString() };
     MOCK_DB.articles.unshift(newArt);
+
+    // Auto broadcast notification for new article
+    MOCK_DB.notifications.unshift({
+      id: 'noti_' + Date.now(),
+      title: `📰 Bài viết mới: ${newArt.title}`,
+      content: `Đã có bài viết mới "${newArt.title}" từ ${newArt.author_name}. Hãy truy cập Cổng truyền thông để đọc bài nhé!`,
+      type: 'info',
+      target: 'all',
+      created_at: new Date().toISOString(),
+      read_by: []
+    });
+
+    MOCK_DB.logs.unshift({
+      timestamp: new Date().toLocaleString('vi-VN'),
+      admin: currentUser ? currentUser.display_name : 'Ban Truyền thông',
+      action: 'ARTICLE.CREATE',
+      module: 'Truyền thông',
+      detail: `Đăng bài viết mới "${newArt.title}"`
+    });
+
     pushToGlobalCloud();
     return Promise.resolve({ message: 'Tạo bài viết mới thành công!', data: newArt });
   }
   if (endpoint.startsWith('/api/articles')) return Promise.resolve(MOCK_DB.articles);
 
   // Quizzes
-  if (endpoint.match(/\/quizzes\/[^/]+\/questions/)) return Promise.resolve(MOCK_DB.quizzes[0]?.questions || []);
-  if (endpoint.includes('/quizzes/') && endpoint.includes('/submit')) return Promise.resolve({ total_points: 2, max_points: 2, score_percent: 100, correct_count: 2, passed: true, grade: 'A' });
+  if (endpoint.match(/\/quizzes\/[^/]+\/questions/)) {
+    const quizId = endpoint.split('/')[3];
+    const qz = (MOCK_DB.quizzes || []).find(q => q.id === quizId) || MOCK_DB.quizzes[0];
+    return Promise.resolve(qz ? (qz.questions || []) : []);
+  }
+  if (endpoint.includes('/quizzes/') && endpoint.includes('/submit')) {
+    const quizId = endpoint.split('/')[3];
+    const qz = (MOCK_DB.quizzes || []).find(q => q.id === quizId) || MOCK_DB.quizzes[0];
+    const answers = body.answers || {};
+    const questions = qz ? (qz.questions || []) : [];
+    
+    let correctCount = 0;
+    if (questions.length > 0) {
+      questions.forEach((q, qi) => {
+        const selectedIdx = parseInt(answers[`quiz_q_${qi}`]);
+        const correctIdx = (q.options || []).findIndex(o => o.correct === true);
+        if (!isNaN(selectedIdx) && (selectedIdx === correctIdx || correctIdx === -1)) {
+          correctCount++;
+        }
+      });
+    } else {
+      correctCount = 1;
+    }
+
+    const totalQuestions = Math.max(1, questions.length);
+    const scorePercent = Math.round((correctCount / totalQuestions) * 100);
+    const passingScore = qz ? (qz.passing_score || 70) : 70;
+    const passed = scorePercent >= passingScore;
+    
+    const currentUser = typeof Auth !== 'undefined' ? Auth.getUser() : null;
+    let earnedPoints = 0;
+    let certObj = null;
+
+    if (passed) {
+      earnedPoints = Math.round((qz?.points_reward || 20) * (scorePercent / 100)) || 15;
+      
+      let mem = (MOCK_DB.members || []).find(m => m.user_id === currentUser?.id || m.email === currentUser?.email);
+      if (!mem && currentUser) {
+        mem = {
+          id: 'mem_' + Date.now(),
+          user_id: currentUser.id,
+          full_name: currentUser.display_name || 'Thành viên',
+          email: currentUser.email,
+          student_id: 'MSTN' + Math.floor(10000 + Math.random() * 90000),
+          department: 'Ban Đào tạo & Kỹ năng',
+          current_position: currentUser.role_name || 'Thành viên',
+          status: 'active',
+          total_points: 0,
+          bonus_points: 0,
+          attendance_points: 0,
+          penalty_points: 0
+        };
+        MOCK_DB.members.push(mem);
+      }
+
+      if (mem) {
+        mem.bonus_points = (mem.bonus_points || 0) + earnedPoints;
+        mem.total_points = (mem.total_points || 0) + earnedPoints;
+        if (!mem.points_history) mem.points_history = [];
+        mem.points_history.unshift({
+          id: 'ph_' + Date.now(),
+          quiz_id: qz ? qz.id : null,
+          title: 'Thi trực tuyến: ' + (qz ? qz.title : 'Bài kiểm tra'),
+          points: earnedPoints,
+          type: 'bonus',
+          date: new Date().toISOString()
+        });
+      }
+
+      // Auto issue certificate if enabled
+      if (qz && (qz.issue_certificate || qz.cert_enabled || qz.certificate_content)) {
+        certObj = {
+          id: 'cert_' + Date.now(),
+          certificate_id: 'CERT-STH-' + new Date().getFullYear() + '-' + Math.floor(1000 + Math.random() * 9000),
+          title: 'CHỨNG NHẬN HOÀN THÀNH: ' + (qz.title || 'ĐÀO TẠO').toUpperCase(),
+          recipient_name: mem ? mem.full_name : (currentUser?.display_name || 'Thành viên'),
+          user_id: currentUser?.id,
+          user_email: currentUser?.email,
+          member_id: mem?.id,
+          department: mem?.department || 'Ban Đào tạo',
+          reason: qz.certificate_content || `Đã hoàn thành xuất sắc bài thi "${qz.title}" với kết quả ${scorePercent}%`,
+          issued_date: new Date().toLocaleDateString('vi-VN'),
+          issued_by: 'Hội đồng Thi & Đào tạo CLB Sen Trắng'
+        };
+        MOCK_DB.certificates.unshift(certObj);
+      }
+
+      // Auto create notification
+      MOCK_DB.notifications.unshift({
+        id: 'noti_' + Date.now(),
+        title: `🎉 Kết quả thi "${qz ? qz.title : 'Trắc nghiệm'}": ĐẠT (${scorePercent}%)`,
+        content: `Chúc mừng bạn đã hoàn thành bài thi! Kết quả: ${correctCount}/${totalQuestions} câu đúng (${scorePercent}%). Bạn được thưởng +${earnedPoints} Điểm thành tích.${certObj ? ' Giấy chứng nhận điện tử đã được cấp thành công!' : ''}`,
+        type: 'info',
+        target: currentUser?.id || 'all',
+        created_at: new Date().toISOString(),
+        read_by: []
+      });
+
+      // Audit Log
+      MOCK_DB.logs.unshift({
+        timestamp: new Date().toLocaleString('vi-VN'),
+        admin: currentUser ? currentUser.display_name : 'Thành viên',
+        action: 'QUIZ.SUBMIT_PASS',
+        module: 'Thi trực tuyến',
+        detail: `Hoàn thành xuất sắc bài thi "${qz ? qz.title : 'Đề thi'}" (${scorePercent}%, +${earnedPoints} ĐTT)`
+      });
+    } else {
+      if (currentUser) {
+        MOCK_DB.notifications.unshift({
+          id: 'noti_' + Date.now(),
+          title: `📝 Kết quả bài thi "${qz ? qz.title : 'Trắc nghiệm'}": CHƯA ĐẠT (${scorePercent}%)`,
+          content: `Bạn đạt ${scorePercent}% (${correctCount}/${totalQuestions} câu). Cần tối thiểu ${passingScore}% để đạt bài thi. Hãy ôn tập và thử lại nhé!`,
+          type: 'warning',
+          target: currentUser.id,
+          created_at: new Date().toISOString(),
+          read_by: []
+        });
+      }
+    }
+
+    pushToGlobalCloud();
+    return Promise.resolve({
+      total_points: earnedPoints,
+      max_points: totalQuestions,
+      score_percent: scorePercent,
+      correct_count: correctCount,
+      total_questions: totalQuestions,
+      passed: passed,
+      grade: scorePercent >= 90 ? 'Xuất sắc' : (scorePercent >= 80 ? 'Giỏi' : (passed ? 'Đạt' : 'Chưa đạt')),
+      earned_points: earnedPoints,
+      certificate: certObj
+    });
+  }
   if (endpoint === '/api/quizzes' && method === 'POST') {
+    const currentUser = typeof Auth !== 'undefined' ? Auth.getUser() : null;
     const newQz = { id: 'quiz_' + Date.now(), ...body, question_count: (body.questions||[]).length };
     MOCK_DB.quizzes.push(newQz);
+
+    MOCK_DB.notifications.unshift({
+      id: 'noti_' + Date.now(),
+      title: `📝 Đề thi mới: ${newQz.title}`,
+      content: `CLB vừa phát hành đề thi mới "${newQz.title}" (${newQz.question_count} câu, ${Math.round((newQz.duration||1800)/60)} phút). Hãy vào thi ngay!`,
+      type: 'info',
+      target: 'all',
+      created_at: new Date().toISOString(),
+      read_by: []
+    });
+
+    MOCK_DB.logs.unshift({
+      timestamp: new Date().toLocaleString('vi-VN'),
+      admin: currentUser ? currentUser.display_name : 'Ban Đào tạo',
+      action: 'QUIZ.CREATE',
+      module: 'Thi trực tuyến',
+      detail: `Phát hành đề thi mới "${newQz.title}" (${newQz.question_count} câu hỏi)`
+    });
+
     pushToGlobalCloud();
     return Promise.resolve({ message: 'Tạo đề thi mới thành công!', data: newQz });
   }
@@ -790,7 +1064,15 @@ function isSuperAdmin() {
   if (!userData) return false;
   try {
     const user = JSON.parse(userData);
-    return user.role_id === 'role_super_admin' || user.role_level === 0;
+    if (!user) return false;
+    return (
+      user.role_id === 'role_super_admin' ||
+      user.role_name === 'Super Admin' ||
+      user.role_level === 0 ||
+      user.role_level === '0' ||
+      user.email === 'admin@sentranghub.vn' ||
+      (Array.isArray(user.permissions) && user.permissions.includes('*'))
+    );
   } catch { return false; }
 }
 

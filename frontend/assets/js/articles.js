@@ -93,6 +93,7 @@ async function handleCreateArticleSubmit(e) {
     const res = await API.post('/articles', payload);
     showToast(res.message || 'Tạo bài viết thành công!', 'success');
     closeModal(); loadArticlesList();
+    if (typeof performSyncCheck === 'function') performSyncCheck();
   } catch (err) { showToast('Lỗi: ' + err.message, 'error'); }
 }
 

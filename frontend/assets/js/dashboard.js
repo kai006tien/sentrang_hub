@@ -948,6 +948,102 @@ function escapeHTML(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// ========================================
+// Real-Time Background Synchronization Engine
+// ========================================
+let syncIntervalTimer = null;
+let lastKnownNotiCount = 0;
+
+function startRealTimeSyncManager() {
+  if (syncIntervalTimer) clearInterval(syncIntervalTimer);
+
+  updateNotiBadge();
+
+  // Polling check every 4 seconds
+  syncIntervalTimer = setInterval(async () => {
+    try {
+      if (typeof syncWithGlobalCloud === 'function') {
+        await syncWithGlobalCloud();
+      }
+      performSyncCheck(false);
+    } catch (e) {
+      console.warn('[RealTime Sync Manager] Polling check failed:', e);
+    }
+  }, 4000);
+
+  // Broadcast / Storage event callback
+  window.onRealtimeDataUpdated = (eventData) => {
+    performSyncCheck(true);
+  };
+}
+
+async function performSyncCheck(isImmediate = false) {
+  try {
+    const prevCount = lastKnownNotiCount;
+    const currentBadgeCount = await updateNotiBadge();
+
+    if (currentBadgeCount > prevCount && prevCount >= 0 && isImmediate) {
+      showToast('🔔 Có thông báo / cập nhật hệ thống mới!', 'info');
+    }
+    lastKnownNotiCount = currentBadgeCount;
+
+    // Refresh current view components if window is active
+    if (typeof currentView !== 'undefined' && currentView) {
+      switch (currentView) {
+        case 'overview':
+          if (typeof loadOverviewStats === 'function') loadOverviewStats();
+          if (typeof loadOverviewCertificates === 'function') loadOverviewCertificates();
+          if (typeof loadLatestNews === 'function') loadLatestNews();
+          break;
+        case 'users':
+          if (typeof loadMembersList === 'function') loadMembersList();
+          break;
+        case 'events':
+          if (typeof loadEventsList === 'function') loadEventsList();
+          break;
+        case 'leaderboard':
+          if (typeof loadLeaderboard === 'function') loadLeaderboard();
+          break;
+        case 'certificates':
+          if (typeof loadCertificatesList === 'function') loadCertificatesList();
+          break;
+        case 'articles':
+          if (typeof loadArticlesList === 'function') loadArticlesList();
+          break;
+        case 'quizzes':
+          if (typeof loadQuizzesList === 'function') loadQuizzesList();
+          break;
+        case 'notifications':
+          if (typeof loadNotificationsList === 'function') loadNotificationsList();
+          break;
+        case 'roles':
+          if (typeof loadRolesGrid === 'function') loadRolesGrid();
+          if (typeof loadUserPermissionsTable === 'function') loadUserPermissionsTable();
+          if (typeof loadSystemLogs === 'function') loadSystemLogs();
+          break;
+      }
+    }
+  } catch (err) {
+    console.warn('[RealTime Sync Manager] Perform sync check error:', err);
+  }
+}
+
+async function updateNotiBadge() {
+  const badge = document.getElementById('noti-badge');
+  if (!badge) return 0;
+  try {
+    const res = await apiFetch('/api/notifications');
+    const list = res.data || (Array.isArray(res) ? res : []);
+    const user = typeof Auth !== 'undefined' ? Auth.getUser() : null;
+    const unread = list.filter(n => !user || !n.read_by || !n.read_by.includes(user.id)).length;
+    badge.textContent = unread;
+    badge.style.display = unread > 0 ? 'inline-block' : 'none';
+    return unread;
+  } catch (err) {
+    return 0;
+  }
+}
+
 // Expose globals
 window.showView = showView;
 window.showModal = showModal;
@@ -958,6 +1054,8 @@ window.loadOverviewStats = loadOverviewStats;
 window.loadOverviewCertificates = loadOverviewCertificates;
 window.openUserProfileModal = openUserProfileModal;
 window.updateNotiBadge = updateNotiBadge;
+window.startRealTimeSyncManager = startRealTimeSyncManager;
+window.performSyncCheck = performSyncCheck;
 
 function openResetModuleModal(moduleKey) {
   if (!isSuperAdmin()) {

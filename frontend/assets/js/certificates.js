@@ -350,6 +350,7 @@ async function handleCreateCertSubmit(e) {
     closeModal();
     if (typeof loadCertificatesList === 'function') loadCertificatesList();
     if (typeof loadOverviewCertificates === 'function') loadOverviewCertificates();
+    if (typeof performSyncCheck === 'function') performSyncCheck();
   } catch (err) { showToast('Lỗi: ' + err.message, 'error'); }
 }
 
@@ -417,6 +418,7 @@ async function handlePointsAdjustmentSubmit(e) {
     closeModal();
     loadLeaderboard();
     if (typeof loadOverviewStats === 'function') loadOverviewStats();
+    if (typeof performSyncCheck === 'function') performSyncCheck();
   } catch (err) {
     showToast('Lỗi: ' + err.message, 'error');
   }
