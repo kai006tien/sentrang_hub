@@ -35,40 +35,48 @@ def list_events(
     offset: int = 0
 ):
     """Lấy danh sách sự kiện trong hệ thống."""
-    supabase = get_supabase_admin()
-    query = supabase.table("events").select("*")
+    try:
+        supabase = get_supabase_admin()
+        if not supabase:
+            return []
 
-    if category:
-        query = query.eq("category", category)
-    if status_val:
-        query = query.eq("status", status_val)
+        query = supabase.table("events").select("*")
 
-    res = query.order("start_date", desc=True).range(offset, offset + limit - 1).execute()
-    
-    events = []
-    for item in res.data:
-        events.append(EventResponse(
-            id=str(item["id"]),
-            title=item["title"],
-            slug=item["slug"],
-            description=item.get("description", ""),
-            category=item.get("category", "volunteer"),
-            cover_image_url=item.get("cover_image_url"),
-            location=item.get("location", ""),
-            location_lat=item.get("location_lat"),
-            location_lng=item.get("location_lng"),
-            start_date=item["start_date"],
-            end_date=item.get("end_date"),
-            max_participants=item.get("max_participants", 50),
-            current_count=item.get("current_count", 0),
-            is_registration_open=item.get("is_registration_open", True),
-            requires_approval=item.get("requires_approval", True),
-            base_points=float(item.get("base_points", 10.0)),
-            status=item.get("status", "active"),
-            visibility=item.get("visibility", "public"),
-            created_at=item.get("created_at") or datetime.utcnow()
-        ))
-    return events
+        if category:
+            query = query.eq("category", category)
+        if status_val:
+            query = query.eq("status", status_val)
+
+        res = query.order("start_date", desc=True).range(offset, offset + limit - 1).execute()
+        
+        events = []
+        for item in (res.data or []):
+            events.append(EventResponse(
+                id=str(item["id"]),
+                title=item.get("title", "Sự kiện"),
+                slug=item.get("slug", "event"),
+                description=item.get("description", ""),
+                category=item.get("category", "volunteer"),
+                cover_image_url=item.get("cover_image_url"),
+                location=item.get("location", ""),
+                location_lat=item.get("location_lat"),
+                location_lng=item.get("location_lng"),
+                start_date=item.get("start_date") or datetime.utcnow(),
+                end_date=item.get("end_date"),
+                max_participants=item.get("max_participants", 50),
+                current_count=item.get("current_count", 0),
+                is_registration_open=item.get("is_registration_open", True),
+                requires_approval=item.get("requires_approval", True),
+                base_points=float(item.get("base_points", 10.0)),
+                status=item.get("status", "active"),
+                visibility=item.get("visibility", "public"),
+                created_at=item.get("created_at") or datetime.utcnow()
+            ))
+        return events
+    except Exception as e:
+        print(f"⚠️ Exception in list_events: {e}")
+        return []
+
 
 
 @router.post("", response_model=EventResponse, status_code=status.HTTP_201_CREATED, summary="Tạo sự kiện mới")
