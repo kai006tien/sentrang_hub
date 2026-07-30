@@ -484,6 +484,9 @@ async function getMockApiResponse(endpoint, options = {}) {
     pushToGlobalCloud();
     return Promise.resolve({ message: `Đã cấp chứng nhận thành công cho ${cert.recipient_name}!`, certificate: cert });
   }
+  if (endpoint.startsWith('/api/certificates') && method === 'GET') {
+    return Promise.resolve({ data: MOCK_DB.certificates || [] });
+  }
 
   // Events
   if (endpoint.includes('/events/') && (endpoint.includes('/attendance') || endpoint.includes('/check-in'))) {
@@ -553,13 +556,19 @@ async function getMockApiResponse(endpoint, options = {}) {
   if (endpoint.startsWith('/api/notifications') && method === 'GET') {
     const user = typeof Auth !== 'undefined' ? Auth.getUser() : null;
     const allNotis = MOCK_DB.notifications || [];
-    if (!user || user.role_id === 'role_super_admin') {
-      return Promise.resolve({ data: allNotis });
-    }
+    
     const userNotis = allNotis.filter(n => {
+      if (!user) return false;
       if (!n.target || n.target === 'all') return true;
       if (n.target === user.id || n.target === user.email || n.target === user.role_id) return true;
-      if (n.user_id === user.id) return true;
+      if (n.user_id && n.user_id === user.id) return true;
+      if (n.target && (n.target.toLowerCase() === (user.display_name || '').toLowerCase() || n.target.toLowerCase() === (user.email || '').toLowerCase())) return true;
+      
+      const userMem = (MOCK_DB.members || []).find(m => m.email === user.email || m.user_id === user.id);
+      if (userMem) {
+        if (n.target === userMem.id || n.target === userMem.email) return true;
+        if (n.target && n.target.toLowerCase() === (userMem.full_name || '').toLowerCase()) return true;
+      }
       return false;
     });
     return Promise.resolve({ data: userNotis });
