@@ -161,12 +161,12 @@ async function loadLeaderboard() {
         </div>
       </div>
 
-      <div style="display:flex;gap:0.5rem;overflow-x:auto;padding-bottom:0.5rem;margin-bottom:1.25rem;">
-        <button class="btn ${selectedLeaderboardCampaign === 'all' ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="changeLeaderboardCampaign('all')">🏆 Tổng kết năm (12 Tháng)</button>
-        <button class="btn ${selectedLeaderboardCampaign === 'xuan_tinh_nguyen' ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="changeLeaderboardCampaign('xuan_tinh_nguyen')">🌸 Xuân Tình Nguyện (Tháng 1-2)</button>
-        <button class="btn ${selectedLeaderboardCampaign === 'thang_thanh_nien' ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="changeLeaderboardCampaign('thang_thanh_nien')">⚡ Tháng Thanh Niên (Tháng 3-4)</button>
-        <button class="btn ${selectedLeaderboardCampaign === 'he_tinh_nguyen' ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="changeLeaderboardCampaign('he_tinh_nguyen')">☀️ Hè Tình Nguyện (Tháng 5-9)</button>
-        <button class="btn ${selectedLeaderboardCampaign === 'dong_tinh_nguyen' ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="changeLeaderboardCampaign('dong_tinh_nguyen')">❄️ Đông Tình Nguyện (Tháng 10-12)</button>
+      <div class="campaign-pill-scroll">
+        <button class="campaign-pill-btn ${selectedLeaderboardCampaign === 'all' ? 'active' : ''}" onclick="changeLeaderboardCampaign('all')">🏆 Tổng kết năm (12 Tháng)</button>
+        <button class="campaign-pill-btn ${selectedLeaderboardCampaign === 'xuan_tinh_nguyen' ? 'active' : ''}" onclick="changeLeaderboardCampaign('xuan_tinh_nguyen')">🌸 Xuân Tình Nguyện (Tháng 1-2)</button>
+        <button class="campaign-pill-btn ${selectedLeaderboardCampaign === 'thang_thanh_nien' ? 'active' : ''}" onclick="changeLeaderboardCampaign('thang_thanh_nien')">⚡ Tháng Thanh Niên (Tháng 3-4)</button>
+        <button class="campaign-pill-btn ${selectedLeaderboardCampaign === 'he_tinh_nguyen' ? 'active' : ''}" onclick="changeLeaderboardCampaign('he_tinh_nguyen')">☀️ Hè Tình Nguyện (Tháng 5-9)</button>
+        <button class="campaign-pill-btn ${selectedLeaderboardCampaign === 'dong_tinh_nguyen' ? 'active' : ''}" onclick="changeLeaderboardCampaign('dong_tinh_nguyen')">❄️ Đông Tình Nguyện (Tháng 10-12)</button>
       </div>
     `;
 
@@ -238,19 +238,80 @@ async function issueCertificate(memberId) {
 }
 
 function displayCertificateModal(cert) {
-  showModal('🎖️ Giấy Chứng Nhận', `
-    <div style="text-align:center;background:linear-gradient(135deg,#FFF8E1,#FFF3E0);padding:2rem;border-radius:var(--radius-xl);border:2px solid #FFB74D;box-shadow:0 10px 30px rgba(255,152,0,0.15);">
-      <div style="font-size:0.8rem;color:#E65100;font-weight:700;margin-bottom:0.5rem;letter-spacing:1px;">CLB THANH NIÊN TÌNH NGUYỆN SEN TRẮNG</div>
-      <h2 style="font-size:1.35rem;font-weight:800;color:#BF360C;margin-bottom:0.35rem;">${escapeHTML(cert.title)}</h2>
-      <div style="width:50px;height:3px;background:#FF9800;margin:0.5rem auto 1rem;border-radius:2px;"></div>
-      <p style="font-size:1.15rem;font-weight:700;color:#1A237E;margin-bottom:0.3rem;">${escapeHTML(cert.recipient_name)}</p>
-      <p style="font-size:0.825rem;color:var(--text-muted);margin-bottom:1rem;">${escapeHTML(cert.department || 'Ban Hoạt động')}</p>
-      <p style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.25rem;">${escapeHTML(cert.reason)}</p>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:1rem;border-top:1px solid rgba(0,0,0,0.1);">
-        <span style="font-size:0.75rem;color:var(--text-muted);">📅 ${cert.issued_date || new Date().toLocaleDateString('vi-VN')}</span>
-        <span style="font-size:0.75rem;font-weight:700;color:#1565C0;">${escapeHTML(cert.certificate_id || 'CERT-' + Date.now().toString().slice(-6))}</span>
+  const issueDate = cert.issued_date || new Date().toLocaleDateString('vi-VN');
+  const certId = cert.certificate_id || ('CERT-STH-' + Date.now().toString().slice(-6));
+  const issuer = cert.issued_by || 'Ban Chủ nhiệm CLB Sen Trắng';
+  
+  showModal('🎖️ Bằng Khen Vinh Danh — CLB Sen Trắng', `
+    <div class="cert-gold-frame" style="position:relative;background:linear-gradient(145deg, #FFFDF5 0%, #FFF8E7 50%, #FFF3D6 100%);padding:2rem 1.5rem;border-radius:16px;border:3px double #D4AF37;box-shadow:0 12px 35px rgba(184,134,11,0.25);text-align:center;overflow:hidden;box-sizing:border-box;">
+      
+      <!-- Corner Ornaments -->
+      <div style="position:absolute;top:8px;left:12px;font-size:1.2rem;color:#B8860B;">⚜️</div>
+      <div style="position:absolute;top:8px;right:12px;font-size:1.2rem;color:#B8860B;">⚜️</div>
+      <div style="position:absolute;bottom:8px;left:12px;font-size:1.2rem;color:#B8860B;">⚜️</div>
+      <div style="position:absolute;bottom:8px;right:12px;font-size:1.2rem;color:#B8860B;">⚜️</div>
+
+      <!-- Watermark Background -->
+      <img src="assets/images/logo.png" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:220px;height:220px;opacity:0.06;pointer-events:none;" alt="Watermark">
+
+      <!-- Header Header Logo & Org -->
+      <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:1.25rem;">
+        <img src="assets/images/logo.png" style="width:72px;height:72px;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.15));margin-bottom:0.6rem;" alt="Sen Trắng Logo">
+        <div style="font-size:0.75rem;font-weight:800;color:#996515;letter-spacing:1.5px;text-transform:uppercase;">CLB THANH NIÊN TÌNH NGUYỆN SEN TRẮNG</div>
+        <div style="font-size:0.68rem;font-weight:600;color:#795548;margin-top:0.2rem;">HỆ THỐNG QUẢN TRỊ & QUẢN LÝ THÀNH TÍCH NỘI BỘ</div>
       </div>
-      <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.75rem;">Ký bởi: <strong>${escapeHTML(cert.issued_by || 'Ban Chủ nhiệm CLB Sen Trắng')}</strong></p>
+
+      <!-- Divider -->
+      <div style="display:flex;align-items:center;justify-content:center;gap:0.5rem;margin-bottom:1.25rem;">
+        <div style="height:1.5px;width:60px;background:linear-gradient(90deg,transparent,#D4AF37);"></div>
+        <span style="color:#D4AF37;font-size:0.9rem;">★ ★ ★</span>
+        <div style="height:1.5px;width:60px;background:linear-gradient(90deg,#D4AF37,transparent);"></div>
+      </div>
+
+      <!-- Main Title -->
+      <div style="font-size:0.8rem;font-weight:700;color:#5D4037;letter-spacing:2px;text-transform:uppercase;margin-bottom:0.25rem;">TRAO TẶNG</div>
+      <h2 style="font-size:1.45rem;font-weight:900;color:#8B0000;text-transform:uppercase;margin:0 0 0.75rem 0;line-height:1.3;text-shadow:0 1px 2px rgba(0,0,0,0.1);">
+        ${escapeHTML(cert.title)}
+      </h2>
+
+      <!-- Recipient -->
+      <div style="background:rgba(255,255,255,0.7);border:1px solid rgba(212,175,55,0.4);border-radius:12px;padding:0.85rem 1.25rem;margin-bottom:1.25rem;display:inline-block;max-width:100%;box-sizing:border-box;">
+        <div style="font-size:0.75rem;color:#795548;margin-bottom:0.2rem;">Chứng nhận Thành viên:</div>
+        <div style="font-size:1.3rem;font-weight:900;color:#1A237E;margin-bottom:0.25rem;word-break:break-word;">
+          ${escapeHTML(cert.recipient_name)}
+        </div>
+        <div style="font-size:0.825rem;font-weight:700;color:#2E7D32;">
+          🏛️ ${escapeHTML(cert.department || 'Ban Công tác Hoạt động')}
+        </div>
+      </div>
+
+      <!-- Reason -->
+      <div style="font-size:0.875rem;color:#3E2723;line-height:1.6;margin-bottom:1.5rem;padding:0 0.5rem;font-style:italic;">
+        "${escapeHTML(cert.reason)}"
+      </div>
+
+      <!-- Signature & Seal Footer -->
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:0.5rem;padding-top:1rem;border-top:1px dashed #D4AF37;flex-wrap:wrap;">
+        <div style="text-align:left;flex:1;min-width:130px;">
+          <div style="font-size:0.72rem;color:#795548;margin-bottom:0.2rem;">MÃ SỐ BẰNG KHEN</div>
+          <div style="font-size:0.78rem;font-weight:800;color:#1565C0;background:rgba(21,101,192,0.08);padding:0.25rem 0.5rem;border-radius:4px;display:inline-block;">
+            ${escapeHTML(certId)}
+          </div>
+          <div style="font-size:0.72rem;color:#795548;margin-top:0.4rem;">📅 Ngày cấp: <strong>${escapeHTML(issueDate)}</strong></div>
+        </div>
+
+        <div style="text-align:center;flex-shrink:0;margin:0 0.5rem;">
+          <div style="width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,#FFD700,#FF9800);border:2px solid #FFF;box-shadow:0 4px 10px rgba(255,152,0,0.4);display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#FFF;margin:0 auto;">
+            🎖️
+          </div>
+          <div style="font-size:0.65rem;font-weight:800;color:#B8860B;margin-top:0.2rem;">VINH DANH</div>
+        </div>
+
+        <div style="text-align:right;flex:1;min-width:140px;">
+          <div style="font-size:0.72rem;font-weight:700;color:#5D4037;">TM. BAN CHỦ NHIỆM CLB</div>
+          <div style="font-size:0.825rem;font-weight:800;color:#8B0000;margin-top:1.5rem;">${escapeHTML(issuer)}</div>
+        </div>
+      </div>
     </div>
   `);
 }
@@ -454,19 +515,21 @@ async function loadCertificatesList() {
     }
 
     const cardsHTML = certs.map(c => `
-      <div style="background:linear-gradient(135deg,#FFF8E1,#FFF3E0);border:1.5px solid #FFB74D;border-radius:var(--radius-xl);padding:1.25rem;box-shadow:var(--shadow-sm);display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
-        <div style="display:flex;align-items:center;gap:1rem;min-width:240px;">
-          <div style="width:52px;height:52px;border-radius:50%;background:#FF9800;color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;">🎖️</div>
+      <div style="background:linear-gradient(135deg, #FFFDF5 0%, #FFF8E7 100%);border:1.5px solid #FFD700;border-radius:var(--radius-xl);padding:1.25rem;box-shadow:0 6px 18px rgba(184,134,11,0.12);display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;position:relative;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:1rem;min-width:240px;flex:1;">
+          <div style="width:54px;height:54px;border-radius:50%;background:#FFF;border:2px solid #FFD700;box-shadow:0 3px 8px rgba(0,0,0,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <img src="assets/images/logo.png" style="width:40px;height:40px;object-fit:contain;" alt="Logo">
+          </div>
           <div>
-            <div style="font-weight:800;font-size:1rem;color:#BF360C;">${escapeHTML(c.title)}</div>
-            <div style="font-size:0.85rem;font-weight:700;color:#1A237E;margin:0.15rem 0;">👤 ${escapeHTML(c.recipient_name)} (${escapeHTML(c.department || 'Ban Hoạt động')})</div>
-            <div style="font-size:0.775rem;color:var(--text-secondary);">"${escapeHTML(c.reason)}"</div>
+            <div style="font-weight:900;font-size:1.05rem;color:#8B0000;text-transform:uppercase;">${escapeHTML(c.title)}</div>
+            <div style="font-size:0.875rem;font-weight:800;color:#1A237E;margin:0.2rem 0;">👤 ${escapeHTML(c.recipient_name)} <span style="font-size:0.775rem;font-weight:600;color:#2E7D32;">(${escapeHTML(c.department || 'Ban Hoạt động')})</span></div>
+            <div style="font-size:0.8rem;color:#5D4037;font-style:italic;">"${escapeHTML(c.reason)}"</div>
           </div>
         </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.4rem;">
-          <span style="font-size:0.75rem;font-weight:700;color:#1565C0;background:rgba(21,101,192,0.1);padding:0.25rem 0.6rem;border-radius:var(--radius-full);">${escapeHTML(c.certificate_id || 'CERT-STH')}</span>
-          <span style="font-size:0.725rem;color:var(--text-muted);">📅 ${escapeHTML(c.issued_date || '2026')}</span>
-          <button class="btn btn-secondary btn-sm" onclick='displayCertificateModal(${JSON.stringify(c)})'>📜 Xem Bằng Khen</button>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.45rem;min-width:140px;">
+          <span style="font-size:0.75rem;font-weight:800;color:#1565C0;background:rgba(21,101,192,0.1);padding:0.25rem 0.65rem;border-radius:var(--radius-full);">${escapeHTML(c.certificate_id || 'CERT-STH')}</span>
+          <span style="font-size:0.75rem;color:var(--text-muted);">📅 ${escapeHTML(c.issued_date || '2026')}</span>
+          <button class="btn btn-secondary btn-sm" onclick='displayCertificateModal(${JSON.stringify(c)})' style="border:1px solid #FFD700;color:#8B0000;font-weight:700;background:#FFF8E7;">📜 Xem Bằng Khen</button>
         </div>
       </div>
     `).join('');

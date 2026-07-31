@@ -159,6 +159,10 @@ function ensureSeedData() {
   }
 }
 
+const SUPABASE_SYNC_URL = 'https://fjshckqpfkjsbpfkojhm.supabase.co/rest/v1/system_state?id=eq.global_state';
+const SUPABASE_SYNC_KEY = 'sb_publishable_E9vO4U5GhxvrHqqgArcjMQ_4nQE6vtR';
+const FALLBACK_CLOUD_DB_URL = 'https://jsonblob.com/api/jsonBlob/019fb1f2-890d-72b3-ae1d-621f05acd070';
+
 function mergeDbArrays(localArr, cloudArr) {
   if (!Array.isArray(cloudArr)) return Array.isArray(localArr) ? localArr : [];
   if (!Array.isArray(localArr) || localArr.length === 0) return cloudArr;
@@ -180,27 +184,51 @@ function mergeDbArrays(localArr, cloudArr) {
 async function syncWithGlobalCloud() {
   if (isCloudSyncing) return;
   isCloudSyncing = true;
+  let fetchedData = null;
+
   try {
-    const res = await fetch(GLOBAL_CLOUD_DB_URL, {
-      headers: { 'Accept': 'application/json', 'Cache-Control': 'no-cache' }
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data && typeof data === 'object') {
-        const cloudVersion = parseInt(data.version) || 0;
-        if (cloudVersion > mockDbVersion || mockDbVersion === 0) {
-          mockDbVersion = cloudVersion || Date.now();
+    // 1. Primary: Try Supabase Cloud KV Store
+    try {
+      const res = await fetch(SUPABASE_SYNC_URL, {
+        headers: {
+          'apikey': SUPABASE_SYNC_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_SYNC_KEY,
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache'
         }
-        
-        ['users', 'members', 'events', 'articles', 'quizzes', 'notifications', 'certificates', 'logs', 'years', 'leaderboard'].forEach(key => {
-          if (Array.isArray(data[key])) {
-            MOCK_DB[key] = mergeDbArrays(MOCK_DB[key], data[key]);
-          }
-        });
-        
-        ensureSeedData();
-        saveMockDbToStorage();
+      });
+      if (res.ok) {
+        const rows = await res.json();
+        if (Array.isArray(rows) && rows.length > 0 && rows[0].payload) {
+          fetchedData = rows[0].payload;
+        }
       }
+    } catch (e1) {}
+
+    // 2. Secondary Fallback: Try JSONBlob / MyJSON
+    if (!fetchedData) {
+      const res2 = await fetch(FALLBACK_CLOUD_DB_URL, {
+        headers: { 'Accept': 'application/json', 'Cache-Control': 'no-cache' }
+      });
+      if (res2.ok) {
+        fetchedData = await res2.json();
+      }
+    }
+
+    if (fetchedData && typeof fetchedData === 'object') {
+      const cloudVersion = parseInt(fetchedData.version) || 0;
+      if (cloudVersion > mockDbVersion || mockDbVersion === 0) {
+        mockDbVersion = cloudVersion || Date.now();
+      }
+      
+      ['users', 'members', 'events', 'articles', 'quizzes', 'notifications', 'certificates', 'logs', 'years', 'leaderboard'].forEach(key => {
+        if (Array.isArray(fetchedData[key])) {
+          MOCK_DB[key] = mergeDbArrays(MOCK_DB[key], fetchedData[key]);
+        }
+      });
+      
+      ensureSeedData();
+      saveMockDbToStorage();
     }
   } catch (e) {
     console.warn('[Global Cloud Sync] Offline fallback to localStorage cache:', e);
@@ -214,32 +242,59 @@ async function pushToGlobalCloud() {
   ensureSeedData();
   saveMockDbToStorage();
   notifyRealtimeSync('CLOUD_PUSH', { version: mockDbVersion });
-  try {
-    const res = await fetch(GLOBAL_CLOUD_DB_URL, {
+
+  const payload = {
+    version: mockDbVersion,
+    users: MOCK_DB.users,
+    members: MOCK_DB.members,
+    events: MOCK_DB.events,
+    articles: MOCK_DB.articles,
+    quizzes: MOCK_DB.quizzes,
+    notifications: MOCK_DB.notifications,
+    leaderboard: MOCK_DB.leaderboard,
+    certificates: MOCK_DB.certificates,
+    logs: MOCK_DB.logs,
+    years: MOCK_DB.years
+  };
+
+  // Push to Primary & Secondary in background asynchronously
+  const pushPromises = [];
+
+  // 1. Supabase Cloud KV Store Push
+  pushPromises.push(
+    fetch('https://fjshckqpfkjsbpfkojhm.supabase.co/rest/v1/system_state', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_SYNC_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_SYNC_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({
+        id: 'global_state',
+        payload: payload,
+        updated_at: new Date().toISOString()
+      })
+    }).catch(() => null)
+  );
+
+  // 2. Fallback JsonBlob Push
+  pushPromises.push(
+    fetch(FALLBACK_CLOUD_DB_URL, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      body: JSON.stringify({
-        version: mockDbVersion,
-        users: MOCK_DB.users,
-        members: MOCK_DB.members,
-        events: MOCK_DB.events,
-        articles: MOCK_DB.articles,
-        quizzes: MOCK_DB.quizzes,
-        notifications: MOCK_DB.notifications,
-        leaderboard: MOCK_DB.leaderboard,
-        certificates: MOCK_DB.certificates,
-        logs: MOCK_DB.logs,
-        years: MOCK_DB.years
-      })
-    });
-    if (res.ok) {
-      console.log('[Global Cloud Sync] Database state pushed to cloud successfully.');
-    }
+      body: JSON.stringify(payload)
+    }).catch(() => null)
+  );
+
+  try {
+    await Promise.allSettled(pushPromises);
+    console.log('[Global Cloud Sync] Database state pushed to multi-cloud successfully.');
   } catch (e) {
-    console.warn('[Global Cloud Sync] Push warning, saved locally:', e);
+    console.warn('[Global Cloud Sync] Push warning, cached locally:', e);
   }
 }
 

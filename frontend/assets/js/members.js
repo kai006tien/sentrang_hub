@@ -247,7 +247,7 @@ async function viewMemberDetail(memberId) {
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;margin-bottom:1rem;">
+        <div class="form-grid-2col" style="margin-bottom:1rem;">
           <div>
             <label style="font-size:0.75rem;font-weight:700;">Họ và tên *</label>
             <input type="text" id="detail-mem-name" value="${escapeHTML(p.full_name)}" ${canEdit?'':'disabled'} required>
@@ -258,7 +258,7 @@ async function viewMemberDetail(memberId) {
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;margin-bottom:1rem;">
+        <div class="form-grid-2col" style="margin-bottom:1rem;">
           <div>
             <label style="font-size:0.75rem;font-weight:700;">Ban hoạt động</label>
             <select id="detail-mem-dept" ${canEdit?'':'disabled'}>
@@ -286,7 +286,7 @@ async function viewMemberDetail(memberId) {
         <!-- Chức vụ kiêm nhiệm (Editable) -->
         <div style="background:var(--bg-main);padding:1rem;border-radius:var(--radius-lg);margin-bottom:1rem;border:1px solid var(--border-light);">
           <h4 style="font-size:0.875rem;font-weight:700;color:var(--primary-700);margin-bottom:0.6rem;">🏢 Chức vụ kiêm nhiệm bên ngoài</h4>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+          <div class="form-grid-2col" style="margin-bottom:0;">
             <div>
               <label style="font-size:0.725rem;color:var(--text-muted);">Chức danh kiêm nhiệm</label>
               <input type="text" id="detail-mem-ext-pos" value="${escapeHTML(extList[0]?.position||'')}" placeholder="Phó Bí thư Chi Đoàn" ${canEdit?'':'disabled'}>
@@ -301,13 +301,13 @@ async function viewMemberDetail(memberId) {
         <!-- Lịch sử thăng tiến (Editable) -->
         <div style="background:var(--success-bg);padding:1rem;border-radius:var(--radius-lg);margin-bottom:1.25rem;border:1px solid rgba(0,200,83,0.2);">
           <h4 style="font-size:0.875rem;font-weight:700;color:#1B5E20;margin-bottom:0.6rem;">⏳ Lịch sử thăng tiến & Nhiệm kỳ</h4>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;">
+          <div class="form-grid-3col" style="margin-bottom:0;">
             <div>
-              <label style="font-size:0.725rem;color:var(--text-muted);">Chức danh quá trình</label>
+              <label style="font-size:0.725rem;color:#1B5E20;">Chức danh quá trình</label>
               <input type="text" id="detail-mem-hist-role" value="${escapeHTML(histList[0]?.role_id||p.current_position||'Thành viên')}" ${canEdit?'':'disabled'}>
             </div>
             <div>
-              <label style="font-size:0.725rem;color:var(--text-muted);">Ngày bắt đầu</label>
+              <label style="font-size:0.725rem;color:#1B5E20;">Ngày bắt đầu</label>
               <input type="text" id="detail-mem-hist-start" value="${escapeHTML(histList[0]?.start_date||'2025-01-01')}" ${canEdit?'':'disabled'}>
             </div>
             <div>
