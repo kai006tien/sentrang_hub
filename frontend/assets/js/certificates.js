@@ -290,26 +290,28 @@ function displayCertificateModal(cert) {
         "${escapeHTML(cert.reason)}"
       </div>
 
-      <!-- Signature & Seal Footer -->
-      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:0.5rem;padding-top:1rem;border-top:1px dashed #D4AF37;flex-wrap:wrap;">
-        <div style="text-align:left;flex:1;min-width:130px;">
-          <div style="font-size:0.72rem;color:#795548;margin-bottom:0.2rem;">MÃ SỐ BẰNG KHEN</div>
-          <div style="font-size:0.78rem;font-weight:800;color:#1565C0;background:rgba(21,101,192,0.08);padding:0.25rem 0.5rem;border-radius:4px;display:inline-block;">
+      <!-- Signature & Official Red Seal Footer -->
+      <div class="cert-footer-container">
+        <div class="cert-footer-left">
+          <div style="font-size:0.72rem;color:#795548;margin-bottom:0.2rem;font-weight:700;">MÃ SỐ BẰNG KHEN</div>
+          <div style="font-size:0.75rem;font-weight:800;color:#1565C0;background:rgba(21,101,192,0.08);padding:0.25rem 0.5rem;border-radius:4px;display:inline-block;">
             ${escapeHTML(certId)}
           </div>
-          <div style="font-size:0.72rem;color:#795548;margin-top:0.4rem;">📅 Ngày cấp: <strong>${escapeHTML(issueDate)}</strong></div>
+          <div style="font-size:0.72rem;color:#795548;margin-top:0.35rem;">📅 Ngày cấp: <strong>${escapeHTML(issueDate)}</strong></div>
         </div>
 
-        <div style="text-align:center;flex-shrink:0;margin:0 0.5rem;">
-          <div style="width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,#FFD700,#FF9800);border:2px solid #FFF;box-shadow:0 4px 10px rgba(255,152,0,0.4);display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#FFF;margin:0 auto;">
+        <div class="cert-footer-center">
+          <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#FFD700,#FF9800);border:2px solid #FFF;box-shadow:0 4px 10px rgba(255,152,0,0.4);display:flex;align-items:center;justify-content:center;font-size:1.5rem;color:#FFF;margin:0 auto;">
             🎖️
           </div>
-          <div style="font-size:0.65rem;font-weight:800;color:#B8860B;margin-top:0.2rem;">VINH DANH</div>
+          <div style="font-size:0.62rem;font-weight:800;color:#B8860B;margin-top:0.15rem;">VINH DANH</div>
         </div>
 
-        <div style="text-align:right;flex:1;min-width:140px;">
-          <div style="font-size:0.72rem;font-weight:700;color:#5D4037;">TM. BAN CHỦ NHIỆM CLB</div>
-          <div style="font-size:0.825rem;font-weight:800;color:#8B0000;margin-top:1.5rem;">${escapeHTML(issuer)}</div>
+        <div class="cert-signature-block">
+          <div class="cert-sig-title">TM. BAN CHỦ NHIỆM CLB</div>
+          <div class="cert-sig-signed">(Đã Ký)</div>
+          <div class="cert-sig-issuer">${escapeHTML(issuer)}</div>
+          <img src="assets/images/seal.png" class="cert-red-seal-img" alt="Mộc Đỏ CLB Sen Trắng">
         </div>
       </div>
     </div>

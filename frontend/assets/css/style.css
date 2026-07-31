@@ -1941,4 +1941,104 @@ img { max-width: 100%; display: block; }
   }
 }
 
+/* Official Red Seal & Certificate Footer Layout */
+.cert-footer-container {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 1.25rem;
+  margin-top: 1.25rem;
+  border-top: 1.5px dashed #D4AF37;
+  position: relative;
+}
+
+.cert-footer-left {
+  text-align: left;
+  flex: 1;
+  min-width: 0;
+}
+
+.cert-footer-center {
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.cert-signature-block {
+  text-align: right;
+  flex: 1;
+  position: relative;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding-bottom: 0.5rem;
+}
+
+.cert-sig-title {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #5D4037;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.cert-sig-signed {
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-style: italic;
+  color: #B71C1C;
+  margin: 0.35rem 0 0.25rem 0;
+  transform: rotate(-4deg);
+  display: inline-block;
+}
+
+.cert-sig-issuer {
+  font-size: 0.9rem;
+  font-weight: 900;
+  color: #8B0000;
+  white-space: nowrap;
+  margin-top: 0.2rem;
+}
+
+.cert-red-seal-img {
+  position: absolute;
+  right: -5px;
+  bottom: -10px;
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  opacity: 0.92;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 5px rgba(183, 28, 28, 0.3));
+  transform: rotate(-6deg);
+  z-index: 5;
+}
+
+@media (max-width: 576px) {
+  .cert-gold-frame {
+    padding: 1.25rem 0.85rem !important;
+  }
+  .cert-footer-container {
+    gap: 0.4rem;
+    padding-top: 0.85rem;
+    margin-top: 0.85rem;
+  }
+  .cert-sig-title {
+    font-size: 0.7rem;
+  }
+  .cert-sig-signed {
+    font-size: 0.78rem;
+  }
+  .cert-sig-issuer {
+    font-size: 0.8rem;
+  }
+  .cert-red-seal-img {
+    width: 82px;
+    height: 82px;
+    right: -5px;
+    bottom: -8px;
+  }
+}
+
 
