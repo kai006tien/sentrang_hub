@@ -256,9 +256,9 @@ function displayCertificateModal(cert) {
 
       <!-- Header Header Logo & Org -->
       <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:1.25rem;">
-        <img src="assets/images/logo.png" style="width:72px;height:72px;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.15));margin-bottom:0.6rem;" alt="Sen Trắng Logo">
-        <div style="font-size:0.75rem;font-weight:800;color:#996515;letter-spacing:1.5px;text-transform:uppercase;">CLB THANH NIÊN TÌNH NGUYỆN SEN TRẮNG</div>
-        <div style="font-size:0.68rem;font-weight:600;color:#795548;margin-top:0.2rem;">HỆ THỐNG QUẢN TRỊ & QUẢN LÝ THÀNH TÍCH NỘI BỘ</div>
+        <img src="assets/images/logo.png" style="width:64px;height:64px;object-fit:contain;border:2.5px solid #FFFFFF;border-radius:14px;background:#FFFFFF;box-shadow:0 4px 12px rgba(184,134,11,0.25);margin-bottom:0.6rem;" alt="Sen Trắng Logo">
+        <div style="font-size:0.78rem;font-weight:900;color:#996515;letter-spacing:1.5px;text-transform:uppercase;">CLB THANH NIÊN TÌNH NGUYỆN SEN TRẮNG</div>
+        <div style="font-size:0.68rem;font-weight:700;color:#795548;margin-top:0.2rem;letter-spacing:0.5px;">HỆ THỐNG QUẢN TRỊ & QUẢN LÝ NỘI BỘ</div>
       </div>
 
       <!-- Divider -->
