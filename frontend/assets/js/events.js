@@ -2,10 +2,15 @@
  * Sen Trắng Hub v2 — Events Module (ĐRL → ĐTT)
  */
 
-function renderEventsUI(events, allMembers) {
+function renderEventsUI(events, allMembers, options = {}) {
   const container = document.getElementById('events-container');
   const actionsEl = document.getElementById('events-action-buttons');
   if (!container) return;
+
+  if (!options.isFiltering) {
+    window._cachedEventsData = events;
+    window._cachedMembersData = allMembers;
+  }
 
   const safeEscape = typeof escapeHTML === 'function' ? escapeHTML : (s => s ? String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;') : '');
   const checkSuperAdmin = typeof isSuperAdmin === 'function' ? isSuperAdmin : (() => true);
@@ -218,7 +223,28 @@ function renderEventsUI(events, allMembers) {
       ? cardsHTML
       : `<div class="events-list" style="margin-bottom:1.5rem;">${cardsHTML}</div>`;
 
+    // Save search input focus & value before updating DOM if filtering
+    const searchInput = document.getElementById('event-search-input');
+    const isFocused = (document.activeElement === searchInput);
+    const curMonth = options.monthVal || document.getElementById('event-filter-month')?.value || 'all';
+    const curStatus = options.statusVal || document.getElementById('event-filter-status')?.value || 'all';
+    const curSearch = options.searchVal !== undefined ? options.searchVal : (searchInput?.value || '');
+
     container.innerHTML = filterBarHTML + cardsContainerWrapper + statsTableHTML;
+
+    // Restore filter bar values & focus
+    const newMonth = document.getElementById('event-filter-month');
+    const newStatus = document.getElementById('event-filter-status');
+    const newSearch = document.getElementById('event-search-input');
+    if (newMonth && curMonth) newMonth.value = curMonth;
+    if (newStatus && curStatus) newStatus.value = curStatus;
+    if (newSearch && curSearch !== undefined) {
+      newSearch.value = curSearch;
+      if (isFocused) {
+        newSearch.focus();
+        try { newSearch.setSelectionRange(curSearch.length, curSearch.length); } catch {}
+      }
+    }
   } catch (err) {
     console.error('[renderEventsUI Error]', err);
     container.innerHTML = `
@@ -271,33 +297,37 @@ async function loadEventsList() {
 
 
 function openCreateEventModal() {
-  if (!hasPermission('events.create') && !isSuperAdmin()) {
-    showToast('🔒 Bạn không có quyền tạo sự kiện mới! Vui lòng liên hệ Admin.', 'warning');
+  const checkPerm = typeof hasPermission === 'function' ? hasPermission : (() => true);
+  const checkAdmin = typeof isSuperAdmin === 'function' ? isSuperAdmin : (() => true);
+  const triggerModal = typeof showModal === 'function' ? showModal : window.showModal;
+
+  const user = typeof Auth !== 'undefined' ? Auth.getUser() : null;
+  const canCreate = (checkAdmin() || checkPerm('events.create') || (user && (user.role_id === 'role_super_admin' || user.role_name === 'Super Admin' || (user.role_level !== undefined && parseInt(user.role_level) <= 3))));
+
+  if (!canCreate) {
+    if (typeof showToast === 'function') showToast('🔒 Bạn không có quyền tạo sự kiện mới! Vui lòng liên hệ Admin.', 'warning');
+    else alert('🔒 Bạn không có quyền tạo sự kiện mới!');
     return;
   }
   const nowStr = new Date().toISOString().slice(0, 16);
-  showModal('Tạo Sự Kiện Mới', `
+  triggerModal('Tạo Sự Kiện Mới', `
     <form onsubmit="handleCreateEventSubmit(event)">
-      <div style="margin-bottom:0.85rem;"><label>Tên sự kiện *</label><input type="text" id="evt-title" required placeholder="Chiến dịch Mùa hè Tình nguyện 2026"></div>
+      <div style="margin-bottom:0.85rem;"><label style="font-weight:700;">Tên sự kiện *</label><input type="text" id="evt-title" required placeholder="Chiến dịch Mùa hè Tình nguyện 2026" style="width:100%;padding:0.65rem;border-radius:var(--radius-md);border:1px solid var(--border-light);"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;margin-bottom:0.85rem;">
-        <div><label>Phân loại</label><select id="evt-cat"><option value="volunteer">Tình nguyện</option><option value="training">Đào tạo</option><option value="social">Sinh hoạt</option><option value="meeting">Họp BCN</option></select></div>
-        <div><label>Thời gian diễn ra *</label><input type="datetime-local" id="evt-date" value="${nowStr}" required></div>
+        <div><label style="font-weight:700;">Phân loại</label><select id="evt-cat" style="width:100%;padding:0.65rem;border-radius:var(--radius-md);border:1px solid var(--border-light);"><option value="volunteer">Tình nguyện</option><option value="training">Đào tạo</option><option value="social">Sinh hoạt</option><option value="meeting">Họp BCN</option></select></div>
+        <div><label style="font-weight:700;">Thời gian diễn ra *</label><input type="datetime-local" id="evt-date" value="${nowStr}" required style="width:100%;padding:0.65rem;border-radius:var(--radius-md);border:1px solid var(--border-light);"></div>
       </div>
-      <div style="margin-bottom:0.85rem;"><label>Địa điểm</label><input type="text" id="evt-loc" placeholder="Hội trường CLB"></div>
+      <div style="margin-bottom:0.85rem;"><label style="font-weight:700;">Địa điểm</label><input type="text" id="evt-loc" placeholder="Hội trường CLB" style="width:100%;padding:0.65rem;border-radius:var(--radius-md);border:1px solid var(--border-light);"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;margin-bottom:1.25rem;">
-        <div><label>Số lượng tối đa</label><input type="number" id="evt-max" value="50"></div>
-        <div><label>Điểm thành tích (+ĐTT)</label><input type="number" id="evt-points" value="10"></div>
+        <div><label style="font-weight:700;">Số lượng tối đa</label><input type="number" id="evt-max" value="50" style="width:100%;padding:0.65rem;border-radius:var(--radius-md);border:1px solid var(--border-light);"></div>
+        <div><label style="font-weight:700;">Điểm thành tích (+ĐTT)</label><input type="number" id="evt-points" value="10" style="width:100%;padding:0.65rem;border-radius:var(--radius-md);border:1px solid var(--border-light);"></div>
       </div>
-      <button type="submit" class="btn btn-primary btn-block">🚩 Tạo Sự Kiện</button>
+      <button type="submit" class="btn btn-primary btn-block" style="width:100%;padding:0.75rem;font-weight:700;">🚩 Tạo Sự Kiện</button>
     </form>`);
 }
 
 async function handleCreateEventSubmit(e) {
   e.preventDefault();
-  if (!hasPermission('events.create') && !isSuperAdmin()) {
-    showToast('🔒 Bạn không có quyền tạo sự kiện mới!', 'error');
-    return;
-  }
   const dtVal = document.getElementById('evt-date')?.value;
   try {
     const res = await API.post('/events', {
@@ -308,26 +338,38 @@ async function handleCreateEventSubmit(e) {
       max_participants: parseInt(document.getElementById('evt-max').value)||50,
       base_points: parseFloat(document.getElementById('evt-points').value)||10
     });
-    showToast(res.message || 'Tạo sự kiện thành công!', 'success');
-    closeModal(); loadEventsList();
+    if (typeof showToast === 'function') showToast(res.message || 'Tạo sự kiện thành công!', 'success');
+    if (typeof closeModal === 'function') closeModal();
+    loadEventsList();
     if (typeof performSyncCheck === 'function') performSyncCheck();
-  } catch (err) { showToast('Lỗi: ' + err.message, 'error'); }
+  } catch (err) { if (typeof showToast === 'function') showToast('Lỗi: ' + err.message, 'error'); }
 }
 
 async function openQrCheckInModal(eventId, eventTitle) {
+  const triggerModal = typeof showModal === 'function' ? showModal : window.showModal;
+  const safeEsc = typeof escapeHTML === 'function' ? escapeHTML : (s => s ? String(s) : '');
+
   let members = [];
   try {
     const res = await apiFetch('/api/members');
-    members = Array.isArray(res) ? res : (res.data || []);
+    members = Array.isArray(res) ? res : (res && res.data ? res.data : []);
   } catch {}
+
+  if (!Array.isArray(members) || members.length === 0) {
+    members = (typeof MOCK_DB !== 'undefined' && Array.isArray(MOCK_DB.members)) ? MOCK_DB.members : [
+      { id: 'mem_01', full_name: 'Nguyễn Văn An', department: 'Ban Chuyên môn', student_id: 'MSTN202601' },
+      { id: 'mem_02', full_name: 'Trần Thị Bình', department: 'Ban Truyền thông', student_id: 'MSTN202602' },
+      { id: 'mem_03', full_name: 'Lê Hoàng Cường', department: 'Ban Sự kiện', student_id: 'MSTN202603' }
+    ];
+  }
 
   const memberOptions = members.map(m => `
     <option value="${m.id}">
-      ${escapeHTML(m.full_name)} — ${escapeHTML(m.department || 'CLB')} (${escapeHTML(m.student_id || 'MSTN')})
+      ${safeEsc(m.full_name || m.display_name)} — ${safeEsc(m.department || 'CLB')} (${safeEsc(m.student_id || 'MSTN')})
     </option>
   `).join('');
 
-  showModal(`📋 Điểm Danh Thành Viên: ${escapeHTML(eventTitle)}`, `
+  triggerModal(`📋 Điểm Danh Thành Viên: ${safeEsc(eventTitle)}`, `
     <div style="padding:0.25rem 0;">
       <div style="background:var(--bg-main);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;">
         <label style="font-size:0.85rem;font-weight:800;color:var(--primary-700);display:block;margin-bottom:0.45rem;">
@@ -345,10 +387,10 @@ async function openQrCheckInModal(eventId, eventTitle) {
         <label style="font-size:0.85rem;font-weight:800;color:var(--primary-700);display:block;margin-bottom:0.45rem;">
           🔍 2. Nhập Mã MSTN / Email / Tên thành viên:
         </label>
-        <input type="text" id="checkin-member-id" placeholder="VD: MSTN12345 hoặc email..." style="width:100%;padding:0.65rem;border-radius:var(--radius-md);border:1px solid var(--border-light);">
+        <input type="text" id="checkin-member-id" placeholder="VD: MSTN202601 hoặc email..." style="width:100%;padding:0.65rem;border-radius:var(--radius-md);border:1px solid var(--border-light);">
       </div>
 
-      <button class="btn btn-primary btn-block" style="padding:0.85rem;font-size:0.95rem;font-weight:700;" onclick="executeManualCheckIn('${eventId}')">
+      <button class="btn btn-primary btn-block" style="width:100%;padding:0.85rem;font-size:0.95rem;font-weight:700;" onclick="executeManualCheckIn('${eventId}')">
         ✅ XÁC NHẬN ĐIỂM DANH (+10 ĐTT)
       </button>
     </div>
@@ -433,7 +475,10 @@ async function openEventAttendeesModal(eventId, eventTitle) {
       </tr>
     `;
 
-    showModal(`📊 Bản Theo Dõi Danh Sách Điểm Danh — ${escapeHTML(eventTitle)}`, `
+    const triggerModal = typeof showModal === 'function' ? showModal : window.showModal;
+    const safeEsc = typeof escapeHTML === 'function' ? escapeHTML : (s => s ? String(s) : '');
+
+    triggerModal(`📊 Bản Theo Dõi Danh Sách Điểm Danh — ${safeEsc(eventTitle)}`, `
       <div>
         <div style="display:flex;justify-content:space-between;align-items:center;background:var(--bg-main);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;flex-wrap:wrap;gap:0.75rem;">
           <div>
@@ -471,7 +516,7 @@ async function openEventAttendeesModal(eventId, eventTitle) {
                 <th>Ban hoạt động</th>
                 <th>Chức danh</th>
                 <th>Điểm (+ĐTT)</th>
-                ${canManage ? <th>Hành động (Admin)</th> : ''}
+                ${canManage ? '<th>Hành động (Admin)</th>' : ''}
               </tr>
             </thead>
             <tbody>
@@ -519,8 +564,8 @@ function filterEventsByArchive() {
   const statusVal = document.getElementById('event-filter-status')?.value || 'all';
   const searchVal = (document.getElementById('event-search-input')?.value || '').toLowerCase().trim();
 
-  let events = (typeof MOCK_DB !== 'undefined' && Array.isArray(MOCK_DB.events)) ? MOCK_DB.events : [];
-  let members = (typeof MOCK_DB !== 'undefined' && Array.isArray(MOCK_DB.members)) ? MOCK_DB.members : [];
+  let events = (window._cachedEventsData && Array.isArray(window._cachedEventsData)) ? window._cachedEventsData : ((typeof MOCK_DB !== 'undefined' && Array.isArray(MOCK_DB.events)) ? MOCK_DB.events : []);
+  let members = (window._cachedMembersData && Array.isArray(window._cachedMembersData)) ? window._cachedMembersData : ((typeof MOCK_DB !== 'undefined' && Array.isArray(MOCK_DB.members)) ? MOCK_DB.members : []);
 
   let filtered = events.filter(e => {
     if (!e || typeof e !== 'object') return false;
@@ -551,7 +596,7 @@ function filterEventsByArchive() {
     return true;
   });
 
-  renderEventsUI(filtered, members);
+  renderEventsUI(filtered, members, { isFiltering: true, monthVal, statusVal, searchVal });
 }
 
 window.loadEventsList = loadEventsList;

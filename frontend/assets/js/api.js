@@ -1144,6 +1144,26 @@ function isSuperAdmin() {
   } catch { return false; }
 }
 
+function showModal(title, contentHTML) {
+  const modal = document.getElementById('global-modal');
+  const titleEl = document.getElementById('modal-title');
+  const bodyEl = document.getElementById('modal-body');
+  if (!modal) return;
+  if (titleEl) titleEl.textContent = title;
+  if (bodyEl) bodyEl.innerHTML = contentHTML;
+  modal.style.display = 'flex';
+  modal.classList.add('active');
+  modal.onclick = (e) => { if (e.target === modal) closeModal(); };
+}
+
+function closeModal() {
+  const modal = document.getElementById('global-modal');
+  if (modal) {
+    modal.style.display = 'none';
+    modal.classList.remove('active');
+  }
+}
+
 // Expose globals
 window.escapeHTML = escapeHTML;
 window.showToast = showToast;
@@ -1154,4 +1174,6 @@ window.isSuperAdmin = isSuperAdmin;
 window.getCurrentUserPermissions = getCurrentUserPermissions;
 window.MOCK_DB = MOCK_DB;
 window.ensureSeedData = ensureSeedData;
+window.showModal = showModal;
+window.closeModal = closeModal;
 
