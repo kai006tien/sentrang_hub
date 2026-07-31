@@ -159,26 +159,45 @@ function ensureSeedData() {
   }
 }
 
+function mergeDbArrays(localArr, cloudArr) {
+  if (!Array.isArray(cloudArr)) return Array.isArray(localArr) ? localArr : [];
+  if (!Array.isArray(localArr) || localArr.length === 0) return cloudArr;
+  
+  const map = new Map();
+  cloudArr.forEach(item => {
+    if (item && item.id) map.set(String(item.id), item);
+    else if (item && item.email) map.set(String(item.email), item);
+    else if (typeof item === 'string') map.set(item, item);
+  });
+  localArr.forEach(item => {
+    if (item && item.id) map.set(String(item.id), item);
+    else if (item && item.email) map.set(String(item.email), item);
+    else if (typeof item === 'string') map.set(item, item);
+  });
+  return Array.from(map.values());
+}
+
 async function syncWithGlobalCloud() {
   if (isCloudSyncing) return;
   isCloudSyncing = true;
   try {
     const res = await fetch(GLOBAL_CLOUD_DB_URL, {
-      headers: { 'Accept': 'application/json' }
+      headers: { 'Accept': 'application/json', 'Cache-Control': 'no-cache' }
     });
     if (res.ok) {
       const data = await res.json();
-      if (data && Array.isArray(data.users) && data.users.length > 0) {
-        if (data.version && data.version > mockDbVersion) mockDbVersion = data.version;
-        MOCK_DB.users = data.users;
-        if (Array.isArray(data.members)) MOCK_DB.members = data.members;
-        if (Array.isArray(data.events)) MOCK_DB.events = data.events;
-        if (Array.isArray(data.articles)) MOCK_DB.articles = data.articles;
-        if (Array.isArray(data.quizzes)) MOCK_DB.quizzes = data.quizzes;
-        if (Array.isArray(data.notifications)) MOCK_DB.notifications = data.notifications;
-        if (Array.isArray(data.certificates)) MOCK_DB.certificates = data.certificates;
-        if (Array.isArray(data.logs)) MOCK_DB.logs = data.logs;
-        if (Array.isArray(data.years)) MOCK_DB.years = data.years;
+      if (data && typeof data === 'object') {
+        const cloudVersion = parseInt(data.version) || 0;
+        if (cloudVersion > mockDbVersion || mockDbVersion === 0) {
+          mockDbVersion = cloudVersion || Date.now();
+        }
+        
+        ['users', 'members', 'events', 'articles', 'quizzes', 'notifications', 'certificates', 'logs', 'years', 'leaderboard'].forEach(key => {
+          if (Array.isArray(data[key])) {
+            MOCK_DB[key] = mergeDbArrays(MOCK_DB[key], data[key]);
+          }
+        });
+        
         ensureSeedData();
         saveMockDbToStorage();
       }
@@ -196,7 +215,7 @@ async function pushToGlobalCloud() {
   saveMockDbToStorage();
   notifyRealtimeSync('CLOUD_PUSH', { version: mockDbVersion });
   try {
-    await fetch(GLOBAL_CLOUD_DB_URL, {
+    const res = await fetch(GLOBAL_CLOUD_DB_URL, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -216,50 +235,38 @@ async function pushToGlobalCloud() {
         years: MOCK_DB.years
       })
     });
-    console.log('[Global Cloud Sync] Database state pushed to cloud successfully.');
+    if (res.ok) {
+      console.log('[Global Cloud Sync] Database state pushed to cloud successfully.');
+    }
   } catch (e) {
-    console.warn('[Global Cloud Sync] Push error, cached locally:', e);
+    console.warn('[Global Cloud Sync] Push warning, saved locally:', e);
   }
 }
 
 function loadMockDbFromStorage() {
   try {
-    const savedUsers = localStorage.getItem('sentrang_db_users');
-    if (savedUsers) {
-      const parsed = JSON.parse(savedUsers);
-      if (Array.isArray(parsed) && parsed.length > 0) MOCK_DB.users = parsed;
-    }
-    const savedMembers = localStorage.getItem('sentrang_db_members');
-    if (savedMembers) {
-      const parsed = JSON.parse(savedMembers);
-      if (Array.isArray(parsed) && parsed.length > 0) MOCK_DB.members = parsed;
-    }
-    const savedEvents = localStorage.getItem('sentrang_db_events');
-    if (savedEvents) {
-      const parsed = JSON.parse(savedEvents);
-      if (Array.isArray(parsed) && parsed.length > 0) MOCK_DB.events = parsed;
-    }
-    const savedArticles = localStorage.getItem('sentrang_db_articles');
-    if (savedArticles) {
-      const parsed = JSON.parse(savedArticles);
-      if (Array.isArray(parsed)) MOCK_DB.articles = parsed;
-    }
-    const savedCerts = localStorage.getItem('sentrang_db_certificates');
-    if (savedCerts) {
-      const parsed = JSON.parse(savedCerts);
-      if (Array.isArray(parsed)) MOCK_DB.certificates = parsed;
-    }
+    const keys = ['users', 'members', 'events', 'articles', 'quizzes', 'notifications', 'certificates', 'logs', 'years', 'leaderboard'];
+    keys.forEach(k => {
+      const saved = localStorage.getItem(`sentrang_db_${k}`);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) MOCK_DB[k] = parsed;
+        } catch (e) {}
+      }
+    });
     ensureSeedData();
   } catch (e) {}
 }
 
 function saveMockDbToStorage() {
   try {
-    localStorage.setItem('sentrang_db_users', JSON.stringify(MOCK_DB.users));
-    localStorage.setItem('sentrang_db_members', JSON.stringify(MOCK_DB.members));
-    localStorage.setItem('sentrang_db_events', JSON.stringify(MOCK_DB.events));
-    localStorage.setItem('sentrang_db_articles', JSON.stringify(MOCK_DB.articles));
-    localStorage.setItem('sentrang_db_certificates', JSON.stringify(MOCK_DB.certificates));
+    const keys = ['users', 'members', 'events', 'articles', 'quizzes', 'notifications', 'certificates', 'logs', 'years', 'leaderboard'];
+    keys.forEach(k => {
+      if (Array.isArray(MOCK_DB[k])) {
+        localStorage.setItem(`sentrang_db_${k}`, JSON.stringify(MOCK_DB[k]));
+      }
+    });
   } catch (e) {}
 }
 

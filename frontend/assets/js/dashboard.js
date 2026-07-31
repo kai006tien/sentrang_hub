@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
   startRealTimeSyncManager();
 
   document.getElementById('btn-logout')?.addEventListener('click', () => Auth.logout());
+  document.getElementById('mobile-btn-logout')?.addEventListener('click', () => Auth.logout());
   updateClock();
   setInterval(updateClock, 1000);
 });
@@ -30,6 +31,11 @@ function initUserInfo(user) {
   if (el('user-display-name')) el('user-display-name').textContent = user.display_name || 'Người dùng';
   if (el('user-role-badge')) el('user-role-badge').textContent = user.role_name || 'Thành viên';
   if (el('user-avatar')) el('user-avatar').textContent = (user.display_name || 'U').charAt(0).toUpperCase();
+
+  // Mobile Drawer Profile Elements
+  if (el('mobile-user-name')) el('mobile-user-name').textContent = user.display_name || 'Người dùng';
+  if (el('mobile-user-role')) el('mobile-user-role').textContent = user.role_name || 'Thành viên';
+  if (el('mobile-user-avatar')) el('mobile-user-avatar').textContent = (user.display_name || 'U').charAt(0).toUpperCase();
 
   // Welcome banner personalization
   if (el('welcome-title')) el('welcome-title').textContent = `Xin chào, ${user.display_name}!`;
@@ -383,15 +389,16 @@ let lastKnownUserPermsJson = '';
 
 function startRealTimeSyncManager() {
   performSyncCheck();
-  setInterval(performSyncCheck, 4000); // Check for real-time updates every 4 seconds
+  setInterval(performSyncCheck, 2500); // Fast real-time sync check every 2.5 seconds
 
   // Listen for cross-tab storage changes on the same device
   window.addEventListener('storage', (e) => {
-    if (e.key === CONFIG.STORAGE_KEYS.USER_DATA || e.key === 'sentrang_sync_trigger') {
-      console.log('[Real-Time Sync] Cross-tab event detected, updating active session...');
+    if (e.key === CONFIG.STORAGE_KEYS.USER_DATA || e.key === 'sentrang_sync_trigger' || (e.key && e.key.startsWith('sentrang_db_'))) {
+      console.log('[Real-Time Sync] Storage event detected, updating active session...');
       const updatedUser = Auth.getUser();
       if (updatedUser) initUserInfo(updatedUser);
       updateNotiBadge();
+      refreshActiveViewSilently();
     }
   });
 
@@ -399,7 +406,7 @@ function startRealTimeSyncManager() {
     try {
       const channel = new BroadcastChannel('sentrang_hub_realtime');
       channel.onmessage = (event) => {
-        if (event.data && event.data.type === 'STATE_CHANGED') {
+        if (event.data) {
           performSyncCheck();
         }
       };
