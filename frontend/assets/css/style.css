@@ -1838,47 +1838,68 @@ img { max-width: 100%; display: block; }
   100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 200, 83, 0); }
 }
 
-/* Logo Styling across application — Crisp White Border & Drop Shadow */
-.topbar-logo-img {
+/* Unified Blue Medallion Logo Badge System (Nền Xanh + Logo ở trong nhỏ lại + Đổ bóng) */
+.app-logo-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1E88E5 0%, #1565C0 100%);
+  border: 2px solid #FFFFFF;
+  border-radius: 14px;
+  box-shadow: 0 8px 20px rgba(21, 101, 192, 0.35);
+  padding: 4px;
+  flex-shrink: 0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.app-logo-badge--topbar {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+}
+.app-logo-badge--topbar img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 5px rgba(0,0,0,0.25));
+}
+
+.app-logo-badge--welcome {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+}
+.app-logo-badge--welcome img {
   width: 36px;
   height: 36px;
   object-fit: contain;
-  border: 2px solid #FFFFFF;
-  border-radius: 10px;
-  background: #FFFFFF;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  transition: transform 0.2s ease;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.25));
 }
 
-.welcome-logo-img {
+.app-logo-badge--login {
+  width: 68px;
+  height: 68px;
+  border-radius: 18px;
+  box-shadow: 0 10px 25px rgba(21, 101, 192, 0.4);
+}
+.app-logo-badge--login img {
   width: 48px;
   height: 48px;
   object-fit: contain;
-  border: 2.5px solid #FFFFFF;
-  border-radius: 12px;
-  background: #FFFFFF;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+  filter: drop-shadow(0 3px 8px rgba(0,0,0,0.3));
 }
 
-.footer-logo-img {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
-  border: 1.5px solid #FFFFFF;
-  border-radius: 6px;
-  background: #FFFFFF;
-  vertical-align: middle;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+.app-logo-badge--cert {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(21, 101, 192, 0.25);
 }
-
-.login-logo-img {
-  width: 56px;
-  height: 56px;
+.app-logo-badge--cert img {
+  width: 44px;
+  height: 44px;
   object-fit: contain;
-  border: 2.5px solid #FFFFFF;
-  border-radius: 14px;
-  background: #FFFFFF;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2));
 }
 
 /* Campaign Pill Horizontal Scroll Tabs (Hình 6) */

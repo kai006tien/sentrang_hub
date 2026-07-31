@@ -254,9 +254,11 @@ function displayCertificateModal(cert) {
       <!-- Watermark Background -->
       <img src="assets/images/logo.png" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:220px;height:220px;opacity:0.06;pointer-events:none;" alt="Watermark">
 
-      <!-- Header Header Logo & Org -->
+      <!-- Header Logo & Org -->
       <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:1.25rem;">
-        <img src="assets/images/logo.png" style="width:64px;height:64px;object-fit:contain;border:2.5px solid #FFFFFF;border-radius:14px;background:#FFFFFF;box-shadow:0 4px 12px rgba(184,134,11,0.25);margin-bottom:0.6rem;" alt="Sen Trắng Logo">
+        <div class="app-logo-badge app-logo-badge--cert" style="margin-bottom:0.6rem;">
+          <img src="assets/images/logo.png" alt="Sen Trắng Logo">
+        </div>
         <div style="font-size:0.78rem;font-weight:900;color:#996515;letter-spacing:1.5px;text-transform:uppercase;">CLB THANH NIÊN TÌNH NGUYỆN SEN TRẮNG</div>
         <div style="font-size:0.68rem;font-weight:700;color:#795548;margin-top:0.2rem;letter-spacing:0.5px;">HỆ THỐNG QUẢN TRỊ & QUẢN LÝ NỘI BỘ</div>
       </div>
@@ -275,7 +277,7 @@ function displayCertificateModal(cert) {
       </h2>
 
       <!-- Recipient -->
-      <div style="background:rgba(255,255,255,0.7);border:1px solid rgba(212,175,55,0.4);border-radius:12px;padding:0.85rem 1.25rem;margin-bottom:1.25rem;display:inline-block;max-width:100%;box-sizing:border-box;">
+      <div style="background:rgba(255,255,255,0.75);border:1px solid rgba(212,175,55,0.4);border-radius:12px;padding:0.85rem 1.25rem;margin-bottom:1.25rem;display:inline-block;max-width:100%;box-sizing:border-box;">
         <div style="font-size:0.75rem;color:#795548;margin-bottom:0.2rem;">Chứng nhận Thành viên:</div>
         <div style="font-size:1.3rem;font-weight:900;color:#1A237E;margin-bottom:0.25rem;word-break:break-word;">
           ${escapeHTML(cert.recipient_name)}
@@ -290,21 +292,14 @@ function displayCertificateModal(cert) {
         "${escapeHTML(cert.reason)}"
       </div>
 
-      <!-- Signature & Official Red Seal Footer -->
+      <!-- Clean 2-Column Signature & Official Red Seal Footer -->
       <div class="cert-footer-container">
         <div class="cert-footer-left">
-          <div style="font-size:0.72rem;color:#795548;margin-bottom:0.2rem;font-weight:700;">MÃ SỐ BẰNG KHEN</div>
-          <div style="font-size:0.75rem;font-weight:800;color:#1565C0;background:rgba(21,101,192,0.08);padding:0.25rem 0.5rem;border-radius:4px;display:inline-block;">
+          <div style="font-size:0.72rem;color:#795548;margin-bottom:0.2rem;font-weight:700;text-transform:uppercase;">MÃ SỐ BẰNG KHEN</div>
+          <div style="font-size:0.78rem;font-weight:800;color:#1565C0;background:rgba(21,101,192,0.08);padding:0.25rem 0.55rem;border-radius:4px;display:inline-block;">
             ${escapeHTML(certId)}
           </div>
-          <div style="font-size:0.72rem;color:#795548;margin-top:0.35rem;">📅 Ngày cấp: <strong>${escapeHTML(issueDate)}</strong></div>
-        </div>
-
-        <div class="cert-footer-center">
-          <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#FFD700,#FF9800);border:2px solid #FFF;box-shadow:0 4px 10px rgba(255,152,0,0.4);display:flex;align-items:center;justify-content:center;font-size:1.5rem;color:#FFF;margin:0 auto;">
-            🎖️
-          </div>
-          <div style="font-size:0.62rem;font-weight:800;color:#B8860B;margin-top:0.15rem;">VINH DANH</div>
+          <div style="font-size:0.72rem;color:#795548;margin-top:0.4rem;">📅 Ngày cấp: <strong>${escapeHTML(issueDate)}</strong></div>
         </div>
 
         <div class="cert-signature-block">
