@@ -2,13 +2,15 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
   <title>Dashboard — Sen Trắng Hub</title>
   <meta name="description" content="Bảng điều khiển quản trị nội bộ CLB Thanh niên Tình nguyện Sen Trắng">
+  <meta name="theme-color" content="#0F172A">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css?v=20.0">
   <link rel="icon" type="image/png" href="assets/images/logo.png">
 </head>
 <body class="dashboard-body">
@@ -19,10 +21,8 @@
       <button class="hamburger-btn" id="hamburger-btn" title="Menu">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
-      <div class="topbar-logo">
-        <div class="app-logo-badge app-logo-badge--topbar">
-          <img src="assets/images/logo.png" alt="Sen Trắng Logo">
-        </div>
+      <div class="app-logo-badge app-logo-badge--topbar">
+        <img src="assets/images/logo.png" alt="Sen Trắng Logo">
       </div>
       <div class="topbar-brand">
         <h1 class="topbar-title">Sen Trắng Hub</h1>
@@ -42,7 +42,7 @@
 
     <div class="topbar-right">
       <button class="topbar-noti-btn" id="topbar-noti-btn" title="Thông báo" onclick="showView('notifications')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         <span class="noti-badge" id="noti-badge" style="display:none;">0</span>
       </button>
       <div class="user-profile-pill" onclick="openUserProfileModal()" style="cursor:pointer;" title="Bấm để xem thông tin cá nhân">
@@ -52,8 +52,8 @@
           <span class="user-role-badge" id="user-role-badge">Super Admin</span>
         </div>
       </div>
-      <button class="btn-topbar-pass" id="btn-topbar-pass" title="Đổi mật khẩu" onclick="openChangePasswordModal()" style="display:flex;align-items:center;gap:0.4rem;padding:0.45rem 0.85rem;background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-md);color:var(--text-primary);font-size:0.825rem;font-weight:600;cursor:pointer;transition:all 0.2s ease;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <button class="btn-topbar-pass" id="btn-topbar-pass" title="Đổi mật khẩu" onclick="openChangePasswordModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         <span>Đổi mật khẩu</span>
       </button>
       <button class="btn-topbar-logout" id="btn-logout" title="Đăng xuất">
@@ -150,8 +150,8 @@
       <div class="content-body">
         <!-- VIEW 1: OVERVIEW -->
         <section id="view-overview" class="view-section active">
-          <!-- Welcome Banner (TOP) -->
-          <div class="welcome-banner" style="margin-bottom:1.5rem;">
+          <!-- Welcome Banner -->
+          <div class="welcome-banner" style="margin-bottom:1.25rem;">
             <div class="welcome-icon">
               <div class="app-logo-badge app-logo-badge--welcome">
                 <img src="assets/images/logo.png" alt="Sen Trắng Logo">
@@ -163,11 +163,12 @@
               <div class="welcome-actions">
                 <button class="btn btn-primary btn-sm" onclick="showView('users')">Quản lý nhân sự →</button>
                 <button class="btn btn-secondary btn-sm" onclick="showView('events')">Sự kiện & Điểm danh →</button>
-                <button class="btn btn-secondary btn-sm" onclick="openUserProfileModal()" style="background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.4);">👤 Hồ sơ cá nhân</button>
+                <button class="btn btn-secondary btn-sm" onclick="openUserProfileModal()">👤 Hồ sơ cá nhân</button>
               </div>
             </div>
           </div>
 
+          <!-- Stats Grid -->
           <div class="stats-grid">
             <div class="stat-card stat-card--users">
               <div class="stat-card__icon">👥</div>
@@ -200,7 +201,7 @@
           </div>
 
           <!-- User Certificates Overview -->
-          <div id="user-my-certificates-container" style="margin-bottom:1.5rem;"></div>
+          <div id="user-my-certificates-container" style="margin-bottom:1.25rem;"></div>
 
           <!-- Latest News Bulletin -->
           <div class="card-panel">
@@ -209,7 +210,7 @@
               <button class="btn btn-secondary btn-sm" onclick="showView('articles')">Xem tất cả →</button>
             </div>
             <div id="latest-news-container">
-              <div class="text-center" style="padding:1rem;">Đang tải bản tin...</div>
+              <div class="text-center" style="padding:0.85rem;color:var(--text-muted);">Đang tải bản tin...</div>
             </div>
           </div>
         </section>
@@ -233,7 +234,7 @@
                   </tr>
                 </thead>
                 <tbody id="users-table-body">
-                  <tr><td colspan="5" class="text-center">Đang tải danh sách thành viên...</td></tr>
+                  <tr><td colspan="5" class="text-center" style="color:var(--text-muted);">Đang tải danh sách thành viên...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -243,21 +244,21 @@
         <!-- VIEW 3: ROLES & USER PERMISSIONS & SYSTEM LOGS -->
         <section id="view-roles" class="view-section">
           <!-- 1. Cấu hình Cây phân quyền Vai trò -->
-          <div class="card-panel" style="margin-bottom: 1.5rem;">
+          <div class="card-panel" style="margin-bottom: 1.25rem;">
             <div class="panel-header">
               <h3 class="panel-title">🛡️ 1. Cấu hình Cây phân quyền Vai trò</h3>
-              <span style="font-size:0.8rem;color:var(--text-muted);">Quyền mặc định định nghĩa theo từng chức danh hệ thống</span>
+              <span style="font-size:0.78rem;color:var(--text-muted);">Quyền mặc định định nghĩa theo từng chức danh hệ thống</span>
             </div>
             <div class="roles-grid" id="roles-cards-container">
-              <div class="text-center">Đang tải danh sách vai trò...</div>
+              <div class="text-center" style="color:var(--text-muted);">Đang tải danh sách vai trò...</div>
             </div>
           </div>
 
           <!-- 2. Bảng Phân Quyền Trực Tiếp Cho User -->
-          <div class="card-panel" style="margin-bottom: 1.5rem;">
+          <div class="card-panel" style="margin-bottom: 1.25rem;">
             <div class="panel-header">
               <h3 class="panel-title">👤 2. Phân quyền Trực tiếp cho từng User</h3>
-              <span style="font-size:0.8rem;color:var(--primary-600);font-weight:600;">⚡ Admin phân quyền & gán tính năng trực tiếp cho từng tài khoản</span>
+              <span style="font-size:0.78rem;color:var(--text-brand);font-weight:600;">⚡ Admin phân quyền & gán tính năng trực tiếp cho từng tài khoản</span>
             </div>
             <div class="table-responsive">
               <table class="data-table">
@@ -270,7 +271,7 @@
                   </tr>
                 </thead>
                 <tbody id="user-permissions-table-body">
-                  <tr><td colspan="4" class="text-center">Đang tải danh sách tài khoản phân quyền...</td></tr>
+                  <tr><td colspan="4" class="text-center" style="color:var(--text-muted);">Đang tải danh sách tài khoản phân quyền...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -282,12 +283,12 @@
               <h3 class="panel-title">📜 3. Nhật ký hoạt động hệ thống</h3>
             </div>
             <div id="logs-container">
-              <div style="font-size:0.85rem; color:var(--text-muted); padding:0.5rem 0;">Ghi nhận lịch sử thao tác phân quyền và quản trị của Admin.</div>
+              <div style="font-size:0.82rem;color:var(--text-muted);padding:0.4rem 0;">Ghi nhận lịch sử thao tác phân quyền và quản trị của Admin.</div>
               <div class="table-responsive">
                 <table class="data-table">
                   <thead><tr><th>Thời gian</th><th>Quản trị viên</th><th>Hành động</th><th>Phân hệ</th><th>Chi tiết</th></tr></thead>
                   <tbody id="system-logs-table-body">
-                    <tr><td colspan="5" class="text-center">Đang tải nhật ký hệ thống...</td></tr>
+                    <tr><td colspan="5" class="text-center" style="color:var(--text-muted);">Đang tải nhật ký hệ thống...</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -306,122 +307,7 @@
               </div>
             </div>
             <div id="events-container">
-              <div class="archive-filter-bar" style="background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-xl);padding:0.85rem 1.15rem;margin-bottom:1.25rem;box-shadow:var(--shadow-sm);display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;justify-content:space-between;">
-                <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;flex:1;">
-                  <div style="display:flex;align-items:center;gap:0.4rem;">
-                    <span style="font-size:0.825rem;font-weight:700;color:var(--primary-700);white-space:nowrap;">📁 Lưu trữ Tháng/Năm:</span>
-                    <select id="event-filter-month" onchange="filterEventsByArchive()" style="padding:0.4rem 0.65rem;border-radius:var(--radius-md);border:1px solid var(--border-light);font-size:0.825rem;font-weight:600;background:var(--bg-main);">
-                      <option value="all">🌐 Tất cả thời gian</option>
-                      <option value="2026-07">📅 Tháng 07 / 2026</option>
-                      <option value="2026-08">📅 Tháng 08 / 2026</option>
-                      <option value="2026-09">📅 Tháng 09 / 2026</option>
-                      <option value="archive">📦 Kho Lưu trữ Sự kiện Cũ</option>
-                    </select>
-                  </div>
-                  <div style="display:flex;align-items:center;gap:0.4rem;">
-                    <span style="font-size:0.825rem;font-weight:700;color:var(--primary-700);white-space:nowrap;">📌 Trạng thái:</span>
-                    <select id="event-filter-status" onchange="filterEventsByArchive()" style="padding:0.4rem 0.65rem;border-radius:var(--radius-md);border:1px solid var(--border-light);font-size:0.825rem;font-weight:600;background:var(--bg-main);">
-                      <option value="all">Tất cả trạng thái</option>
-                      <option value="active">🟢 Đang diễn ra</option>
-                      <option value="archived">📦 Đã lưu trữ / Đóng</option>
-                    </select>
-                  </div>
-                </div>
-                <div style="min-width:200px;">
-                  <input type="text" id="event-search-input" placeholder="🔍 Tìm kiếm sự kiện..." oninput="filterEventsByArchive()" style="width:100%;padding:0.4rem 0.75rem;border-radius:var(--radius-md);border:1px solid var(--border-light);font-size:0.825rem;">
-                </div>
-              </div>
-
-              <div class="events-list" style="margin-bottom:1.5rem;">
-                <div style="background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-xl);padding:1.25rem;box-shadow:var(--shadow-sm);">
-                  <div style="display:flex;justify-content:space-between;margin-bottom:0.6rem;">
-                    <span style="font-size:0.72rem;padding:0.2rem 0.65rem;background:#FFEBEE;color:#C62828;font-weight:700;border-radius:var(--radius-full);white-space:nowrap;display:inline-block;">Tình nguyện</span>
-                    <span style="font-size:0.72rem;color:var(--text-muted);white-space:nowrap;">Mới đây</span>
-                  </div>
-                  <h4 style="font-size:1rem;font-weight:700;margin-bottom:0.35rem;">Chiến dịch Mùa Hè Tình Nguyện 2026</h4>
-                  <p style="font-size:0.825rem;color:var(--text-muted);margin-bottom:0.75rem;">📍 Huyện Hóc Môn, TP.HCM</p>
-                  <div style="background:var(--bg-main);border-radius:var(--radius-full);height:6px;margin-bottom:0.75rem;overflow:hidden;"><div style="background:var(--primary-gradient-light);height:100%;width:24%;border-radius:var(--radius-full);"></div></div>
-                  <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <span style="font-size:0.8rem;color:var(--accent-green);font-weight:700;">👥 12/50</span>
-                    <button class="btn btn-secondary btn-sm" onclick="openQrCheckInModal('event_01','Chiến dịch Mùa Hè Tình Nguyện 2026')">📷 Điểm danh</button>
-                  </div>
-                </div>
-                <div style="background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-xl);padding:1.25rem;box-shadow:var(--shadow-sm);">
-                  <div style="display:flex;justify-content:space-between;margin-bottom:0.6rem;">
-                    <span style="font-size:0.72rem;padding:0.2rem 0.65rem;background:#E3F2FD;color:#0D47A1;font-weight:700;border-radius:var(--radius-full);white-space:nowrap;display:inline-block;">Đào tạo</span>
-                    <span style="font-size:0.72rem;color:var(--text-muted);white-space:nowrap;">Mới đây</span>
-                  </div>
-                  <h4 style="font-size:1rem;font-weight:700;margin-bottom:0.35rem;">Tập huấn Kỹ năng Đội Nhóm & Sơ cứu</h4>
-                  <p style="font-size:0.825rem;color:var(--text-muted);margin-bottom:0.75rem;">📍 Hội trường B - Bách Khoa</p>
-                  <div style="background:var(--bg-main);border-radius:var(--radius-full);height:6px;margin-bottom:0.75rem;overflow:hidden;"><div style="background:var(--primary-gradient-light);height:100%;width:20%;border-radius:var(--radius-full);"></div></div>
-                  <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <span style="font-size:0.8rem;color:var(--accent-green);font-weight:700;">👥 8/40</span>
-                    <button class="btn btn-secondary btn-sm" onclick="openQrCheckInModal('event_02','Tập huấn Kỹ năng Đội Nhóm & Sơ cứu')">📷 Điểm danh</button>
-                  </div>
-                </div>
-                <div style="background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-xl);padding:1.25rem;box-shadow:var(--shadow-sm);">
-                  <div style="display:flex;justify-content:space-between;margin-bottom:0.6rem;">
-                    <span style="font-size:0.72rem;padding:0.2rem 0.65rem;background:#E8F5E9;color:#1B5E20;font-weight:700;border-radius:var(--radius-full);white-space:nowrap;display:inline-block;">Sinh hoạt</span>
-                    <span style="font-size:0.72rem;color:var(--text-muted);white-space:nowrap;">Mới đây</span>
-                  </div>
-                  <h4 style="font-size:1rem;font-weight:700;margin-bottom:0.35rem;">Sinh hoạt Định kỳ CLB Tháng 7</h4>
-                  <p style="font-size:0.825rem;color:var(--text-muted);margin-bottom:0.75rem;">📍 Phòng Sinh hoạt Sen Trắng</p>
-                  <div style="background:var(--bg-main);border-radius:var(--radius-full);height:6px;margin-bottom:0.75rem;overflow:hidden;"><div style="background:var(--primary-gradient-light);height:100%;width:25%;border-radius:var(--radius-full);"></div></div>
-                  <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <span style="font-size:0.8rem;color:var(--accent-green);font-weight:700;">👥 15/60</span>
-                    <button class="btn btn-secondary btn-sm" onclick="openQrCheckInModal('event_03','Sinh hoạt Định kỳ CLB Tháng 7')">📷 Điểm danh</button>
-                  </div>
-                </div>
-              </div>
-              <div style="margin-top:1.5rem;background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-xl);padding:1.25rem;box-shadow:var(--shadow-sm);">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
-                  <div>
-                    <h3 style="font-size:1.05rem;font-weight:800;color:var(--primary-700);margin:0;">📊 Bảng Thống Kê Điểm Danh Hoạt Động</h3>
-                    <div style="font-size:0.8rem;color:var(--text-muted);">Theo dõi chi tiết số lượt tham gia và danh sách thành viên đã điểm danh</div>
-                  </div>
-                  <span style="font-size:0.75rem;padding:0.25rem 0.65rem;background:var(--bg-main);border:1px solid var(--border-light);border-radius:var(--radius-full);font-weight:700;color:var(--primary-600);">👤 Admin Hệ Thống</span>
-                </div>
-                <div class="table-responsive">
-                  <table class="data-table">
-                    <thead>
-                      <tr>
-                        <th>Tên Sự kiện / Hoạt động</th>
-                        <th>Phân loại</th>
-                        <th>Ngày tổ chức</th>
-                        <th>Địa điểm</th>
-                        <th>Số lượt đã tham gia</th>
-                        <th>Danh sách điểm danh (Admin & Quyền quản lý)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td><strong>Chiến dịch Mùa Hè Tình Nguyện 2026</strong></td>
-                        <td><span style="font-size:0.72rem;padding:0.2rem 0.65rem;background:#FFEBEE;color:#C62828;font-weight:700;border-radius:var(--radius-full);white-space:nowrap;display:inline-block;">Tình nguyện</span></td>
-                        <td><span style="font-size:0.825rem;color:var(--text-muted);white-space:nowrap;">20/07/2026</span></td>
-                        <td><span style="font-size:0.825rem;color:var(--text-muted);">📍 Huyện Hóc Môn, TP.HCM</span></td>
-                        <td><span style="font-weight:700;color:var(--accent-green);white-space:nowrap;">👥 12 / 50</span></td>
-                        <td style="white-space:nowrap;"><button class="btn btn-secondary btn-sm" onclick="openEventAttendeesModal('event_01','Chiến dịch Mùa Hè Tình Nguyện 2026')">📋 Xem danh sách đã điểm danh (12)</button></td>
-                      </tr>
-                      <tr>
-                        <td><strong>Tập huấn Kỹ năng Đội Nhóm & Sơ cứu</strong></td>
-                        <td><span style="font-size:0.72rem;padding:0.2rem 0.65rem;background:#E3F2FD;color:#0D47A1;font-weight:700;border-radius:var(--radius-full);white-space:nowrap;display:inline-block;">Đào tạo</span></td>
-                        <td><span style="font-size:0.825rem;color:var(--text-muted);white-space:nowrap;">25/07/2026</span></td>
-                        <td><span style="font-size:0.825rem;color:var(--text-muted);">📍 Hội trường B - Bách Khoa</span></td>
-                        <td><span style="font-weight:700;color:var(--accent-green);white-space:nowrap;">👥 8 / 40</span></td>
-                        <td style="white-space:nowrap;"><button class="btn btn-secondary btn-sm" onclick="openEventAttendeesModal('event_02','Tập huấn Kỹ năng Đội Nhóm & Sơ cứu')">📋 Xem danh sách đã điểm danh (8)</button></td>
-                      </tr>
-                      <tr>
-                        <td><strong>Sinh hoạt Định kỳ CLB Tháng 7</strong></td>
-                        <td><span style="font-size:0.72rem;padding:0.2rem 0.65rem;background:#E8F5E9;color:#1B5E20;font-weight:700;border-radius:var(--radius-full);white-space:nowrap;display:inline-block;">Sinh hoạt</span></td>
-                        <td><span style="font-size:0.825rem;color:var(--text-muted);white-space:nowrap;">30/07/2026</span></td>
-                        <td><span style="font-size:0.825rem;color:var(--text-muted);">📍 Phòng Sinh hoạt Sen Trắng</span></td>
-                        <td><span style="font-weight:700;color:var(--accent-green);white-space:nowrap;">👥 15 / 60</span></td>
-                        <td style="white-space:nowrap;"><button class="btn btn-secondary btn-sm" onclick="openEventAttendeesModal('event_03','Sinh hoạt Định kỳ CLB Tháng 7')">📋 Xem danh sách đã điểm danh (15)</button></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <div class="text-center" style="padding:1rem;color:var(--text-muted);">Đang tải sự kiện...</div>
             </div>
           </div>
         </section>
@@ -434,7 +320,7 @@
               <div id="cert-action-buttons"></div>
             </div>
             <div id="leaderboard-container">
-              <div class="text-center">Đang tải bảng xếp hạng thành tích...</div>
+              <div class="text-center" style="color:var(--text-muted);">Đang tải bảng xếp hạng thành tích...</div>
             </div>
           </div>
         </section>
@@ -447,7 +333,7 @@
               <div id="cert-view-action-buttons"></div>
             </div>
             <div id="certificates-list-container">
-              <div class="text-center">Đang tải danh sách giấy chứng nhận...</div>
+              <div class="text-center" style="color:var(--text-muted);">Đang tải danh sách giấy chứng nhận...</div>
             </div>
           </div>
         </section>
@@ -460,7 +346,7 @@
               <div id="articles-action-buttons"></div>
             </div>
             <div class="articles-list" id="articles-container">
-              <div class="text-center">Đang tải tin bài...</div>
+              <div class="text-center" style="color:var(--text-muted);">Đang tải tin bài...</div>
             </div>
           </div>
         </section>
@@ -473,7 +359,7 @@
               <div id="quizzes-action-buttons"></div>
             </div>
             <div class="quizzes-list" id="quizzes-container">
-              <div class="text-center">Đang tải bài thi...</div>
+              <div class="text-center" style="color:var(--text-muted);">Đang tải bài thi...</div>
             </div>
           </div>
         </section>
@@ -486,7 +372,7 @@
               <div id="noti-action-buttons"></div>
             </div>
             <div id="notifications-container">
-              <div class="text-center">Đang tải thông báo...</div>
+              <div class="text-center" style="color:var(--text-muted);">Đang tải thông báo...</div>
             </div>
           </div>
         </section>
@@ -498,9 +384,9 @@
         <div class="footer-inner">
           <div class="footer-brand">
             <img src="assets/images/logo.png" alt="Logo" class="footer-logo-img">
-            <strong>Sen Trắng Hub</strong> v2.0
+            <strong>Sen Trắng Hub</strong> v3.0
           </div>
-          <div class="footer-copy">© 2026 CLB Thanh niên Tình nguyện Sen Trắng. Tất cả quyền được bảo lưu.</div>
+          <div class="footer-copy">© 2026 CLB Thanh niên Tình nguyện Sen Trắng.<br>Tất cả quyền được bảo lưu.</div>
           <div class="footer-credit">Phát triển bởi Ban Chuyên môn & Công nghệ</div>
         </div>
       </footer>
@@ -522,17 +408,16 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 
   <!-- JavaScript Modules -->
-  <script src="assets/js/config.js?v=15.0"></script>
-  <script src="assets/js/api.js?v=15.0"></script>
-  <script src="assets/js/auth.js?v=15.0"></script>
-  <script src="assets/js/members.js?v=15.0"></script>
-  <script src="assets/js/events.js?v=15.0"></script>
-  <script src="assets/js/articles.js?v=15.0"></script>
-  <script src="assets/js/quizzes.js?v=15.0"></script>
-  <script src="assets/js/certificates.js?v=15.0"></script>
-  <script src="assets/js/notifications.js?v=15.0"></script>
-  <script src="assets/js/dashboard.js?v=15.0"></script>
-
+  <script src="assets/js/config.js?v=20.0"></script>
+  <script src="assets/js/api.js?v=20.0"></script>
+  <script src="assets/js/auth.js?v=20.0"></script>
+  <script src="assets/js/members.js?v=20.0"></script>
+  <script src="assets/js/events.js?v=20.0"></script>
+  <script src="assets/js/articles.js?v=20.0"></script>
+  <script src="assets/js/quizzes.js?v=20.0"></script>
+  <script src="assets/js/certificates.js?v=20.0"></script>
+  <script src="assets/js/notifications.js?v=20.0"></script>
+  <script src="assets/js/dashboard.js?v=20.0"></script>
 
 </body>
 </html>

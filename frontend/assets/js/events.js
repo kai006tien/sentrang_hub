@@ -44,7 +44,7 @@ function renderEventsUI(events, allMembers, options = {}) {
     const safeMembers = Array.isArray(allMembers) ? allMembers.filter(m => m && typeof m === 'object') : (allMembers && Array.isArray(allMembers.data) ? allMembers.data.filter(m => m && typeof m === 'object') : []);
 
     const userMem = safeMembers.find(m => m && (m.user_id === user?.id || m.email === user?.email));
-    const catColors = { volunteer:{bg:'#FFEBEE',text:'#C62828',label:'Tình nguyện'}, training:{bg:'#E3F2FD',text:'#0D47A1',label:'Đào tạo'}, social:{bg:'#E8F5E9',text:'#1B5E20',label:'Sinh hoạt'}, meeting:{bg:'#FFF3E0',text:'#E65100',label:'Họp BCN'} };
+    const catColors = { volunteer:{bg:'rgba(239,68,68,0.15)',text:'#FCA5A5',label:'Tình nguyện'}, training:{bg:'rgba(59,130,246,0.15)',text:'#93C5FD',label:'Đào tạo'}, social:{bg:'rgba(16,185,129,0.15)',text:'#6EE7B7',label:'Sinh hoạt'}, meeting:{bg:'rgba(249,115,22,0.15)',text:'#FDBA74',label:'Họp BCN'} };
 
     // Helper for safe inline JS parameter
     const attrEscape = (str) => safeEscape(str).replace(/'/g, "\\'");

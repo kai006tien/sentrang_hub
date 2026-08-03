@@ -199,11 +199,11 @@ async function loadOverviewCertificates() {
     }
 
     const certCardsHTML = myCerts.map(cert => `
-      <div style="background:linear-gradient(135deg,#FFF8E1,#FFF3E0);border:1px solid #FFB74D;border-radius:var(--radius-lg);padding:1rem;box-shadow:var(--shadow-sm);display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+      <div style="background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.25);border-radius:var(--radius-lg);padding:1rem;box-shadow:var(--shadow-sm);display:flex;align-items:center;justify-content:space-between;gap:1rem;">
         <div style="display:flex;align-items:center;gap:0.85rem;">
-          <div style="width:42px;height:42px;border-radius:50%;background:#FF9800;color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0;">🎖️</div>
+          <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#F97316,#FB923C);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0;">🎖️</div>
           <div>
-            <div style="font-weight:700;font-size:0.925rem;color:#BF360C;">${escapeHTML(cert.title)}</div>
+            <div style="font-weight:700;font-size:0.925rem;color:#FDBA74;">${escapeHTML(cert.title)}</div>
             <div style="font-size:0.775rem;color:var(--text-muted);">${escapeHTML(cert.recipient_name)} • ${escapeHTML(cert.department || 'Ban Hoạt động')}</div>
             <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.25rem;">"${escapeHTML(cert.reason)}"</div>
           </div>
@@ -322,9 +322,9 @@ async function openUserProfileModal() {
     </div>
 
     <!-- Lịch sử thăng tiến -->
-    <div style="background:var(--success-bg);padding:0.85rem 1rem;border-radius:var(--radius-md);margin-bottom:1rem;border:1px solid rgba(0,200,83,0.2);">
-      <div style="font-size:0.75rem;font-weight:700;color:#1B5E20;margin-bottom:0.3rem;">⏳ Lịch sử thăng tiến quá trình</div>
-      <div style="font-size:0.85rem;font-weight:600;color:#1B5E20;">
+    <div style="background:var(--success-bg);padding:0.85rem 1rem;border-radius:var(--radius-md);margin-bottom:1rem;border:1px solid rgba(16,185,129,0.2);">
+      <div style="font-size:0.75rem;font-weight:700;color:#6EE7B7;margin-bottom:0.3rem;">⏳ Lịch sử thăng tiến quá trình</div>
+      <div style="font-size:0.85rem;font-weight:600;color:#6EE7B7;">
         • <strong>${escapeHTML(histList[0]?.role_id || position)}</strong> (${escapeHTML(histList[0]?.start_date || '2025-01-01')} → ${escapeHTML(histList[0]?.end_date || 'Hiện tại')})
       </div>
     </div>
@@ -605,13 +605,13 @@ async function loadRolesGrid() {
     if (cachedRoles.length === 0) { container.innerHTML = '<div class="text-center">Chưa có vai trò nào.</div>'; return; }
 
     const canEdit = canManagePermissions();
-    const levelColors = { 0:{bg:'#FFEBEE',border:'#EF5350',text:'#C62828'}, 1:{bg:'#FFF3E0',border:'#FF9800',text:'#E65100'}, 2:{bg:'#E3F2FD',border:'#42A5F5',text:'#0D47A1'}, 3:{bg:'#F3E5F5',border:'#AB47BC',text:'#6A1B9A'}, 10:{bg:'#E8F5E9',border:'#66BB6A',text:'#1B5E20'} };
+    const levelColors = { 0:{bg:'rgba(239,68,68,0.15)',border:'#F87171',text:'#FCA5A5'}, 1:{bg:'rgba(249,115,22,0.15)',border:'#FB923C',text:'#FDBA74'}, 2:{bg:'rgba(59,130,246,0.15)',border:'#60A5FA',text:'#93C5FD'}, 3:{bg:'rgba(139,92,246,0.15)',border:'#A78BFA',text:'#C4B5FD'}, 10:{bg:'rgba(16,185,129,0.15)',border:'#34D399',text:'#6EE7B7'} };
     container.innerHTML = cachedRoles.map(r => {
       const c = levelColors[r.level] || levelColors[10];
       
       let permListHTML = '';
       if (r.permissions.includes('*')) {
-        permListHTML = `<span style="color:#C62828;font-weight:700;">🔑 Toàn quyền hệ thống (*)</span>`;
+        permListHTML = `<span style="color:#FCA5A5;font-weight:700;">🔑 Toàn quyền hệ thống (*)</span>`;
       } else {
         const labels = r.permissions.map(p => PERMISSION_LABEL_MAP[p] || p);
         permListHTML = labels.map(l => `<div style="font-size:0.775rem;color:var(--text-secondary);margin-top:0.2rem;">• ${escapeHTML(l)}</div>`).join('');
@@ -737,7 +737,7 @@ async function loadUserPermissionsTable() {
       
       let permsBadge = '';
       if (perms.includes('*')) {
-        permsBadge = `<span class="badge-role" style="background:#FFEBEE;color:#C62828;font-weight:700;">🔑 TOÀN QUYỀN HỆ THỐNG (*)</span>`;
+        permsBadge = `<span class="badge-role" style="background:rgba(239,68,68,0.15);color:#FCA5A5;font-weight:700;border:1px solid rgba(239,68,68,0.3);">🔑 TOÀN QUYỀN HỆ THỐNG (*)</span>`;
       } else if (perms.length === 0) {
         permsBadge = `<span style="font-size:0.8rem;color:var(--text-muted);">Chưa được gán quyền riêng</span>`;
       } else {

@@ -2,18 +2,20 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
   <title>Đăng nhập — Sen Trắng Hub</title>
   <meta name="description" content="Hệ thống quản trị nội bộ CLB Thanh niên Tình nguyện Sen Trắng — Đăng nhập để truy cập hệ thống">
+  <meta name="theme-color" content="#0F172A">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css?v=20.0">
   <link rel="icon" type="image/png" href="assets/images/logo.png">
 </head>
 <body class="login-page">
 
-  <!-- Decorative Elements -->
+  <!-- Aurora Background Effects -->
   <div class="login-bg-overlay">
     <div class="login-decoration login-decoration--trongdong"></div>
     <div class="glow-spotlight glow-spotlight--top"></div>
@@ -22,14 +24,14 @@
 
   <div class="login-wrapper">
     <!-- Header -->
-    <header class="login-header animate-fadeInDown">
-      <div class="login-header__logo-container" style="margin-bottom:1.25rem;">
+    <header class="login-header animate-fadeInDown" style="margin-bottom:1.25rem;">
+      <div class="login-header__logo-container" style="margin-bottom:1rem;">
         <div class="app-logo-badge app-logo-badge--login">
           <img src="assets/images/logo.png" alt="Sen Trắng Logo">
         </div>
       </div>
-      <h1 class="login-header__title" style="font-size:1.85rem;font-weight:900;letter-spacing:1px;margin-bottom:0.4rem;color:#FFF;text-transform:uppercase;">SEN TRẮNG HUB</h1>
-      <p class="login-header__subtitle" style="font-size:0.85rem;font-weight:700;color:rgba(255,255,255,0.92);line-height:1.6;text-transform:uppercase;letter-spacing:0.5px;">
+      <h1 class="login-header__title">SEN TRẮNG HUB</h1>
+      <p class="login-header__subtitle">
         HỆ THỐNG QUẢN TRỊ & QUẢN LÝ NỘI BỘ –<br>
         CLB THANH NIÊN TÌNH NGUYỆN SEN TRẮNG
       </p>
@@ -121,15 +123,14 @@
 
     <!-- Footer -->
     <footer class="login-footer">
-      <p>© 2026 CLB Thanh niên Tình nguyện Sen Trắng. Tất cả quyền được bảo lưu.</p>
+      <p>© 2026 CLB Thanh niên Tình nguyện Sen Trắng.<br>Tất cả quyền được bảo lưu.</p>
     </footer>
   </div>
 
   <!-- JavaScript -->
-  <script src="assets/js/config.js?v=16.0"></script>
-  <script src="assets/js/api.js?v=16.0"></script>
-  <script src="assets/js/auth.js?v=16.0"></script>
-
+  <script src="assets/js/config.js?v=20.0"></script>
+  <script src="assets/js/api.js?v=20.0"></script>
+  <script src="assets/js/auth.js?v=20.0"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
