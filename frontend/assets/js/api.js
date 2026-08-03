@@ -159,82 +159,60 @@ function ensureSeedData() {
   }
 }
 
-const SUPABASE_SYNC_URL = 'https://fjshckqpfkjsbpfkojhm.supabase.co/rest/v1/system_state?id=eq.global_state';
-const SUPABASE_SYNC_KEY = 'sb_publishable_E9vO4U5GhxvrHqqgArcjMQ_4nQE6vtR';
-const FALLBACK_CLOUD_DB_URL = 'https://jsonblob.com/api/jsonBlob/019fb1f2-890d-72b3-ae1d-621f05acd070';
-
-function mergeDbArrays(localArr, cloudArr) {
-  if (!Array.isArray(cloudArr)) return Array.isArray(localArr) ? localArr : [];
-  if (!Array.isArray(localArr) || localArr.length === 0) return cloudArr;
-  
-  const map = new Map();
-  cloudArr.forEach(item => {
-    if (item && item.id) map.set(String(item.id), item);
-    else if (item && item.email) map.set(String(item.email), item);
-    else if (typeof item === 'string') map.set(item, item);
-  });
-  localArr.forEach(item => {
-    if (item && item.id) map.set(String(item.id), item);
-    else if (item && item.email) map.set(String(item.email), item);
-    else if (typeof item === 'string') map.set(item, item);
-  });
-  return Array.from(map.values());
-}
+const PRIMARY_CLOUD_DB_URL = 'https://jsonblob.com/api/jsonBlob/019fc8c4-e302-7390-95f7-8c36f5c1fecc';
+const BACKUP_CLOUD_DB_URL = 'https://jsonblob.com/api/jsonBlob/019fc8c5-142a-7c0a-bf0b-d855c93a56c5';
 
 async function syncWithGlobalCloud() {
-  if (isCloudSyncing) return;
+  if (isCloudSyncing) return false;
   isCloudSyncing = true;
   let fetchedData = null;
+  let hasUpdated = false;
 
   try {
-    // 1. Primary: Try Supabase Cloud KV Store
+    // 1. Primary: Try JsonBlob Primary Store
     try {
-      const res = await fetch(SUPABASE_SYNC_URL, {
-        headers: {
-          'apikey': SUPABASE_SYNC_KEY,
-          'Authorization': 'Bearer ' + SUPABASE_SYNC_KEY,
-          'Accept': 'application/json',
-          'Cache-Control': 'no-cache'
-        }
+      const res = await fetch(PRIMARY_CLOUD_DB_URL, {
+        headers: { 'Accept': 'application/json', 'Cache-Control': 'no-cache' }
       });
       if (res.ok) {
-        const rows = await res.json();
-        if (Array.isArray(rows) && rows.length > 0 && rows[0].payload) {
-          fetchedData = rows[0].payload;
-        }
+        fetchedData = await res.json();
       }
     } catch (e1) {}
 
-    // 2. Secondary Fallback: Try JSONBlob / MyJSON
+    // 2. Secondary Fallback: Try JsonBlob Backup Store
     if (!fetchedData) {
-      const res2 = await fetch(FALLBACK_CLOUD_DB_URL, {
-        headers: { 'Accept': 'application/json', 'Cache-Control': 'no-cache' }
-      });
-      if (res2.ok) {
-        fetchedData = await res2.json();
-      }
+      try {
+        const res2 = await fetch(BACKUP_CLOUD_DB_URL, {
+          headers: { 'Accept': 'application/json', 'Cache-Control': 'no-cache' }
+        });
+        if (res2.ok) {
+          fetchedData = await res2.json();
+        }
+      } catch (e2) {}
     }
 
     if (fetchedData && typeof fetchedData === 'object') {
       const cloudVersion = parseInt(fetchedData.version) || 0;
       if (cloudVersion > mockDbVersion || mockDbVersion === 0) {
         mockDbVersion = cloudVersion || Date.now();
+        hasUpdated = true;
+        
+        ['users', 'members', 'events', 'articles', 'quizzes', 'notifications', 'certificates', 'logs', 'years', 'leaderboard'].forEach(key => {
+          if (Array.isArray(fetchedData[key])) {
+            MOCK_DB[key] = fetchedData[key];
+          }
+        });
+        
+        ensureSeedData();
+        saveMockDbToStorage();
       }
-      
-      ['users', 'members', 'events', 'articles', 'quizzes', 'notifications', 'certificates', 'logs', 'years', 'leaderboard'].forEach(key => {
-        if (Array.isArray(fetchedData[key])) {
-          MOCK_DB[key] = mergeDbArrays(MOCK_DB[key], fetchedData[key]);
-        }
-      });
-      
-      ensureSeedData();
-      saveMockDbToStorage();
     }
   } catch (e) {
     console.warn('[Global Cloud Sync] Offline fallback to localStorage cache:', e);
   } finally {
     isCloudSyncing = false;
   }
+  return hasUpdated;
 }
 
 async function pushToGlobalCloud() {
@@ -257,38 +235,19 @@ async function pushToGlobalCloud() {
     years: MOCK_DB.years
   };
 
-  // Push to Primary & Secondary in background asynchronously
-  const pushPromises = [];
+  const pushOptions = {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  };
 
-  // 1. Supabase Cloud KV Store Push
-  pushPromises.push(
-    fetch('https://fjshckqpfkjsbpfkojhm.supabase.co/rest/v1/system_state', {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_SYNC_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_SYNC_KEY,
-        'Content-Type': 'application/json',
-        'Prefer': 'resolution=merge-duplicates'
-      },
-      body: JSON.stringify({
-        id: 'global_state',
-        payload: payload,
-        updated_at: new Date().toISOString()
-      })
-    }).catch(() => null)
-  );
-
-  // 2. Fallback JsonBlob Push
-  pushPromises.push(
-    fetch(FALLBACK_CLOUD_DB_URL, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    }).catch(() => null)
-  );
+  const pushPromises = [
+    fetch(PRIMARY_CLOUD_DB_URL, pushOptions).catch(() => null),
+    fetch(BACKUP_CLOUD_DB_URL, pushOptions).catch(() => null)
+  ];
 
   try {
     await Promise.allSettled(pushPromises);

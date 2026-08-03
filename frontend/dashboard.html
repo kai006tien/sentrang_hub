@@ -35,7 +35,7 @@
         <span class="clock-icon">🕐</span>
         <span id="clock-text">Đang tải...</span>
       </div>
-      <div class="sync-status-badge" title="Hệ thống đang đồng bộ thời gian thực liên tục giữa các tài khoản & thiết bị">
+      <div class="sync-status-badge" onclick="triggerManualCloudSync()" style="cursor:pointer;" title="Bấm để kích hoạt đồng bộ dữ liệu thời gian thực ngay lập tức từ Cloud">
         <span class="sync-dot"></span> ⚡ Đồng bộ thời gian thực
       </div>
     </div>
@@ -129,7 +129,7 @@
             <span>Đăng xuất</span>
           </button>
         </div>
-        <div class="sync-status-badge mobile-sync-badge">
+        <div class="sync-status-badge mobile-sync-badge" onclick="triggerManualCloudSync()" style="cursor:pointer;" title="Bấm để kích hoạt đồng bộ Cloud">
           <span class="sync-dot"></span> ⚡ Đồng bộ Real-Time
         </div>
       </div>
