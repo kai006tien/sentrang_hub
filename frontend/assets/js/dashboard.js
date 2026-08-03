@@ -389,17 +389,7 @@ let lastKnownUserPermsJson = '';
 
 function startRealTimeSyncManager() {
   performSyncCheck();
-  setInterval(performSyncCheck, 6000); // Poll cloud every 6 seconds to stay comfortably within rate limits
-
-  // Immediate sync when user returns to tab or wakes mobile screen
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      performSyncCheck();
-    }
-  });
-  window.addEventListener('focus', () => {
-    performSyncCheck();
-  });
+  setInterval(performSyncCheck, 2500); // Fast real-time sync check every 2.5 seconds
 
   // Listen for cross-tab storage changes on the same device
   window.addEventListener('storage', (e) => {
@@ -426,13 +416,7 @@ function startRealTimeSyncManager() {
 
 let lastSyncTimestamp = 0;
 
-async function triggerManualCloudSync() {
-  showToast('⚡ Đang kiểm tra và đồng bộ dữ liệu thời gian thực từ Cloud...', 'info');
-  await performSyncCheck(true);
-}
-window.triggerManualCloudSync = triggerManualCloudSync;
-
-async function performSyncCheck(isManual = false) {
+async function performSyncCheck() {
   try {
     const syncData = await apiFetch('/api/sync');
     if (!syncData) return;
@@ -441,14 +425,6 @@ async function performSyncCheck(isManual = false) {
     const hasDataChanged = (syncData.timestamp && syncData.timestamp !== lastSyncTimestamp);
     if (hasDataChanged && lastSyncTimestamp !== 0) {
       console.log('[Real-Time Sync] Database version updated, refreshing active view silently...');
-      if (isManual) {
-        showToast('⚡ Đồng bộ dữ liệu Cloud thành công giữa các thiết bị!', 'success');
-      } else {
-        showToast('⚡ Dữ liệu vừa được tự động cập nhật từ thiết bị khác!', 'info');
-      }
-      refreshActiveViewSilently();
-    } else if (isManual) {
-      showToast('⚡ Dữ liệu hệ thống đang ở trạng thái mới nhất!', 'success');
       refreshActiveViewSilently();
     }
     if (syncData.timestamp) lastSyncTimestamp = syncData.timestamp;

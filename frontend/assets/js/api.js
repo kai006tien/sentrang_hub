@@ -159,52 +159,76 @@ function ensureSeedData() {
   }
 }
 
-const PRIMARY_CLOUD_DB_URL = 'https://jsonblob.com/api/jsonBlob/019fc8c4-e302-7390-95f7-8c36f5c1fecc';
-const BACKUP_CLOUD_DB_URL = 'https://jsonblob.com/api/jsonBlob/019fc8c5-142a-7c0a-bf0b-d855c93a56c5';
+const PRIMARY_CLOUD_DB_URL = 'https://jsonblob.com/api/jsonBlob/019fc9bd-539a-7264-8764-e29b5cdbdbbe';
+const SECONDARY_CLOUD_DB_URL = 'https://jsonblob.com/api/jsonBlob/019fc9bd-55d0-7e1e-80aa-257ea7f47589';
+
+function mergeDbArrays(localArr, cloudArr) {
+  if (!Array.isArray(cloudArr)) return Array.isArray(localArr) ? localArr : [];
+  if (!Array.isArray(localArr) || localArr.length === 0) return cloudArr;
+  
+  const map = new Map();
+  // Local items first
+  localArr.forEach(item => {
+    if (item && item.id) map.set(String(item.id), item);
+    else if (item && item.email) map.set(String(item.email), item);
+    else if (typeof item === 'string') map.set(item, item);
+  });
+  // Cloud items SECOND -> Cloud items OVERWRITE local items so edits from Device A take effect on Device B
+  cloudArr.forEach(item => {
+    if (item && item.id) map.set(String(item.id), item);
+    else if (item && item.email) map.set(String(item.email), item);
+    else if (typeof item === 'string') map.set(item, item);
+  });
+  return Array.from(map.values());
+}
 
 async function syncWithGlobalCloud() {
-  if (isCloudSyncing) return false;
+  if (isCloudSyncing) return;
   isCloudSyncing = true;
   let fetchedData = null;
-  let hasUpdated = false;
 
   try {
-    // 1. Primary: Try JsonBlob Primary Store
+    // 1. Primary Cloud Database Fetch
     try {
-      const res = await fetch(PRIMARY_CLOUD_DB_URL, {
+      const res1 = await fetch(PRIMARY_CLOUD_DB_URL, {
         headers: { 'Accept': 'application/json', 'Cache-Control': 'no-cache' }
       });
-      if (res.ok) {
-        fetchedData = await res.json();
+      if (res1.ok) {
+        fetchedData = await res1.json();
       }
-    } catch (e1) {}
+    } catch (e1) {
+      console.warn('[Global Cloud Sync] Primary fetch error:', e1.message);
+    }
 
-    // 2. Secondary Fallback: Try JsonBlob Backup Store
-    if (!fetchedData) {
+    // 2. Secondary Cloud Database Fetch (Fallback)
+    if (!fetchedData || !fetchedData.users) {
       try {
-        const res2 = await fetch(BACKUP_CLOUD_DB_URL, {
+        const res2 = await fetch(SECONDARY_CLOUD_DB_URL, {
           headers: { 'Accept': 'application/json', 'Cache-Control': 'no-cache' }
         });
         if (res2.ok) {
           fetchedData = await res2.json();
         }
-      } catch (e2) {}
+      } catch (e2) {
+        console.warn('[Global Cloud Sync] Secondary fetch error:', e2.message);
+      }
     }
 
-    if (fetchedData && typeof fetchedData === 'object') {
+    if (fetchedData && typeof fetchedData === 'object' && Array.isArray(fetchedData.users)) {
       const cloudVersion = parseInt(fetchedData.version) || 0;
-      if (cloudVersion > mockDbVersion || mockDbVersion === 0) {
+      const isNewer = cloudVersion > mockDbVersion || mockDbVersion === 0;
+
+      if (isNewer) {
         mockDbVersion = cloudVersion || Date.now();
-        hasUpdated = true;
-        
         ['users', 'members', 'events', 'articles', 'quizzes', 'notifications', 'certificates', 'logs', 'years', 'leaderboard'].forEach(key => {
           if (Array.isArray(fetchedData[key])) {
-            MOCK_DB[key] = fetchedData[key];
+            MOCK_DB[key] = mergeDbArrays(MOCK_DB[key], fetchedData[key]);
           }
         });
         
         ensureSeedData();
         saveMockDbToStorage();
+        console.log('[Global Cloud Sync] Synced latest multi-device state, version:', mockDbVersion);
       }
     }
   } catch (e) {
@@ -212,7 +236,6 @@ async function syncWithGlobalCloud() {
   } finally {
     isCloudSyncing = false;
   }
-  return hasUpdated;
 }
 
 async function pushToGlobalCloud() {
@@ -235,25 +258,28 @@ async function pushToGlobalCloud() {
     years: MOCK_DB.years
   };
 
-  const pushOptions = {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    },
-    body: JSON.stringify(payload)
-  };
+  const jsonBody = JSON.stringify(payload);
 
+  // Push to Primary & Secondary asynchronously
   const pushPromises = [
-    fetch(PRIMARY_CLOUD_DB_URL, pushOptions).catch(() => null),
-    fetch(BACKUP_CLOUD_DB_URL, pushOptions).catch(() => null)
+    fetch(PRIMARY_CLOUD_DB_URL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: jsonBody
+    }).catch(e => console.warn('[Cloud Push] Primary push error:', e)),
+
+    fetch(SECONDARY_CLOUD_DB_URL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: jsonBody
+    }).catch(e => console.warn('[Cloud Push] Secondary push error:', e))
   ];
 
   try {
     await Promise.allSettled(pushPromises);
-    console.log('[Global Cloud Sync] Database state pushed to multi-cloud successfully.');
+    console.log('[Global Cloud Sync] Pushed new version', mockDbVersion, 'to multi-cloud endpoints.');
   } catch (e) {
-    console.warn('[Global Cloud Sync] Push warning, cached locally:', e);
+    console.warn('[Global Cloud Sync] Push error:', e);
   }
 }
 
