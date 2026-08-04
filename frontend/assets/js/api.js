@@ -83,7 +83,7 @@ const MOCK_DB = {
 
 const GLOBAL_CLOUD_DB_URL = 'https://jsonblob.com/api/jsonBlob/019fb1f2-890d-72b3-ae1d-621f05acd070';
 let isCloudSyncing = false;
-let mockDbVersion = Date.now();
+let mockDbVersion = 0;
 
 // Cross-tab & multi-user Real-Time Synchronization Engine
 const SYNC_CHANNEL_NAME = 'sentrang_hub_realtime_sync';
@@ -222,12 +222,13 @@ async function syncWithGlobalCloud() {
         mockDbVersion = cloudVersion || Date.now();
         ['users', 'members', 'events', 'articles', 'quizzes', 'notifications', 'certificates', 'logs', 'years', 'leaderboard'].forEach(key => {
           if (Array.isArray(fetchedData[key])) {
-            MOCK_DB[key] = mergeDbArrays(MOCK_DB[key], fetchedData[key]);
+            MOCK_DB[key] = fetchedData[key];
           }
         });
         
         ensureSeedData();
         saveMockDbToStorage();
+        notifyRealtimeSync('CLOUD_PULL', { version: mockDbVersion });
         console.log('[Global Cloud Sync] Synced latest multi-device state, version:', mockDbVersion);
       }
     }
@@ -285,6 +286,12 @@ async function pushToGlobalCloud() {
 
 function loadMockDbFromStorage() {
   try {
+    const savedVer = localStorage.getItem('sentrang_db_version');
+    if (savedVer) {
+      mockDbVersion = parseInt(savedVer) || 0;
+    } else {
+      mockDbVersion = 0;
+    }
     const keys = ['users', 'members', 'events', 'articles', 'quizzes', 'notifications', 'certificates', 'logs', 'years', 'leaderboard'];
     keys.forEach(k => {
       const saved = localStorage.getItem(`sentrang_db_${k}`);
@@ -301,6 +308,7 @@ function loadMockDbFromStorage() {
 
 function saveMockDbToStorage() {
   try {
+    localStorage.setItem('sentrang_db_version', mockDbVersion.toString());
     const keys = ['users', 'members', 'events', 'articles', 'quizzes', 'notifications', 'certificates', 'logs', 'years', 'leaderboard'];
     keys.forEach(k => {
       if (Array.isArray(MOCK_DB[k])) {
@@ -313,6 +321,12 @@ function saveMockDbToStorage() {
 // Initial load from storage and background cloud sync
 loadMockDbFromStorage();
 syncWithGlobalCloud();
+
+if (typeof window !== 'undefined' && !window.__globalCloudSyncInterval) {
+  window.__globalCloudSyncInterval = setInterval(() => {
+    syncWithGlobalCloud();
+  }, 4000);
+}
 
 async function getMockApiResponse(endpoint, options = {}) {
   const method = (options.method || 'GET').toUpperCase();
