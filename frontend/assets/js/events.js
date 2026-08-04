@@ -99,21 +99,33 @@ function renderEventsUI(events, allMembers, options = {}) {
           const title = safeEscape(e.title || 'Sự kiện');
           const titleAttr = attrEscape(e.title || 'Sự kiện');
           const eventId = attrEscape(e.id || '');
+          const isClosed = (e.status === 'closed' || e.status === 'archived' || e.status === 'finished');
 
-          return `<div style="background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-xl);padding:1.25rem;box-shadow:var(--shadow-sm);transition:all 0.25s ease;" onmouseenter="this.style.transform='translateY(-2px)'" onmouseleave="this.style.transform='none'">
-            <div style="display:flex;justify-content:space-between;margin-bottom:0.6rem;">
-              <span style="font-size:0.72rem;padding:0.2rem 0.65rem;background:${cat.bg};color:${cat.text};font-weight:700;border-radius:var(--radius-full);white-space:nowrap;display:inline-block;">${cat.label}</span>
+          const statusTag = isClosed
+            ? `<span style="font-size:0.72rem;padding:0.2rem 0.65rem;background:rgba(239,68,68,0.18);color:#EF4444;font-weight:800;border-radius:var(--radius-full);white-space:nowrap;display:inline-block;">🔒 Đã đóng điểm danh</span>`
+            : `<span style="font-size:0.72rem;padding:0.2rem 0.65rem;background:${cat.bg};color:${cat.text};font-weight:700;border-radius:var(--radius-full);white-space:nowrap;display:inline-block;">🟢 ${cat.label}</span>`;
+
+          return `<div style="background:var(--bg-card);border:1px solid ${isClosed ? 'var(--border-light)' : 'var(--border-light)'};border-radius:var(--radius-xl);padding:1.25rem;box-shadow:var(--shadow-sm);transition:all 0.25s ease;${isClosed ? 'opacity:0.88;' : ''}" onmouseenter="this.style.transform='translateY(-2px)'" onmouseleave="this.style.transform='none'">
+            <div style="display:flex;justify-content:space-between;margin-bottom:0.6rem;align-items:center;gap:0.5rem;">
+              ${statusTag}
               <span style="font-size:0.72rem;color:var(--text-muted);white-space:nowrap;">${formatDate(e.start_date, 'Mới đây')}</span>
             </div>
-            <h4 style="font-size:1rem;font-weight:700;margin-bottom:0.35rem;">${title}</h4>
+            <h4 style="font-size:1rem;font-weight:700;margin-bottom:0.35rem;color:${isClosed ? 'var(--text-secondary)' : 'var(--text-primary)'};">${title}</h4>
             <p style="font-size:0.825rem;color:var(--text-muted);margin-bottom:0.75rem;">📍 ${safeEscape(e.location || 'CLB')}</p>
-            <div style="background:var(--bg-main);border-radius:var(--radius-full);height:6px;margin-bottom:0.75rem;overflow:hidden;"><div style="background:var(--primary-gradient-light);height:100%;width:${pct}%;border-radius:var(--radius-full);"></div></div>
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <span style="font-size:0.8rem;color:var(--accent-green);font-weight:700;">👥 ${currentCount}/${maxCapacity}</span>
-              ${canCheckIn 
-                ? `<button class="btn btn-secondary btn-sm" onclick="openQrCheckInModal('${eventId}','${titleAttr}')">📷 Điểm danh</button>`
-                : `<button class="btn btn-secondary btn-sm" onclick="openEventAttendeesModal('${eventId}','${titleAttr}')">📋 Xem danh sách</button>`
-              }
+            <div style="background:var(--bg-main);border-radius:var(--radius-full);height:6px;margin-bottom:0.75rem;overflow:hidden;"><div style="background:${isClosed ? '#94A3B8' : 'var(--primary-gradient-light)'};height:100%;width:${pct}%;border-radius:var(--radius-full);"></div></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:0.4rem;flex-wrap:wrap;">
+              <span style="font-size:0.8rem;color:${isClosed ? 'var(--text-muted)' : 'var(--accent-green)'};font-weight:700;">👥 ${currentCount}/${maxCapacity}</span>
+              <div style="display:flex;gap:0.35rem;align-items:center;">
+                ${canCheckIn 
+                  ? (isClosed
+                      ? `<button class="btn btn-secondary btn-sm" onclick="openEventAttendeesModal('${eventId}','${titleAttr}')">📋 Danh sách</button>
+                         <button class="btn btn-warning btn-sm" style="font-size:0.75rem;padding:0.25rem 0.55rem;" onclick="toggleCloseEvent('${eventId}','${titleAttr}', false)" title="Mở lại điểm danh sự kiện">🔓 Mở lại</button>`
+                      : `<button class="btn btn-secondary btn-sm" onclick="openQrCheckInModal('${eventId}','${titleAttr}')">📷 Điểm danh</button>
+                         <button class="btn btn-outline-danger btn-sm" style="font-size:0.75rem;padding:0.25rem 0.5rem;color:#DC2626;border-color:#FCA5A5;background:rgba(239,68,68,0.05);" onclick="toggleCloseEvent('${eventId}','${titleAttr}', true)" title="Đóng điểm danh sự kiện">🔒 Đóng SK</button>`
+                    )
+                  : `<button class="btn btn-secondary btn-sm" onclick="openEventAttendeesModal('${eventId}','${titleAttr}')">📋 Xem danh sách</button>`
+                }
+              </div>
             </div>
           </div>`;
         }).join('');
@@ -127,6 +139,11 @@ function renderEventsUI(events, allMembers, options = {}) {
           const title = safeEscape(e.title || 'Sự kiện');
           const titleAttr = attrEscape(e.title || 'Sự kiện');
           const eventId = attrEscape(e.id || '');
+          const isClosed = (e.status === 'closed' || e.status === 'archived' || e.status === 'finished');
+
+          const statusBadge = isClosed 
+            ? `<span style="font-size:0.72rem;padding:0.2rem 0.65rem;background:rgba(239,68,68,0.18);color:#EF4444;font-weight:800;border-radius:var(--radius-full);white-space:nowrap;display:inline-block;">🔒 Đã đóng</span>`
+            : `<span style="font-size:0.72rem;padding:0.2rem 0.65rem;background:${cat.bg};color:${cat.text};font-weight:700;border-radius:var(--radius-full);white-space:nowrap;display:inline-block;">🟢 ${cat.label}</span>`;
 
           const attendedMembers = safeMembers.filter(m => {
             if (!m || !Array.isArray(m.points_history)) return false;
@@ -152,32 +169,41 @@ function renderEventsUI(events, allMembers, options = {}) {
 
           if (canCheckIn) {
             return `
-              <tr>
+              <tr style="${isClosed ? 'opacity:0.9;background:rgba(241,245,249,0.5);' : ''}">
                 <td><strong>${title}</strong></td>
-                <td><span style="font-size:0.72rem;padding:0.2rem 0.65rem;background:${cat.bg};color:${cat.text};font-weight:700;border-radius:var(--radius-full);white-space:nowrap;display:inline-block;">${cat.label}</span></td>
+                <td>${statusBadge}</td>
                 <td><span style="font-size:0.825rem;color:var(--text-muted);white-space:nowrap;">${dateStr}</span></td>
                 <td><span style="font-size:0.825rem;color:var(--text-muted);">📍 ${safeEscape(e.location || 'CLB')}</span></td>
-                <td><span style="font-weight:700;color:var(--accent-green);white-space:nowrap;">👥 ${totalCount} / ${maxCap}</span></td>
+                <td><span style="font-weight:700;color:${isClosed ? 'var(--text-muted)' : 'var(--accent-green)'};white-space:nowrap;">👥 ${totalCount} / ${maxCap}</span></td>
                 <td style="white-space:nowrap;">
-                  <button class="btn btn-secondary btn-sm" onclick="openEventAttendeesModal('${eventId}','${titleAttr}')">
-                    📋 Xem danh sách đã điểm danh (${totalCount})
-                  </button>
+                  <div style="display:flex;gap:0.4rem;align-items:center;">
+                    <button class="btn btn-secondary btn-sm" onclick="openEventAttendeesModal('${eventId}','${titleAttr}')">
+                      📋 Xem danh sách (${totalCount})
+                    </button>
+                    ${isClosed
+                      ? `<button class="btn btn-warning btn-sm" style="font-size:0.75rem;padding:0.25rem 0.55rem;" onclick="toggleCloseEvent('${eventId}','${titleAttr}', false)">🔓 Mở lại</button>`
+                      : `<button class="btn btn-danger btn-sm" style="font-size:0.75rem;padding:0.25rem 0.55rem;background:#DC2626;border-color:#B91C1C;" onclick="toggleCloseEvent('${eventId}','${titleAttr}', true)">🔒 Đóng sự kiện</button>`
+                    }
+                  </div>
                 </td>
               </tr>
             `;
           } else {
             return `
-              <tr>
+              <tr style="${isClosed ? 'opacity:0.9;' : ''}">
                 <td><strong>${title}</strong></td>
-                <td><span style="font-size:0.72rem;padding:0.2rem 0.65rem;background:${cat.bg};color:${cat.text};font-weight:700;border-radius:var(--radius-full);white-space:nowrap;display:inline-block;">${cat.label}</span></td>
+                <td>${statusBadge}</td>
                 <td><span style="font-size:0.825rem;color:var(--text-muted);white-space:nowrap;">${dateStr}</span></td>
                 <td><span style="font-size:0.825rem;color:var(--text-muted);">📍 ${safeEscape(e.location || 'CLB')}</span></td>
-                <td><span style="font-weight:700;color:var(--accent-green);white-space:nowrap;">👥 ${totalCount} / ${maxCap}</span></td>
+                <td><span style="font-weight:700;color:${isClosed ? 'var(--text-muted)' : 'var(--accent-green)'};white-space:nowrap;">👥 ${totalCount} / ${maxCap}</span></td>
                 <td style="white-space:nowrap;">
                   <div style="display:flex;align-items:center;gap:0.5rem;">
-                    ${isAttended 
-                      ? '<span style="color:#2E7D32;font-weight:700;background:#E8F5E9;padding:0.25rem 0.65rem;border-radius:var(--radius-full);font-size:0.775rem;white-space:nowrap;display:inline-block;">✅ Đã tham gia (+10 ĐTT)</span>'
-                      : '<span style="color:#C62828;font-weight:600;background:#FFEBEE;padding:0.25rem 0.65rem;border-radius:var(--radius-full);font-size:0.775rem;white-space:nowrap;display:inline-block;">⏳ Chưa điểm danh</span>'
+                    ${isClosed
+                      ? '<span style="color:#DC2626;font-weight:700;background:#FEE2E2;padding:0.25rem 0.65rem;border-radius:var(--radius-full);font-size:0.775rem;white-space:nowrap;display:inline-block;">🔒 Đã kết thúc</span>'
+                      : (isAttended 
+                          ? '<span style="color:#2E7D32;font-weight:700;background:#E8F5E9;padding:0.25rem 0.65rem;border-radius:var(--radius-full);font-size:0.775rem;white-space:nowrap;display:inline-block;">✅ Đã tham gia (+10 ĐTT)</span>'
+                          : '<span style="color:#C62828;font-weight:600;background:#FFEBEE;padding:0.25rem 0.65rem;border-radius:var(--radius-full);font-size:0.775rem;white-space:nowrap;display:inline-block;">⏳ Chưa điểm danh</span>'
+                        )
                     }
                     <button class="btn btn-secondary btn-sm" style="font-size:0.72rem;padding:0.2rem 0.5rem;" onclick="openEventAttendeesModal('${eventId}','${titleAttr}')">📋 Xem sĩ số</button>
                   </div>
@@ -204,7 +230,7 @@ function renderEventsUI(events, allMembers, options = {}) {
             <thead>
               <tr>
                 <th>Tên Sự kiện / Hoạt động</th>
-                <th>Phân loại</th>
+                <th>Phân loại & Trạng thái</th>
                 <th>Ngày tổ chức</th>
                 <th>Địa điểm</th>
                 <th>Số lượt đã tham gia</th>
@@ -348,6 +374,33 @@ async function handleCreateEventSubmit(e) {
 async function openQrCheckInModal(eventId, eventTitle) {
   const triggerModal = typeof showModal === 'function' ? showModal : window.showModal;
   const safeEsc = typeof escapeHTML === 'function' ? escapeHTML : (s => s ? String(s) : '');
+  const titleAttr = attrEscape(eventTitle);
+
+  let events = [];
+  try {
+    const eventsRes = await apiFetch('/api/events');
+    events = Array.isArray(eventsRes) ? eventsRes : (eventsRes.data || []);
+  } catch {}
+  
+  const evt = events.find(e => String(e.id) === String(eventId)) || (typeof MOCK_DB !== 'undefined' && Array.isArray(MOCK_DB.events) ? MOCK_DB.events.find(e => String(e.id) === String(eventId)) : null);
+  const isClosed = evt && (evt.status === 'closed' || evt.status === 'archived' || evt.status === 'finished');
+
+  if (isClosed) {
+    triggerModal(`📋 Điểm Danh Thành Viên: ${safeEsc(eventTitle)}`, `
+      <div style="padding:1rem 0;text-align:center;">
+        <div style="background:rgba(239,68,68,0.08);border:1.5px dashed #FCA5A5;border-radius:var(--radius-lg);padding:1.5rem 1rem;margin-bottom:1.25rem;">
+          <div style="font-size:2.8rem;margin-bottom:0.4rem;">🔒</div>
+          <h4 style="font-weight:800;color:#DC2626;font-size:1.1rem;margin-bottom:0.35rem;">Sự kiện này đã ĐÓNG ĐIỂM DANH</h4>
+          <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem;line-height:1.4;">Ban tổ chức đã khóa tính năng điểm danh cho sự kiện này. Thành viên không thể điểm danh thêm.</p>
+          <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="openEventAttendeesModal('${eventId}', '${titleAttr}')">📋 Xem danh sách đã tham gia</button>
+            ${(isSuperAdmin() || hasPermission('attendance.manage')) ? `<button class="btn btn-warning btn-sm" onclick="toggleCloseEvent('${eventId}', '${titleAttr}', false)">🔓 Mở lại điểm danh</button>` : ''}
+          </div>
+        </div>
+      </div>
+    `);
+    return;
+  }
 
   let members = [];
   try {
@@ -393,6 +446,14 @@ async function openQrCheckInModal(eventId, eventTitle) {
       <button class="btn btn-primary btn-block" style="width:100%;padding:0.85rem;font-size:0.95rem;font-weight:700;" onclick="executeManualCheckIn('${eventId}')">
         ✅ XÁC NHẬN ĐIỂM DANH (+10 ĐTT)
       </button>
+
+      ${(isSuperAdmin() || hasPermission('attendance.manage')) ? `
+        <div style="margin-top:1rem;text-align:center;border-top:1px dashed var(--border-light);padding-top:0.85rem;">
+          <button class="btn btn-outline-danger btn-sm" style="font-size:0.8rem;color:#DC2626;border-color:#FCA5A5;" onclick="toggleCloseEvent('${eventId}', '${titleAttr}', true)">
+            🔒 Đóng điểm danh sự kiện này
+          </button>
+        </div>
+      ` : ''}
     </div>
   `);
 }
@@ -417,7 +478,8 @@ async function openEventAttendeesModal(eventId, eventTitle) {
   try {
     const eventsRes = await apiFetch('/api/events');
     const events = Array.isArray(eventsRes) ? eventsRes : (eventsRes.data || []);
-    const evt = events.find(e => e.id === eventId);
+    const evt = events.find(e => String(e.id) === String(eventId));
+    const isClosed = evt && (evt.status === 'closed' || evt.status === 'archived' || evt.status === 'finished');
     
     const membersRes = await apiFetch('/api/members');
     const allMembers = Array.isArray(membersRes) ? membersRes : (membersRes.data || []);
@@ -477,28 +539,33 @@ async function openEventAttendeesModal(eventId, eventTitle) {
 
     const triggerModal = typeof showModal === 'function' ? showModal : window.showModal;
     const safeEsc = typeof escapeHTML === 'function' ? escapeHTML : (s => s ? String(s) : '');
+    const titleAttr = attrEscape(eventTitle);
 
     triggerModal(`📊 Bản Theo Dõi Danh Sách Điểm Danh — ${safeEsc(eventTitle)}`, `
       <div>
         <div style="display:flex;justify-content:space-between;align-items:center;background:var(--bg-main);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;flex-wrap:wrap;gap:0.75rem;">
           <div>
-            <div style="font-size:0.8rem;color:var(--text-muted);">Hoạt động:</div>
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+              <span style="font-size:0.8rem;color:var(--text-muted);">Hoạt động:</span>
+              ${isClosed ? `<span style="font-size:0.7rem;padding:0.15rem 0.5rem;background:rgba(239,68,68,0.18);color:#EF4444;font-weight:800;border-radius:var(--radius-full);">🔒 Đã đóng</span>` : `<span style="font-size:0.7rem;padding:0.15rem 0.5rem;background:rgba(16,185,129,0.15);color:#059669;font-weight:800;border-radius:var(--radius-full);">🟢 Đang mở</span>`}
+            </div>
             <div style="font-size:1.05rem;font-weight:800;color:var(--primary-700);">${escapeHTML(eventTitle)}</div>
           </div>
-          <div style="display:flex;gap:1rem;align-items:center;">
+          <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
             <div style="text-align:center;">
-              <div style="font-size:1.3rem;font-weight:800;color:var(--accent-green);">👥 ${totalCount} / ${maxCapacity}</div>
+              <div style="font-size:1.2rem;font-weight:800;color:var(--accent-green);">👥 ${totalCount} / ${maxCapacity}</div>
               <div style="font-size:0.72rem;color:var(--text-muted);">Sĩ số đã tham gia</div>
             </div>
             <div style="text-align:center;">
-              <div style="font-size:1.3rem;font-weight:800;color:#E65100;">+${pointsReward * totalCount} ĐTT</div>
+              <div style="font-size:1.2rem;font-weight:800;color:#E65100;">+${pointsReward * totalCount} ĐTT</div>
               <div style="font-size:0.72rem;color:var(--text-muted);">Tổng điểm cấp ra</div>
             </div>
-            ${canManage ? `
-              <button class="btn btn-primary btn-sm" onclick="openQrCheckInModal('${eventId}', '${escapeHTML(eventTitle)}')">
-                ➕ Điểm danh thêm
-              </button>
-            ` : ''}
+            ${canManage ? (
+              isClosed
+                ? `<button class="btn btn-warning btn-sm" onclick="toggleCloseEvent('${eventId}', '${titleAttr}', false)">🔓 Mở lại điểm danh</button>`
+                : `<button class="btn btn-primary btn-sm" onclick="openQrCheckInModal('${eventId}', '${titleAttr}')">➕ Điểm danh thêm</button>
+                   <button class="btn btn-danger btn-sm" style="background:#DC2626;" onclick="toggleCloseEvent('${eventId}', '${titleAttr}', true)">🔒 Đóng sự kiện</button>`
+            ) : ''}
           </div>
         </div>
 
@@ -528,6 +595,25 @@ async function openEventAttendeesModal(eventId, eventTitle) {
     `);
   } catch (err) {
     showToast('Lỗi tải danh sách điểm danh: ' + err.message, 'error');
+  }
+}
+
+async function toggleCloseEvent(eventId, eventTitle, shouldClose = true) {
+  const actionText = shouldClose ? 'ĐÓNG ĐIỂM DANH' : 'MỞ LẠI ĐIỂM DANH';
+  const confirmMsg = shouldClose 
+    ? `Bạn có chắc chắn muốn ĐÓNG ĐIỂM DANH cho sự kiện "${eventTitle}"?\nSau khi đóng, các thành viên sẽ không thể thực hiện điểm danh mới.`
+    : `Bạn có chắc chắn muốn MỞ LẠI điểm danh cho sự kiện "${eventTitle}"?`;
+  
+  if (!confirm(confirmMsg)) return;
+
+  try {
+    const res = await API.post(`/events/${eventId}/toggle-status`, { action: shouldClose ? 'close' : 'reopen' });
+    showToast(res.message || `Đã ${actionText.toLowerCase()} sự kiện thành công!`, 'success');
+    closeModal();
+    loadEventsList();
+    if (typeof performSyncCheck === 'function') performSyncCheck();
+  } catch (err) {
+    showToast('Lỗi: ' + err.message, 'error');
   }
 }
 
@@ -573,7 +659,7 @@ function filterEventsByArchive() {
     // Filter by Month / Year
     if (monthVal !== 'all') {
       if (monthVal === 'archive') {
-        if (e.status !== 'archived' && e.status !== 'finished') return false;
+        if (e.status !== 'archived' && e.status !== 'closed' && e.status !== 'finished') return false;
       } else {
         const dateStr = e.start_date ? new Date(e.start_date).toISOString().slice(0, 7) : '';
         if (dateStr !== monthVal) return false;
@@ -582,8 +668,8 @@ function filterEventsByArchive() {
 
     // Filter by Status
     if (statusVal !== 'all') {
-      if (statusVal === 'active' && e.status === 'archived') return false;
-      if (statusVal === 'archived' && e.status !== 'archived' && e.status !== 'finished') return false;
+      if (statusVal === 'active' && (e.status === 'archived' || e.status === 'closed' || e.status === 'finished')) return false;
+      if (statusVal === 'archived' && e.status !== 'archived' && e.status !== 'closed' && e.status !== 'finished') return false;
     }
 
     // Search query
@@ -608,3 +694,4 @@ window.executeManualCheckIn = executeManualCheckIn;
 window.openEventAttendeesModal = openEventAttendeesModal;
 window.filterAttendeesModalTable = filterAttendeesModalTable;
 window.removeEventAttendance = removeEventAttendance;
+window.toggleCloseEvent = toggleCloseEvent;

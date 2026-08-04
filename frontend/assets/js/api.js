@@ -685,9 +685,54 @@ async function getMockApiResponse(endpoint, options = {}) {
   }
 
   // Events
+  if (endpoint.includes('/events/') && (endpoint.includes('/toggle-status') || endpoint.includes('/close'))) {
+    const eventId = endpoint.split('/')[3];
+    const evt = (MOCK_DB.events || []).find(e => e.id === eventId);
+    if (!evt) return Promise.reject(new Error('Không tìm thấy sự kiện!'));
+    
+    const action = body.action || (evt.status === 'closed' || evt.status === 'archived' ? 'reopen' : 'close');
+    if (action === 'close') {
+      evt.status = 'closed';
+    } else {
+      evt.status = 'active';
+    }
+
+    const currentUser = typeof Auth !== 'undefined' ? Auth.getUser() : null;
+    MOCK_DB.logs.unshift({
+      timestamp: new Date().toLocaleString('vi-VN'),
+      admin: currentUser ? currentUser.display_name : 'Ban Hoạt động',
+      action: evt.status === 'closed' ? 'EVENT.CLOSE' : 'EVENT.REOPEN',
+      module: 'Hoạt động',
+      detail: `${evt.status === 'closed' ? 'Đóng điểm danh' : 'Mở lại điểm danh'} cho sự kiện "${evt.title}"`
+    });
+
+    MOCK_DB.notifications.unshift({
+      id: 'noti_' + Date.now(),
+      title: evt.status === 'closed' ? `🔒 Sự kiện đã đóng điểm danh: ${evt.title}` : `🔓 Sự kiện mở lại điểm danh: ${evt.title}`,
+      content: evt.status === 'closed' 
+        ? `Ban tổ chức đã chính thức đóng điểm danh cho sự kiện "${evt.title}".` 
+        : `Sự kiện "${evt.title}" đã được mở lại điểm danh cho các thành viên.`,
+      type: 'info',
+      target: 'all',
+      created_at: new Date().toISOString(),
+      read_by: []
+    });
+
+    pushToGlobalCloud();
+    return Promise.resolve({
+      success: true,
+      message: evt.status === 'closed' ? `Đã đóng điểm danh sự kiện "${evt.title}" thành công!` : `Đã mở lại điểm danh sự kiện "${evt.title}"!`,
+      status: evt.status,
+      event: evt
+    });
+  }
+
   if (endpoint.includes('/events/') && (endpoint.includes('/attendance') || endpoint.includes('/check-in'))) {
     const eventId = endpoint.split('/')[3];
     const evt = (MOCK_DB.events || []).find(e => e.id === eventId);
+    if (evt && (evt.status === 'closed' || evt.status === 'archived')) {
+      return Promise.reject(new Error('🔒 Sự kiện này đã đóng điểm danh, không thể tiếp tục điểm danh!'));
+    }
     if (evt) {
       evt.current_count = (evt.current_count || 0) + 1;
     }
