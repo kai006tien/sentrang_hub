@@ -1123,8 +1123,43 @@ async function executeResetModule(moduleKey) {
   }
 }
 
+function openMasterFactoryResetModal() {
+  if (!isSuperAdmin()) {
+    showToast('🔒 Chỉ Super Admin mới có quyền thực hiện Reset toàn bộ hệ thống!', 'error');
+    return;
+  }
+  showModal('⚡ Master Reset Toàn Bộ Hệ Thống', `
+    <div style="text-align:center;padding:1rem;">
+      <div style="font-size:3.5rem;margin-bottom:0.5rem;">🚨</div>
+      <h3 style="font-size:1.2rem;font-weight:900;color:#DC2626;margin-bottom:0.75rem;">XÁC NHẬN MASTER FACTORY RESET</h3>
+      <p style="font-size:0.9rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.25rem;">
+        Hành động này sẽ <strong>Xóa sạch toàn bộ dữ liệu mẫu</strong> (Thành viên, Sự kiện, Bài viết, Thi trực tuyến, Giấy chứng nhận...) và đưa hệ thống về trạng thái <strong>Dữ liệu trắng 0.0</strong> chuẩn bị phát hành thử nghiệm.<br>
+        <strong style="color:#DC2626;">Dữ liệu sẽ được đồng bộ ngay lập tức tới tất cả thiết bị đang kết nối!</strong>
+      </p>
+      <div style="display:flex;gap:0.75rem;justify-content:center;">
+        <button class="btn btn-secondary" onclick="closeModal()">Hủy bỏ</button>
+        <button class="btn btn-danger" style="background:#DC2626;font-weight:800;" onclick="executeMasterFactoryReset()">💥 Xác nhận Master Reset</button>
+      </div>
+    </div>
+  `);
+}
+
+async function executeMasterFactoryReset() {
+  try {
+    const res = await API.post('/system/factory-reset');
+    showToast(res.message || '⚡ Đã Reset toàn bộ hệ thống về dữ liệu trắng thành công!', 'success');
+    closeModal();
+    if (typeof refreshCurrentView === 'function') refreshCurrentView();
+    if (typeof performSyncCheck === 'function') performSyncCheck();
+  } catch (err) {
+    showToast('Lỗi: ' + err.message, 'error');
+  }
+}
+
 window.openResetModuleModal = openResetModuleModal;
 window.executeResetModule = executeResetModule;
+window.openMasterFactoryResetModal = openMasterFactoryResetModal;
+window.executeMasterFactoryReset = executeMasterFactoryReset;
 window.loadUserPermissionsTable = loadUserPermissionsTable;
 window.openUserPermissionsModal = openUserPermissionsModal;
 window.handleSaveUserPermissions = handleSaveUserPermissions;

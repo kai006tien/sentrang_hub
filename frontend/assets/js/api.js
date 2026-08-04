@@ -55,7 +55,7 @@ const MOCK_DB = {
     { id: 'admin_uid', email: 'admin@sentranghub.vn', password: 'SenTrang@2026!', display_name: 'Admin Hệ Thống', role_id: 'role_super_admin', role_name: 'Super Admin', role_level: 0, is_active: true, permissions: ['*'], created_at: '2026-01-01T00:00:00Z' }
   ],
   members: [
-    { id: 'mem_01', user_id: 'admin_uid', full_name: 'Admin Hệ Thống', email: 'admin@sentranghub.vn', student_id: 'MSTN2026001', department: 'Ban Chủ nhiệm', current_position: 'Chủ nhiệm', status: 'active', total_points: 120, bonus_points: 40, attendance_points: 80, penalty_points: 0, points_history: [{ id: 'ph_init', event_id: 'event_01', title: 'Điểm danh: Chiến dịch Mùa Hè Tình Nguyện 2026', points: 10, type: 'attendance', date: new Date().toISOString() }] }
+    { id: 'mem_01', user_id: 'admin_uid', full_name: 'Admin Hệ Thống', email: 'admin@sentranghub.vn', student_id: 'MSTN2026001', department: 'Ban Chủ nhiệm', current_position: 'Chủ nhiệm', status: 'active', total_points: 0, bonus_points: 0, attendance_points: 0, penalty_points: 0, points_history: [] }
   ],
   roles: [
     { id: 'role_super_admin', name: 'Super Admin', description: 'Quản trị viên cao nhất, toàn quyền hệ thống', level: 0, permissions: ['*'] },
@@ -68,17 +68,18 @@ const MOCK_DB = {
     { id: 'role_thanh_vien', name: 'Thành viên', description: 'Thành viên chính thức câu lạc bộ', level: 10, permissions: ['quizzes.take', 'events.read', 'articles.read', 'certificates.view'] },
     { id: 'role_cong_tac_vien', name: 'Cộng tác viên', description: 'Cộng tác viên câu lạc bộ', level: 10, permissions: ['events.read', 'articles.read'] }
   ],
-  events: [
-    { id: 'event_01', title: 'Chiến dịch Mùa Hè Tình Nguyện 2026', category: 'volunteer', location: 'Huyện Hóc Môn, TP.HCM', start_date: '2026-07-20T08:00:00Z', max_participants: 50, current_count: 12, points_reward: 10, status: 'active' },
-    { id: 'event_02', title: 'Tập huấn Kỹ năng Đội Nhóm & Sơ cứu', category: 'training', location: 'Hội trường B - Bách Khoa', start_date: '2026-07-25T14:00:00Z', max_participants: 40, current_count: 8, points_reward: 10, status: 'active' },
-    { id: 'event_03', title: 'Sinh hoạt Định kỳ CLB Tháng 7', category: 'social', location: 'Phòng Sinh hoạt Sen Trắng', start_date: '2026-07-30T18:00:00Z', max_participants: 60, current_count: 15, points_reward: 10, status: 'active' }
-  ],
+  events: [],
   articles: [],
   quizzes: [],
-  notifications: [],
+  notifications: [
+    { id: 'noti_welcome', title: '🎉 Nền tảng Sen Trắng Hub v3.0 đã khởi tạo sẵn sàng!', content: 'Hệ thống đã được nâng cấp bảo mật và dọn dẹp dữ liệu trắng, sẵn sàng cho việc phát hành thử nghiệm toàn hệ thống.', type: 'important', target: 'all', created_at: new Date().toISOString(), read_by: [] }
+  ],
   leaderboard: [],
   certificates: [],
-  logs: []
+  logs: [
+    { timestamp: new Date().toLocaleString('vi-VN'), admin: 'Admin Hệ Thống', action: 'SYSTEM.INIT', module: 'Hệ thống', detail: 'Nâng cấp bảo mật hệ thống & dọn dẹp dữ liệu trắng chuẩn bị phát hành thử nghiệm.' }
+  ],
+  years: ['2026']
 };
 
 const GLOBAL_CLOUD_DB_URL = 'https://jsonblob.com/api/jsonBlob/019fb1f2-890d-72b3-ae1d-621f05acd070';
@@ -143,20 +144,36 @@ function notifyRealtimeSync(eventType = 'DATA_UPDATED', payload = {}) {
 }
 
 function ensureSeedData() {
-  const seedEvents = [
-    { id: 'event_01', title: 'Chiến dịch Mùa Hè Tình Nguyện 2026', category: 'volunteer', location: 'Huyện Hóc Môn, TP.HCM', start_date: '2026-07-20T08:00:00Z', max_participants: 50, current_count: 12, points_reward: 10, status: 'active' },
-    { id: 'event_02', title: 'Tập huấn Kỹ năng Đội Nhóm & Sơ cứu', category: 'training', location: 'Hội trường B - Bách Khoa', start_date: '2026-07-25T14:00:00Z', max_participants: 40, current_count: 8, points_reward: 10, status: 'active' },
-    { id: 'event_03', title: 'Sinh hoạt Định kỳ CLB Tháng 7', category: 'social', location: 'Phòng Sinh hoạt Sen Trắng', start_date: '2026-07-30T18:00:00Z', max_participants: 60, current_count: 15, points_reward: 10, status: 'active' }
-  ];
-  if (!Array.isArray(MOCK_DB.events) || MOCK_DB.events.length === 0) {
-    MOCK_DB.events = seedEvents;
+  if (!Array.isArray(MOCK_DB.users) || MOCK_DB.users.length === 0) {
+    MOCK_DB.users = [
+      { id: 'admin_uid', email: 'admin@sentranghub.vn', password: 'SenTrang@2026!', display_name: 'Admin Hệ Thống', role_id: 'role_super_admin', role_name: 'Super Admin', role_level: 0, is_active: true, permissions: ['*'], created_at: '2026-01-01T00:00:00Z' }
+    ];
   }
-  const seedMembers = [
-    { id: 'mem_01', user_id: 'admin_uid', full_name: 'Admin Hệ Thống', email: 'admin@sentranghub.vn', student_id: 'MSTN2026001', department: 'Ban Chủ nhiệm', current_position: 'Chủ nhiệm', status: 'active', total_points: 120, bonus_points: 40, attendance_points: 80, penalty_points: 0, points_history: [{ id: 'ph_init', event_id: 'event_01', title: 'Điểm danh: Chiến dịch Mùa Hè Tình Nguyện 2026', points: 10, type: 'attendance', date: new Date().toISOString() }] }
-  ];
   if (!Array.isArray(MOCK_DB.members) || MOCK_DB.members.length === 0) {
-    MOCK_DB.members = seedMembers;
+    MOCK_DB.members = [
+      { id: 'mem_01', user_id: 'admin_uid', full_name: 'Admin Hệ Thống', email: 'admin@sentranghub.vn', student_id: 'MSTN2026001', department: 'Ban Chủ nhiệm', current_position: 'Chủ nhiệm', status: 'active', total_points: 0, bonus_points: 0, attendance_points: 0, penalty_points: 0, points_history: [] }
+    ];
   }
+  if (!Array.isArray(MOCK_DB.roles) || MOCK_DB.roles.length === 0) {
+    MOCK_DB.roles = [
+      { id: 'role_super_admin', name: 'Super Admin', description: 'Quản trị viên cao nhất, toàn quyền hệ thống', level: 0, permissions: ['*'] },
+      { id: 'role_chu_nhiem', name: 'Chủ nhiệm', description: 'Chủ nhiệm câu lạc bộ', level: 1, permissions: ['users.read', 'users.create', 'users.update', 'users.delete', 'roles.manage', 'events.read', 'events.create', 'attendance.manage', 'articles.read', 'articles.create', 'articles.publish', 'quizzes.take', 'quizzes.create', 'certificates.view', 'certificates.issue', 'notifications.create'] },
+      { id: 'role_pcn_thuong_truc', name: 'Phó Chủ nhiệm Thường trực', description: 'Phó Chủ nhiệm Thường trực câu lạc bộ', level: 1, permissions: ['users.read', 'users.create', 'users.update', 'events.read', 'events.create', 'attendance.manage', 'articles.read', 'articles.create', 'articles.publish', 'quizzes.take', 'quizzes.create', 'certificates.view', 'certificates.issue'] },
+      { id: 'role_pho_chu_nhiem', name: 'Phó Chủ nhiệm', description: 'Phó Chủ nhiệm câu lạc bộ', level: 2, permissions: ['users.read', 'events.read', 'events.create', 'attendance.manage', 'articles.read', 'articles.create', 'articles.publish', 'quizzes.take', 'certificates.view'] },
+      { id: 'role_uy_vien_bcn', name: 'Ủy viên Ban Chủ nhiệm', description: 'Ủy viên Ban Chủ nhiệm câu lạc bộ', level: 3, permissions: ['users.read', 'events.read', 'events.create', 'quizzes.take', 'certificates.view'] },
+      { id: 'role_thu_ky', name: 'Thư ký', description: 'Thư ký câu lạc bộ', level: 3, permissions: ['users.read', 'articles.read', 'articles.create', 'notifications.create', 'certificates.view'] },
+      { id: 'role_thu_quy', name: 'Thủ quỹ', description: 'Thủ quỹ quản lý tài chính', level: 3, permissions: ['users.read', 'certificates.view'] },
+      { id: 'role_thanh_vien', name: 'Thành viên', description: 'Thành viên chính thức câu lạc bộ', level: 10, permissions: ['quizzes.take', 'events.read', 'articles.read', 'certificates.view'] },
+      { id: 'role_cong_tac_vien', name: 'Cộng tác viên', description: 'Cộng tác viên câu lạc bộ', level: 10, permissions: ['events.read', 'articles.read'] }
+    ];
+  }
+  if (!Array.isArray(MOCK_DB.events)) MOCK_DB.events = [];
+  if (!Array.isArray(MOCK_DB.articles)) MOCK_DB.articles = [];
+  if (!Array.isArray(MOCK_DB.quizzes)) MOCK_DB.quizzes = [];
+  if (!Array.isArray(MOCK_DB.notifications)) MOCK_DB.notifications = [];
+  if (!Array.isArray(MOCK_DB.certificates)) MOCK_DB.certificates = [];
+  if (!Array.isArray(MOCK_DB.logs)) MOCK_DB.logs = [];
+  if (!Array.isArray(MOCK_DB.years)) MOCK_DB.years = ['2026'];
 }
 
 const PRIMARY_CLOUD_DB_URL = 'https://jsonblob.com/api/jsonBlob/019fc9bd-539a-7264-8764-e29b5cdbdbbe';
@@ -1147,6 +1164,37 @@ async function getMockApiResponse(endpoint, options = {}) {
     saveMockDbToStorage();
     pushToGlobalCloud();
     return Promise.resolve({ message: `Đã Xóa sạch (Reset) toàn bộ dữ liệu phân hệ "${label}" về trạng thái trống (0 dữ liệu)!`, module: moduleKey });
+  }
+
+  // Master System Factory Reset
+  if (endpoint.includes('/system/factory-reset') && method === 'POST') {
+    if (typeof isSuperAdmin === 'function' && !isSuperAdmin()) {
+      return Promise.reject(new Error('🔒 Chỉ Super Admin hệ thống mới có quyền thực hiện Master Reset!'));
+    }
+    
+    MOCK_DB.users = [
+      { id: 'admin_uid', email: 'admin@sentranghub.vn', password: 'SenTrang@2026!', display_name: 'Admin Hệ Thống', role_id: 'role_super_admin', role_name: 'Super Admin', role_level: 0, is_active: true, permissions: ['*'], created_at: '2026-01-01T00:00:00Z' }
+    ];
+    MOCK_DB.members = [
+      { id: 'mem_01', user_id: 'admin_uid', full_name: 'Admin Hệ Thống', email: 'admin@sentranghub.vn', student_id: 'MSTN2026001', department: 'Ban Chủ nhiệm', current_position: 'Chủ nhiệm', status: 'active', total_points: 0, bonus_points: 0, attendance_points: 0, penalty_points: 0, points_history: [] }
+    ];
+    MOCK_DB.events = [];
+    MOCK_DB.articles = [];
+    MOCK_DB.quizzes = [];
+    MOCK_DB.notifications = [
+      { id: 'noti_init_' + Date.now(), title: '🎉 HỆ THỐNG ĐÃ KHỞI TẠO BẢN THỬ NGHIỆM PRO', content: 'Chào mừng bạn đến với Sen Trắng Hub v3.0! Nền tảng đã được dọn dẹp dữ liệu trắng và nâng cấp bảo mật toàn diện, sẵn sàng cho việc phát hành thử nghiệm.', type: 'important', target: 'all', created_at: new Date().toISOString(), read_by: [] }
+    ];
+    MOCK_DB.certificates = [];
+    MOCK_DB.leaderboard = [];
+    MOCK_DB.logs = [
+      { timestamp: new Date().toLocaleString('vi-VN'), admin: typeof Auth !== 'undefined' ? (Auth.getUser()?.display_name || 'Admin') : 'Admin', action: 'SYSTEM.FACTORY_RESET', module: 'Bảo mật & Khởi tạo', detail: 'Đã Master Reset toàn bộ hệ thống về dữ liệu trắng sẵn sàng phát hành sử dụng thử.' }
+    ];
+    MOCK_DB.years = ['2026'];
+
+    mockDbVersion = Date.now();
+    saveMockDbToStorage();
+    await pushToGlobalCloud();
+    return Promise.resolve({ success: true, message: '⚡ Đã Master Reset hệ thống về dữ liệu trắng thành công!' });
   }
 
   return Promise.resolve({ status: 'ok' });
