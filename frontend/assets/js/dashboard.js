@@ -32,6 +32,12 @@ function initUserInfo(user) {
   if (el('user-role-badge')) el('user-role-badge').textContent = user.role_name || 'Thành viên';
   if (el('user-avatar')) el('user-avatar').textContent = (user.display_name || 'U').charAt(0).toUpperCase();
 
+  // Show/Hide topbar Master Reset button for Super Admin
+  const resetBtn = el('btn-topbar-reset');
+  if (resetBtn) {
+    resetBtn.style.display = isSuperAdmin() ? 'inline-flex' : 'none';
+  }
+
   // Mobile Drawer Profile Elements
   if (el('mobile-user-name')) el('mobile-user-name').textContent = user.display_name || 'Người dùng';
   if (el('mobile-user-role')) el('mobile-user-role').textContent = user.role_name || 'Thành viên';
