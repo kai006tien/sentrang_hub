@@ -2007,30 +2007,122 @@ img {
   .topbar-noti-btn { width: 42px; height: 42px; }
 }
 
-/* Master Reset Button in Topbar */
-.btn-topbar-reset {
-  display: inline-flex;
+/* ==========================================================================
+   UNIFIED TOPBAR ACTION BUTTON SYSTEM (EQUAL SIZES & HARMONIOUS STYLING)
+   ========================================================================== */
+.topbar-right {
+  display: flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.45rem 0.85rem;
-  border-radius: var(--radius-full, 9999px);
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  color: #EF4444;
-  font-size: 0.8rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-.btn-topbar-reset:hover {
-  background: rgba(239, 68, 68, 0.28);
-  border-color: #EF4444;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+  gap: 0.5rem;
 }
 
-/* Panel Header & Action Buttons Styling (Fix Sticking/Overlapping) */
+.topbar-noti-btn,
+.user-profile-pill,
+.btn-topbar-reset,
+.btn-topbar-pass,
+.btn-topbar-logout {
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  padding: 0 0.85rem !important;
+  border-radius: var(--radius-full, 9999px) !important;
+  font-size: 0.8rem !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.45rem !important;
+  box-sizing: border-box !important;
+  white-space: nowrap !important;
+  transition: all 0.2s ease-in-out !important;
+  cursor: pointer !important;
+}
+
+.topbar-noti-btn svg,
+.btn-topbar-reset svg,
+.btn-topbar-pass svg,
+.btn-topbar-logout svg {
+  width: 16px !important;
+  height: 16px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Individual Button Theme Colors with Consistent Glassmorphism */
+.topbar-noti-btn {
+  width: 38px !important;
+  padding: 0 !important;
+  background: var(--bg-surface, rgba(30, 41, 59, 0.7)) !important;
+  border: 1px solid var(--border-subtle, rgba(51, 65, 85, 0.6)) !important;
+  color: var(--text-primary) !important;
+  position: relative !important;
+}
+.topbar-noti-btn:hover {
+  background: var(--bg-hover, rgba(51, 65, 85, 0.5)) !important;
+  border-color: var(--brand-primary, #06B6D4) !important;
+  transform: translateY(-1px) !important;
+}
+
+.user-profile-pill {
+  background: var(--bg-surface, rgba(30, 41, 59, 0.7)) !important;
+  border: 1px solid var(--border-subtle, rgba(51, 65, 85, 0.6)) !important;
+  color: var(--text-primary) !important;
+  padding: 0 0.75rem 0 0.4rem !important;
+}
+.user-profile-pill:hover {
+  background: var(--bg-hover, rgba(51, 65, 85, 0.5)) !important;
+  border-color: var(--brand-primary, #06B6D4) !important;
+  transform: translateY(-1px) !important;
+}
+.user-avatar-circle {
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 50% !important;
+  background: var(--gradient-brand, linear-gradient(135deg, #06B6D4, #8B5CF6)) !important;
+  color: #FFF !important;
+  font-size: 0.75rem !important;
+  font-weight: 800 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+}
+
+.btn-topbar-reset {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+  color: #EF4444 !important;
+}
+.btn-topbar-reset:hover {
+  background: rgba(239, 68, 68, 0.28) !important;
+  border-color: #EF4444 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25) !important;
+}
+
+.btn-topbar-pass {
+  background: var(--bg-surface, rgba(30, 41, 59, 0.7)) !important;
+  border: 1px solid var(--border-subtle, rgba(51, 65, 85, 0.6)) !important;
+  color: var(--cyan-300, #67E8F9) !important;
+}
+.btn-topbar-pass:hover {
+  background: rgba(6, 182, 212, 0.18) !important;
+  border-color: var(--cyan-400, #22D3EE) !important;
+  transform: translateY(-1px) !important;
+}
+
+.btn-topbar-logout {
+  background: var(--bg-surface, rgba(30, 41, 59, 0.7)) !important;
+  border: 1px solid var(--border-subtle, rgba(51, 65, 85, 0.6)) !important;
+  color: var(--text-secondary, #94A3B8) !important;
+}
+.btn-topbar-logout:hover {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  color: #EF4444 !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Panel Header & Action Buttons Styling */
 .panel-header {
   display: flex;
   align-items: center;
@@ -2062,7 +2154,7 @@ img {
     justify-content: flex-start !important;
   }
 
-  /* 1. Mobile Topbar Cleanup */
+  /* Mobile Topbar Clean Uniform Sizes */
   .topbar-brand {
     display: none !important;
   }
@@ -2075,26 +2167,37 @@ img {
   .user-details {
     display: none !important;
   }
-  .btn-topbar-reset span {
-    display: none !important;
+  
+  .topbar-noti-btn,
+  .user-profile-pill,
+  .btn-topbar-reset,
+  .btn-topbar-pass,
+  .btn-topbar-logout {
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    padding: 0 0.55rem !important;
+    font-size: 0.775rem !important;
   }
-  .btn-topbar-reset {
-    padding: 0.4rem 0.55rem !important;
+  .topbar-noti-btn {
+    width: 36px !important;
+    padding: 0 !important;
   }
-  .btn-topbar-pass span {
-    display: none !important;
+  .user-profile-pill {
+    padding: 0 0.35rem !important;
   }
-  .btn-topbar-pass {
-    padding: 0.4rem 0.55rem !important;
+  .user-avatar-circle {
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 0.7rem !important;
   }
+  .btn-topbar-reset span,
+  .btn-topbar-pass span,
   .btn-topbar-logout span {
     display: none !important;
   }
-  .btn-topbar-logout {
-    padding: 0.4rem 0.55rem !important;
-  }
 
-  /* 2. Action Buttons & Section Headers Spacing (Fix Sticking/Overlapping) */
+  /* Action Buttons & Section Headers Spacing */
   .view-header-actions,
   [id$="-action-buttons"],
   .section-header-actions {
@@ -2106,7 +2209,7 @@ img {
     width: 100% !important;
   }
 
-  /* 3. Filter Bar Mobile Alignment (No Overlap/Chopping) */
+  /* Filter Bar Mobile Alignment */
   .archive-filter-bar {
     flex-direction: column !important;
     align-items: stretch !important;
