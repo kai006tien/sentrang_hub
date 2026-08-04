@@ -1027,6 +1027,47 @@ async function getMockApiResponse(endpoint, options = {}) {
       certificate: certObj
     });
   }
+  if (endpoint.includes('/articles') && method === 'POST') {
+    const currentUser = typeof Auth !== 'undefined' ? Auth.getUser() : null;
+    const newArt = {
+      id: 'art_' + Date.now(),
+      author_id: currentUser?.id || 'admin_uid',
+      author_name: currentUser?.display_name || 'Ban Truyền thông',
+      view_count: 0,
+      created_at: new Date().toISOString(),
+      ...body
+    };
+    if (!Array.isArray(MOCK_DB.articles)) MOCK_DB.articles = [];
+    MOCK_DB.articles.unshift(newArt);
+
+    MOCK_DB.notifications.unshift({
+      id: 'noti_' + Date.now(),
+      title: `📰 Bài viết mới: ${newArt.title}`,
+      content: `Ban Truyền thông vừa xuất bản bài viết mới "${newArt.title}". Hãy vào xem ngay!`,
+      type: 'info',
+      target: 'all',
+      created_at: new Date().toISOString(),
+      read_by: []
+    });
+
+    MOCK_DB.logs.unshift({
+      timestamp: new Date().toLocaleString('vi-VN'),
+      admin: currentUser ? currentUser.display_name : 'Ban Truyền thông',
+      action: 'ARTICLE.CREATE',
+      module: 'Truyền thông CMS',
+      detail: `Xuất bản bài viết mới "${newArt.title}"`
+    });
+
+    mockDbVersion = Date.now();
+    saveMockDbToStorage();
+    pushToGlobalCloud();
+    return Promise.resolve({ message: 'Xuất bản bài viết truyền thông thành công!', data: newArt });
+  }
+
+  if (endpoint.includes('/articles') && method === 'GET') {
+    return Promise.resolve(MOCK_DB.articles || []);
+  }
+
   if (endpoint === '/api/quizzes' && method === 'POST') {
     const currentUser = typeof Auth !== 'undefined' ? Auth.getUser() : null;
     const newQz = { id: 'quiz_' + Date.now(), ...body, question_count: (body.questions||[]).length };

@@ -69,7 +69,27 @@ function previewArticleImage(input) {
   const img = document.getElementById('art-image-preview-img');
   if (input.files && input.files[0]) {
     const reader = new FileReader();
-    reader.onload = (e) => { img.src = e.target.result; preview.style.display = 'block'; };
+    reader.onload = (e) => {
+      const tempImg = new Image();
+      tempImg.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 600;
+        let width = tempImg.width;
+        let height = tempImg.height;
+        if (width > MAX_WIDTH) {
+          height = Math.round((height * MAX_WIDTH) / width);
+          width = MAX_WIDTH;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(tempImg, 0, 0, width, height);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        img.src = compressedDataUrl;
+        preview.style.display = 'block';
+      };
+      tempImg.src = e.target.result;
+    };
     reader.readAsDataURL(input.files[0]);
   }
 }
