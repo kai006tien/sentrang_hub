@@ -92,32 +92,6 @@
             </svg>
           </button>
         </form>
-
-        <!-- Demo Credentials -->
-        <div class="credentials-box">
-          <div class="credentials-header">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            </svg>
-            <span>Tài khoản Super Admin mặc định</span>
-          </div>
-          <div class="credentials-body">
-            <div class="cred-row">
-              <span class="cred-label">Email:</span>
-              <code class="cred-value" id="demo-email">admin@sentranghub.vn</code>
-            </div>
-            <div class="cred-row">
-              <span class="cred-label">Mật khẩu:</span>
-              <code class="cred-value" id="demo-password">SenTrang@2026!</code>
-            </div>
-          </div>
-          <button type="button" class="btn-autofill" id="btn-autofill">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-            </svg>
-            <span>Tự động điền tài khoản</span>
-          </button>
-        </div>
       </div>
     </main>
 
@@ -141,7 +115,6 @@
       const emailInput = document.getElementById('email');
       const passInput = document.getElementById('password');
       const btnTogglePass = document.getElementById('btn-toggle-password');
-      const btnAutofill = document.getElementById('btn-autofill');
       const errorBox = document.getElementById('login-error');
       const errorText = document.getElementById('login-error-text');
 
@@ -151,16 +124,6 @@
           const type = passInput.getAttribute('type') === 'password' ? 'text' : 'password';
           passInput.setAttribute('type', type);
           btnTogglePass.classList.toggle('active');
-        });
-      }
-
-      // Auto Fill Credentials
-      if (btnAutofill) {
-        btnAutofill.addEventListener('click', () => {
-          emailInput.value = 'admin@sentranghub.vn';
-          passInput.value = 'SenTrang@2026!';
-          emailInput.focus();
-          showToast('Đã điền tự động tài khoản Super Admin!', 'success');
         });
       }
 

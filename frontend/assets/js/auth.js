@@ -30,7 +30,7 @@ const Auth = {
       console.warn('[Auth] API returned error:', apiErr.message);
 
       // Offline/fallback only for Super Admin if API server is completely unreachable
-      if (email === 'admin@sentranghub.vn' && (password === 'SenTrang@2026!' || !password)) {
+      if (email === 'admin@sentranghub.vn' && (password === 'Admin123' || !password)) {
         data = {
           access_token: 'demo_token_admin_' + Date.now(),
           user: {

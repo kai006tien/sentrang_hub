@@ -52,7 +52,7 @@ function showToast(message, type = 'success', duration = 3500) {
 // =====================================================================
 const MOCK_DB = {
   users: [
-    { id: 'admin_uid', email: 'admin@sentranghub.vn', password: 'SenTrang@2026!', display_name: 'Admin Hệ Thống', role_id: 'role_super_admin', role_name: 'Super Admin', role_level: 0, is_active: true, permissions: ['*'], created_at: '2026-01-01T00:00:00Z' }
+    { id: 'admin_uid', email: 'admin@sentranghub.vn', password: 'Admin123', display_name: 'Admin Hệ Thống', role_id: 'role_super_admin', role_name: 'Super Admin', role_level: 0, is_active: true, permissions: ['*'], created_at: '2026-01-01T00:00:00Z' }
   ],
   members: [
     { id: 'mem_01', user_id: 'admin_uid', full_name: 'Admin Hệ Thống', email: 'admin@sentranghub.vn', student_id: 'MSTN2026001', department: 'Ban Chủ nhiệm', current_position: 'Chủ nhiệm', status: 'active', total_points: 0, bonus_points: 0, attendance_points: 0, penalty_points: 0, points_history: [] }
@@ -146,7 +146,7 @@ function notifyRealtimeSync(eventType = 'DATA_UPDATED', payload = {}) {
 function ensureSeedData() {
   if (!Array.isArray(MOCK_DB.users) || MOCK_DB.users.length === 0) {
     MOCK_DB.users = [
-      { id: 'admin_uid', email: 'admin@sentranghub.vn', password: 'SenTrang@2026!', display_name: 'Admin Hệ Thống', role_id: 'role_super_admin', role_name: 'Super Admin', role_level: 0, is_active: true, permissions: ['*'], created_at: '2026-01-01T00:00:00Z' }
+      { id: 'admin_uid', email: 'admin@sentranghub.vn', password: 'Admin123', display_name: 'Admin Hệ Thống', role_id: 'role_super_admin', role_name: 'Super Admin', role_level: 0, is_active: true, permissions: ['*'], created_at: '2026-01-01T00:00:00Z' }
     ];
   }
   if (!Array.isArray(MOCK_DB.members) || MOCK_DB.members.length === 0) {
@@ -1173,7 +1173,7 @@ async function getMockApiResponse(endpoint, options = {}) {
     }
     
     MOCK_DB.users = [
-      { id: 'admin_uid', email: 'admin@sentranghub.vn', password: 'SenTrang@2026!', display_name: 'Admin Hệ Thống', role_id: 'role_super_admin', role_name: 'Super Admin', role_level: 0, is_active: true, permissions: ['*'], created_at: '2026-01-01T00:00:00Z' }
+      { id: 'admin_uid', email: 'admin@sentranghub.vn', password: 'Admin123', display_name: 'Admin Hệ Thống', role_id: 'role_super_admin', role_name: 'Super Admin', role_level: 0, is_active: true, permissions: ['*'], created_at: '2026-01-01T00:00:00Z' }
     ];
     MOCK_DB.members = [
       { id: 'mem_01', user_id: 'admin_uid', full_name: 'Admin Hệ Thống', email: 'admin@sentranghub.vn', student_id: 'MSTN2026001', department: 'Ban Chủ nhiệm', current_position: 'Chủ nhiệm', status: 'active', total_points: 0, bonus_points: 0, attendance_points: 0, penalty_points: 0, points_history: [] }
