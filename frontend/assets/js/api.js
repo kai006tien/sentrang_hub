@@ -202,44 +202,42 @@ function mergeDbArrays(localArr, cloudArr) {
 async function syncWithGlobalCloud() {
   if (isCloudSyncing) return;
   isCloudSyncing = true;
-  let fetchedData = null;
 
   try {
-    // 1. Primary Cloud Database Fetch
-    try {
-      const res1 = await fetch(PRIMARY_CLOUD_DB_URL, {
-        headers: { 'Accept': 'application/json', 'Cache-Control': 'no-cache' }
-      });
-      if (res1.ok) {
-        fetchedData = await res1.json();
-      }
-    } catch (e1) {
-      console.warn('[Global Cloud Sync] Primary fetch error:', e1.message);
-    }
+    const urls = [PRIMARY_CLOUD_DB_URL, SECONDARY_CLOUD_DB_URL];
+    const fetchPromises = urls.map(url => 
+      fetch(url, {
+        headers: { 'Accept': 'application/json', 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+      })
+      .then(res => res.ok ? res.json() : null)
+      .catch(e => {
+        console.warn('[Global Cloud Sync] Fetch error for', url, e.message);
+        return null;
+      })
+    );
 
-    // 2. Secondary Cloud Database Fetch (Fallback)
-    if (!fetchedData || !fetchedData.users) {
-      try {
-        const res2 = await fetch(SECONDARY_CLOUD_DB_URL, {
-          headers: { 'Accept': 'application/json', 'Cache-Control': 'no-cache' }
-        });
-        if (res2.ok) {
-          fetchedData = await res2.json();
+    const results = await Promise.allSettled(fetchPromises);
+    let bestData = null;
+    let maxVersion = 0;
+
+    results.forEach(res => {
+      if (res.status === 'fulfilled' && res.value && typeof res.value === 'object' && Array.isArray(res.value.users)) {
+        const ver = parseInt(res.value.version) || 0;
+        if (ver > maxVersion) {
+          maxVersion = ver;
+          bestData = res.value;
         }
-      } catch (e2) {
-        console.warn('[Global Cloud Sync] Secondary fetch error:', e2.message);
       }
-    }
+    });
 
-    if (fetchedData && typeof fetchedData === 'object' && Array.isArray(fetchedData.users)) {
-      const cloudVersion = parseInt(fetchedData.version) || 0;
-      const isNewer = cloudVersion > mockDbVersion || mockDbVersion === 0;
+    if (bestData && maxVersion > 0) {
+      const isNewer = (maxVersion > mockDbVersion) || (mockDbVersion === 0);
 
       if (isNewer) {
-        mockDbVersion = cloudVersion || Date.now();
+        mockDbVersion = maxVersion;
         ['users', 'members', 'events', 'articles', 'quizzes', 'notifications', 'certificates', 'logs', 'years', 'leaderboard'].forEach(key => {
-          if (Array.isArray(fetchedData[key])) {
-            MOCK_DB[key] = fetchedData[key];
+          if (Array.isArray(bestData[key])) {
+            MOCK_DB[key] = bestData[key];
           }
         });
         
@@ -278,7 +276,7 @@ async function pushToGlobalCloud() {
 
   const jsonBody = JSON.stringify(payload);
 
-  // Push to Primary & Secondary asynchronously
+  // Push to Primary & Secondary asynchronously with error handling
   const pushPromises = [
     fetch(PRIMARY_CLOUD_DB_URL, {
       method: 'PUT',
@@ -315,7 +313,7 @@ function loadMockDbFromStorage() {
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) MOCK_DB[k] = parsed;
+          if (Array.isArray(parsed)) MOCK_DB[k] = parsed;
         } catch (e) {}
       }
     });
@@ -342,7 +340,7 @@ syncWithGlobalCloud();
 if (typeof window !== 'undefined' && !window.__globalCloudSyncInterval) {
   window.__globalCloudSyncInterval = setInterval(() => {
     syncWithGlobalCloud();
-  }, 4000);
+  }, 2500);
 }
 
 async function getMockApiResponse(endpoint, options = {}) {

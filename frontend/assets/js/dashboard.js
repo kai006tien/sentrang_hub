@@ -980,7 +980,7 @@ function startRealTimeSyncManager() {
 
   updateNotiBadge();
 
-  // Polling check every 6 seconds
+  // Polling check every 2.5 seconds
   syncIntervalTimer = setInterval(async () => {
     try {
       if (typeof syncWithGlobalCloud === 'function') {
@@ -990,7 +990,7 @@ function startRealTimeSyncManager() {
     } catch (e) {
       console.warn('[RealTime Sync Manager] Polling check failed:', e);
     }
-  }, 6000);
+  }, 2500);
 
   // Broadcast / Storage event callback
   window.onRealtimeDataUpdated = (eventData) => {
