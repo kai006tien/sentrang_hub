@@ -39,36 +39,53 @@ function renderEventsUI(events, allMembers, options = {}) {
       checkPerm('events.create') ||
       (user && (user.role_id === 'role_super_admin' || user.role_name === 'Super Admin' || (user.role_level !== undefined && parseInt(user.role_level) <= 3)))
     );
-
-    const safeEvents = Array.isArray(events) ? events.filter(e => e && typeof e === 'object') : (events && Array.isArray(events.data) ? events.data.filter(e => e && typeof e === 'object') : []);
+    const allEventsList = Array.isArray(events) ? events.filter(e => e && typeof e === 'object') : (events && Array.isArray(events.data) ? events.data.filter(e => e && typeof e === 'object') : []);
     const safeMembers = Array.isArray(allMembers) ? allMembers.filter(m => m && typeof m === 'object') : (allMembers && Array.isArray(allMembers.data) ? allMembers.data.filter(m => m && typeof m === 'object') : []);
+
+    if (!options.isFiltering) {
+      window._cachedEventsData = allEventsList;
+      window._cachedMembersData = safeMembers;
+    }
+
+    const allEvents = (window._cachedEventsData && Array.isArray(window._cachedEventsData)) ? window._cachedEventsData : allEventsList;
+    const closedCount = allEvents.filter(e => e && (e.status === 'closed' || e.status === 'archived' || e.status === 'finished')).length;
+    const activeCount = allEvents.filter(e => e && (e.status !== 'closed' && e.status !== 'archived' && e.status !== 'finished')).length;
+
+    let safeEvents = [];
+    if (options.isFiltering) {
+      safeEvents = allEventsList;
+    } else {
+      // Default view: ONLY active events! Closed events are hidden into Archive Box!
+      safeEvents = allEvents.filter(e => e && (e.status !== 'closed' && e.status !== 'archived' && e.status !== 'finished'));
+    }
 
     const userMem = safeMembers.find(m => m && (m.user_id === user?.id || m.email === user?.email));
     const catColors = { volunteer:{bg:'rgba(239,68,68,0.15)',text:'#FCA5A5',label:'Tình nguyện'}, training:{bg:'rgba(59,130,246,0.15)',text:'#93C5FD',label:'Đào tạo'}, social:{bg:'rgba(16,185,129,0.15)',text:'#6EE7B7',label:'Sinh hoạt'}, meeting:{bg:'rgba(249,115,22,0.15)',text:'#FDBA74',label:'Họp BCN'} };
 
     // Helper for safe inline JS parameter
     const attrEscape = (str) => safeEscape(str).replace(/'/g, "\\'");
+    const activeFilterStatus = options.statusVal || (options.isFiltering ? 'all' : 'active');
 
     // Archive Filter Bar HTML
     const filterBarHTML = `
       <div class="archive-filter-bar" style="background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-xl);padding:0.85rem 1.15rem;margin-bottom:1.25rem;box-shadow:var(--shadow-sm);display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;justify-content:space-between;">
         <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;flex:1;">
           <div style="display:flex;align-items:center;gap:0.4rem;">
-            <span style="font-size:0.825rem;font-weight:700;color:var(--primary-700);white-space:nowrap;">📁 Lưu trữ Tháng/Năm:</span>
+            <span style="font-size:0.825rem;font-weight:700;color:var(--primary-700);white-space:nowrap;">📌 Chế độ xem:</span>
+            <select id="event-filter-status" onchange="filterEventsByArchive()" style="padding:0.4rem 0.65rem;border-radius:var(--radius-md);border:1.5px solid var(--primary-400);font-size:0.825rem;font-weight:700;background:var(--bg-main);">
+              <option value="active">🟢 Đang diễn ra (${activeCount})</option>
+              <option value="archived">📦 Kho Lưu trữ (${closedCount} SK đã đóng)</option>
+              <option value="all">🌐 Tất cả sự kiện (${allEvents.length})</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.4rem;">
+            <span style="font-size:0.825rem;font-weight:700;color:var(--primary-700);white-space:nowrap;">📁 Tháng/Năm:</span>
             <select id="event-filter-month" onchange="filterEventsByArchive()" style="padding:0.4rem 0.65rem;border-radius:var(--radius-md);border:1px solid var(--border-light);font-size:0.825rem;font-weight:600;background:var(--bg-main);">
               <option value="all">🌐 Tất cả thời gian</option>
               <option value="2026-07">📅 Tháng 07 / 2026</option>
               <option value="2026-08">📅 Tháng 08 / 2026</option>
               <option value="2026-09">📅 Tháng 09 / 2026</option>
-              <option value="archive">📦 Kho Lưu trữ Sự kiện Cũ</option>
-            </select>
-          </div>
-          <div style="display:flex;align-items:center;gap:0.4rem;">
-            <span style="font-size:0.825rem;font-weight:700;color:var(--primary-700);white-space:nowrap;">📌 Trạng thái:</span>
-            <select id="event-filter-status" onchange="filterEventsByArchive()" style="padding:0.4rem 0.65rem;border-radius:var(--radius-md);border:1px solid var(--border-light);font-size:0.825rem;font-weight:600;background:var(--bg-main);">
-              <option value="all">Tất cả trạng thái</option>
-              <option value="active">🟢 Đang diễn ra</option>
-              <option value="archived">📦 Đã lưu trữ / Đóng</option>
+              <option value="archive">📦 Hộp Lưu trữ Sự kiện Đã Đóng</option>
             </select>
           </div>
         </div>
@@ -82,12 +99,19 @@ function renderEventsUI(events, allMembers, options = {}) {
     const cardsHTML = (safeEvents.length === 0)
       ? `
         <div style="grid-column:1/-1;text-align:center;padding:3rem 1rem;background:var(--bg-card);border:2px dashed var(--border-light);border-radius:var(--radius-xl);">
-          <div style="font-size:3.5rem;margin-bottom:0.5rem;">📅</div>
-          <h4 style="font-size:1.1rem;font-weight:800;color:var(--text-primary);margin-bottom:0.35rem;">Không tìm thấy sự kiện phù hợp</h4>
-          <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1.25rem;">Thử thay đổi bộ lọc Tháng/Năm hoặc tạo sự kiện mới bên dưới.</p>
+          <div style="font-size:3.5rem;margin-bottom:0.5rem;">${activeFilterStatus === 'archived' ? '📦' : '📅'}</div>
+          <h4 style="font-size:1.1rem;font-weight:800;color:var(--text-primary);margin-bottom:0.35rem;">
+            ${activeFilterStatus === 'archived' ? 'Kho lưu trữ đang trống' : 'Không có sự kiện nào đang diễn ra'}
+          </h4>
+          <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1.25rem;">
+            ${activeFilterStatus === 'archived' ? 'Chưa có sự kiện nào bị đóng hoặc lưu trữ.' : 'Các sự kiện đã đóng sẽ tự động được ẩn vào Kho lưu trữ.'}
+          </p>
           <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
             ${(checkPerm('events.create') || checkSuperAdmin()) ? `<button class="btn btn-primary btn-sm" onclick="openCreateEventModal()">+ Tạo sự kiện mới</button>` : ''}
-            <button class="btn btn-secondary btn-sm" onclick="if(typeof ensureSeedData==='function'){ensureSeedData();}loadEventsList();showToast('Đã nạp dữ liệu sự kiện mẫu!','success');">🔄 Nạp dữ liệu sự kiện mẫu</button>
+            ${activeFilterStatus === 'archived' 
+              ? `<button class="btn btn-secondary btn-sm" onclick="document.getElementById('event-filter-status').value='active';filterEventsByArchive();">🟢 Xem sự kiện đang diễn ra</button>` 
+              : `<button class="btn btn-secondary btn-sm" onclick="document.getElementById('event-filter-status').value='archived';filterEventsByArchive();">📦 Xem Kho lưu trữ (${closedCount})</button>`
+            }
           </div>
         </div>
       ` 
@@ -253,7 +277,7 @@ function renderEventsUI(events, allMembers, options = {}) {
     const searchInput = document.getElementById('event-search-input');
     const isFocused = (document.activeElement === searchInput);
     const curMonth = options.monthVal || document.getElementById('event-filter-month')?.value || 'all';
-    const curStatus = options.statusVal || document.getElementById('event-filter-status')?.value || 'all';
+    const curStatus = options.statusVal || (options.isFiltering ? (document.getElementById('event-filter-status')?.value || 'all') : 'active');
     const curSearch = options.searchVal !== undefined ? options.searchVal : (searchInput?.value || '');
 
     container.innerHTML = filterBarHTML + cardsContainerWrapper + statsTableHTML;
@@ -287,13 +311,9 @@ function renderEventsUI(events, allMembers, options = {}) {
 async function loadEventsList() {
   if (typeof ensureSeedData === 'function') ensureSeedData();
 
-  const fallbackEvts = [
-    { id: 'event_01', title: 'Chiến dịch Mùa Hè Tình Nguyện 2026', category: 'volunteer', location: 'Huyện Hóc Môn, TP.HCM', start_date: '2026-07-20T08:00:00Z', max_participants: 50, current_count: 12, points_reward: 10, status: 'active' },
-    { id: 'event_02', title: 'Tập huấn Kỹ năng Đội Nhóm & Sơ cứu', category: 'training', location: 'Hội trường B - Bách Khoa', start_date: '2026-07-25T14:00:00Z', max_participants: 40, current_count: 8, points_reward: 10, status: 'active' },
-    { id: 'event_03', title: 'Sinh hoạt Định kỳ CLB Tháng 7', category: 'social', location: 'Phòng Sinh hoạt Sen Trắng', start_date: '2026-07-30T18:00:00Z', max_participants: 60, current_count: 15, points_reward: 10, status: 'active' }
-  ];
+  const fallbackEvts = [];
   
-  let initialEvents = (typeof MOCK_DB !== 'undefined' && Array.isArray(MOCK_DB.events) && MOCK_DB.events.length > 0) ? MOCK_DB.events : fallbackEvts;
+  let initialEvents = (typeof MOCK_DB !== 'undefined' && Array.isArray(MOCK_DB.events)) ? MOCK_DB.events : fallbackEvts;
   let initialMembers = (typeof MOCK_DB !== 'undefined' && Array.isArray(MOCK_DB.members)) ? MOCK_DB.members : [];
 
   // Step 1: Render INSTANTLY synchronously (0ms)
@@ -302,7 +322,7 @@ async function loadEventsList() {
   // Step 2: Background refresh if network has fresh updates
   try {
     const res = await apiFetch('/api/events');
-    let events = Array.isArray(res) && res.length > 0 ? res : ((res && Array.isArray(res.data) && res.data.length > 0) ? res.data : initialEvents);
+    let events = Array.isArray(res) ? res : ((res && Array.isArray(res.data)) ? res.data : initialEvents);
     if (!Array.isArray(events) || events.length === 0) events = initialEvents;
     
     let allMembers = initialMembers;
